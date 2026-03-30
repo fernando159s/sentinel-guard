@@ -20,10 +20,26 @@ if (session_status() === PHP_SESSION_NONE) {
     ]);
 }
 
-// Headers de seguridad básicos
+// Headers de seguridad
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
+header('X-XSS-Protection: 1; mode=block');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+
+// Content Security Policy — permite Bootstrap CDN, Chart.js CDN y estilos inline de Bootstrap
+$csp = implode('; ', [
+    "default-src 'self'",
+    "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+    "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+    "img-src 'self' data:",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+]);
+header('Content-Security-Policy: ' . $csp);
 
 // Obtener URI limpia
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
