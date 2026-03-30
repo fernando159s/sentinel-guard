@@ -1,0 +1,26 @@
+# ============================================================
+# SecuriForm — Rewrite Rules
+# Redirige todas las peticiones al front controller (index.php)
+# ============================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Si el archivo o directorio existe físicamente, servir directamente
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Todo lo demás va al front controller
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Bloquear acceso a archivos sensibles
+<FilesMatch "\.(env|log|sql|md|json|lock|sh|py)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
