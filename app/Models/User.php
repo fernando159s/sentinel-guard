@@ -7,11 +7,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -22,6 +23,14 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'empresa_id',
+        'rol',
+        'estado',
+        'intentos_fallidos',
+        'bloqueado_hasta',
+        'notif_tickets',
+        'notif_incidencias',
+        'ultimo_acceso',
     ];
 
     /**
@@ -44,6 +53,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'bloqueado_hasta' => 'datetime',
+            'ultimo_acceso' => 'datetime',
+            'notif_tickets' => 'boolean',
+            'notif_incidencias' => 'boolean',
         ];
     }
 }

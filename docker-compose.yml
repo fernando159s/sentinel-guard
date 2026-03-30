@@ -91,11 +91,15 @@ services:
       - db
     restart: unless-stopped
 
-  # ── Cloudflare Tunnel: expone la app publicamente ────────────
+  # ── Tunnelmole: expone la app publicamente ───────────────────
   tunnel:
-    image: cloudflare/cloudflared:latest
+    image: node:20-alpine
     container_name: securiform-tunnel
-    command: tunnel --no-autoupdate --url http://app:80
+    command: >
+      sh -c "apk add --no-cache socat &&
+             socat TCP-LISTEN:80,fork,reuseaddr TCP:app:80 &
+             npm install -g tunnelmole &&
+             tmole 80"
     depends_on:
       - app
     restart: unless-stopped
