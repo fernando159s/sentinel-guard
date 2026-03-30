@@ -1,0 +1,57 @@
+# ============================================================
+# SecuriForm — .gitignore
+# ============================================================
+
+# Variables de entorno (NUNCA al repositorio)
+.env
+.env.local
+.env.production
+
+# Dependencias PHP
+vendor/
+
+# Archivos subidos por usuarios
+uploads/logos/*
+uploads/tickets/*
+!uploads/logos/.gitkeep
+!uploads/tickets/.gitkeep
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs de PHP y sistema
+*.log
+logs/
+error_log
+
+# Archivos temporales de exportación
+/tmp/
+*.tmp
+
+# Cache de mPDF
+vendor/mpdf/mpdf/tmp/
+
+# Archivos de sistema macOS
+.DS_Store
+__MACOSX/
+
+# Archivos de backup locales
+*.sql.bak
+*.sql.backup
+backup_*.sql
+
+# Archivos de configuración de servidor local
+/public/.htaccess.local
+
+# Node (si se usa en algún momento para assets)
+node_modules/
+package-lock.json
+
+# Claude Code (contexto de desarrollo, no va a producción)
+# Comentar esta línea si quieres versionar CLAUDE.md en el equipo
+# CLAUDE.md
