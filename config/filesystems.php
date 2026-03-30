@@ -47,6 +47,20 @@ return [
             'report' => false,
         ],
 
+        'logos' => [
+            'driver' => 'local',
+            'root' => storage_path('app/logos'),
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
+        'tickets' => [
+            'driver' => 'local',
+            'root' => storage_path('app/tickets'),
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
