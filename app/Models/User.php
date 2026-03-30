@@ -5,6 +5,8 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -58,5 +60,30 @@ class User extends Authenticatable
             'notif_tickets' => 'boolean',
             'notif_incidencias' => 'boolean',
         ];
+    }
+
+    public function empresa(): BelongsTo
+    {
+        return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+
+    public function registrosCreados(): HasMany
+    {
+        return $this->hasMany(Registro::class, 'creado_por');
+    }
+
+    public function ticketsCreados(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'creado_por');
+    }
+
+    public function ticketsAsignados(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'asignado_a');
+    }
+
+    public function isActivo(): bool
+    {
+        return $this->estado === 'activo';
     }
 }
