@@ -1,0 +1,17 @@
+# Bloquear ejecución de scripts en directorio de uploads
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule \.(php|phtml|php3|php4|php5|phps|cgi|pl|py|sh|bash)$ - [F,L]
+</IfModule>
+
+# Deshabilitar ejecución de PHP
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+# Solo permitir tipos de archivo seguros
+<FilesMatch "\.(?!jpg|jpeg|png|gif|pdf|xlsx|docx|zip)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
