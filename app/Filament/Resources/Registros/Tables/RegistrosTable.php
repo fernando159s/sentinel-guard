@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Filament\Resources\Registros\Tables;
+
+use App\Enums\TipoFormato;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Table;
+
+class RegistrosTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('numero_registro')
+                    ->label('N° Registro')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('tipo_formato')
+                    ->label('Formato')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => TipoFormato::tryFrom($state)?->label() ?? $state),
+                TextColumn::make('creador.name')
+                    ->label('Creado por')
+                    ->sortable(),
+                TextColumn::make('estado')
+                    ->label('Estado')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'activo' => 'success',
+                        'inactivo' => 'danger',
+                    }),
+                TextColumn::make('created_at')
+                    ->label('Fecha')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->filters([
+                SelectFilter::make('tipo_formato')
+                    ->label('Formato')
+                    ->options(TipoFormato::options()),
+                SelectFilter::make('estado')
+                    ->options(['activo' => 'Activo', 'inactivo' => 'Inactivo']),
+                TrashedFilter::make(),
+            ])
+            ->recordActions([
+                EditAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make(),
+                ]),
+            ]);
+    }
+}
