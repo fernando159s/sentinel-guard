@@ -3,11 +3,15 @@
 namespace App\Filament\Resources\Registros\Tables;
 
 use App\Enums\TipoFormato;
+use App\Services\ExcelExportService;
+use App\Services\PdfExportService;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Facades\Filament;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -52,7 +56,30 @@ class RegistrosTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('exportPdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->action(function ($record) {
+                        $path = PdfExportService::exportRegistro($record);
+
+                        return response()->download($path)->deleteFileAfterSend();
+                    }),
                 EditAction::make(),
+            ])
+            ->headerActions([
+                Action::make('exportExcel')
+                    ->label('Exportar Excel')
+                    ->icon('heroicon-o-table-cells')
+                    ->color('success')
+                    ->action(function () use ($table) {
+                        $query = $table->getQuery();
+                        $registros = $query->with('creador')->limit(5000)->get();
+                        $empresa = Filament::getTenant();
+                        $path = ExcelExportService::exportRegistros($registros, $empresa?->razon_social);
+
+                        return response()->download($path)->deleteFileAfterSend();
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
