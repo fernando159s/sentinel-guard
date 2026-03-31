@@ -4,14 +4,18 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasTenants;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser, HasTenants
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable;
@@ -85,5 +89,34 @@ class User extends Authenticatable
     public function isActivo(): bool
     {
         return $this->estado === 'activo';
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->isActivo();
+    }
+
+    public function getTenants(Panel $panel): Collection
+    {
+        // Super admin and agents can see all companies
+        if ($this->hasRole(['super_admin', 'agente_helpdesk'])) {
+            return Empresa::where('estado', 'activo')->get();
+        }
+
+        // Regular users only see their own company
+        if ($this->empresa_id) {
+            return Empresa::where('id', $this->empresa_id)->get();
+        }
+
+        return collect();
+    }
+
+    public function canAccessTenant(\Illuminate\Database\Eloquent\Model $tenant): bool
+    {
+        if ($this->hasRole(['super_admin', 'agente_helpdesk'])) {
+            return true;
+        }
+
+        return $this->empresa_id === $tenant->getKey();
     }
 }

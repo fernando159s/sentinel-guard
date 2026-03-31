@@ -28,6 +28,8 @@ class EmpresaResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    protected static bool $isScopedToTenant = false;
+
     public static function canAccess(): bool
     {
         return auth()->user()?->hasRole('super_admin') ?? false;
@@ -46,7 +48,7 @@ class EmpresaResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\UsersRelationManager::class,
         ];
     }
 

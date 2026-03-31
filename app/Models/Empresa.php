@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Empresa extends Model
+class Empresa extends Model implements HasName
 {
     protected $fillable = [
         'ruc',
@@ -35,5 +36,10 @@ class Empresa extends Model
     public function isActivo(): bool
     {
         return $this->estado === 'activo';
+    }
+
+    public function getFilamentName(): string
+    {
+        return $this->razon_social;
     }
 }
