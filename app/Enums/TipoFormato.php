@@ -78,19 +78,19 @@ enum TipoFormato: string
     public function description(): string
     {
         return match ($this) {
-            self::F01 => 'Documenta las auditorias internas y externas realizadas sobre los sistemas de informacion, registrando responsables, resultados y acciones correctivas.',
-            self::F02 => 'Inventario de los bancos de datos personales inscritos ante la Autoridad, incluyendo su categoria, areas con acceso y descripcion.',
-            self::F03 => 'Registro de prestadores de servicios (terceros) que tienen acceso a datos personales, con detalle de contrato y datos facilitados.',
-            self::F04 => 'Inventario de datos sensibles que maneja la organizacion, su ubicacion y las areas autorizadas para acceder a ellos.',
-            self::F05 => 'Control del personal autorizado para acceder a los bancos de datos, con fecha de asignacion y banco correspondiente.',
-            self::F06 => 'Registro de accesos de soporte tecnico no autorizado o sospechoso, documentando quien accedio, cuando y desde donde.',
-            self::F07 => 'Inventario de soportes fisicos y digitales (discos, USB, servidores, expedientes) que contienen datos personales.',
-            self::F08 => 'Control de ingresos y salidas de soportes fisicos/digitales, con trazabilidad de origen, destino y autorizacion.',
-            self::F09 => 'Notificacion y documentacion de incidencias de seguridad (accesos no autorizados, perdida de datos, malware, fallos de sistema).',
-            self::F10 => 'Documentacion de la resolucion de incidencias previamente reportadas (F09), incluyendo medidas adoptadas y acciones preventivas.',
-            self::F11 => 'Registro de procesos de recuperacion de datos tras una incidencia, con autorizacion, responsable y proceso ejecutado.',
-            self::F12 => 'Control de las copias de seguridad (backups) realizadas, su contenido, periodicidad y fecha de ejecucion.',
-            self::F13 => 'Registro de destruccion segura de activos de informacion, documentando metodo, responsable y autorizacion.',
+            self::F01 => 'Lleva el control de las revisiones de seguridad que se hacen en la empresa. Anota quien la hizo, que encontro y si hay algo que corregir.',
+            self::F02 => 'Lista todas las bases de datos con informacion personal que maneja la empresa. Sirve para saber que datos tenemos y quien puede verlos.',
+            self::F03 => 'Registra a los proveedores o empresas externas que pueden ver datos personales. Ayuda a controlar quien de afuera tiene acceso.',
+            self::F04 => 'Lleva el control de los datos mas delicados (como datos de salud o religion). Indica donde estan guardados y quien puede acceder.',
+            self::F05 => 'Registra que personas tienen permiso para ver las bases de datos. Es como una lista de acceso autorizado.',
+            self::F06 => 'Documenta cuando alguien de soporte tecnico accede sin autorizacion o de forma sospechosa. Sirve para investigar accesos indebidos.',
+            self::F07 => 'Lista todos los dispositivos donde se guardan datos: discos, USB, servidores, archivos fisicos, etc. Es un inventario de donde esta la informacion.',
+            self::F08 => 'Controla cuando entra o sale un dispositivo con datos de la empresa. Registra de donde viene, a donde va y quien lo autorizo.',
+            self::F09 => 'Se usa cuando ocurre un problema de seguridad: alguien accedio sin permiso, se perdieron datos, hubo un virus, etc. Es el reporte inicial.',
+            self::F10 => 'Documenta como se resolvio un problema de seguridad que ya fue reportado (F09). Explica que se hizo y como evitar que pase de nuevo.',
+            self::F11 => 'Registra cuando se recuperan datos despues de un problema. Anota quien lo autorizo, quien lo hizo y como se realizo.',
+            self::F12 => 'Lleva el control de las copias de respaldo (backups). Registra que se copio, cuando y con que frecuencia.',
+            self::F13 => 'Registra cuando se destruye informacion de forma segura. Documenta que se destruyo, como y quien lo autorizo.',
         };
     }
 
