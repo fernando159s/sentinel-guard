@@ -122,6 +122,20 @@ HTML,
 <p>Recuerda que las incidencias de severidad Alta requieren atencion inmediata segun la politica PSC000-25.</p>
 HTML,
             ],
+            [
+                'slug' => 'ticket_reabierto',
+                'nombre' => 'Ticket reabierto',
+                'asunto' => 'Ticket {{numero_ticket}} reabierto: {{asunto}}',
+                'variables_disponibles' => ['nombre', 'numero_ticket', 'asunto', 'quien_reabrio', 'motivo', 'enlace_ticket'],
+                'contenido' => <<<'HTML'
+<p>Hola <strong>{{nombre}}</strong>,</p>
+<p>El ticket <strong>{{numero_ticket}}</strong> ha sido <strong>reabierto</strong> por <strong>{{quien_reabrio}}</strong>.</p>
+<p><strong>Asunto:</strong> {{asunto}}<br>
+<strong>Motivo de reapertura:</strong> {{motivo}}</p>
+<p>Por favor revisa el ticket y toma las acciones necesarias:</p>
+<p><a href="{{enlace_ticket}}">Ver ticket</a></p>
+HTML,
+            ],
         ];
     }
 }

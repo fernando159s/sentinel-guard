@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\TipoFormato;
+use App\Jobs\SendEmailJob;
 use App\Models\Registro;
 use App\Models\Ticket;
 use App\Models\User;
@@ -274,6 +275,55 @@ class PanelAgente extends Page implements HasForms
 
         Notification::make()
             ->title('Estado actualizado a: ' . $estado)
+            ->success()
+            ->send();
+    }
+
+    public function reabrirTicket(): void
+    {
+        $ticket = $this->selectedTicket;
+
+        if (! $ticket || ! $ticket->puedeReabrirse() || ! auth()->user()->can('editar_tickets')) {
+            return;
+        }
+
+        $ticket->update([
+            'estado' => 'en_revision',
+            'fecha_ultima_actividad' => now(),
+            'fecha_cierre' => null,
+        ]);
+
+        $ticket->mensajes()->create([
+            'autor_id' => auth()->id(),
+            'tipo' => 'interno',
+            'contenido' => 'TICKET REABIERTO por ' . auth()->user()->name . '.',
+            'created_at' => now(),
+        ]);
+
+        if ($ticket->asignado_a && $ticket->agente) {
+            $ticketUrl = url("admin/{$ticket->empresa?->ruc}/tickets/{$ticket->id}");
+
+            dispatch(SendEmailJob::fromTemplate(
+                destinatario: $ticket->agente->email,
+                nombreDestino: $ticket->agente->name,
+                templateSlug: 'ticket_reabierto',
+                templateVariables: [
+                    'nombre' => $ticket->agente->name,
+                    'numero_ticket' => $ticket->numero_ticket,
+                    'asunto' => $ticket->asunto,
+                    'quien_reabrio' => auth()->user()->name,
+                    'motivo' => 'Reabierto desde panel de agente',
+                    'enlace_ticket' => $ticketUrl,
+                ],
+                actionUrl: $ticketUrl,
+                actionLabel: 'Ver ticket',
+            ));
+        }
+
+        unset($this->selectedTicket, $this->tickets, $this->counters, $this->mensajes);
+
+        Notification::make()
+            ->title('Ticket reabierto')
             ->success()
             ->send();
     }

@@ -51,4 +51,17 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketMensaje::class, 'ticket_id');
     }
+
+    public function puedeReabrirse(): bool
+    {
+        if ($this->estado !== 'resuelto') {
+            return false;
+        }
+
+        if (! $this->fecha_cierre) {
+            return false;
+        }
+
+        return $this->fecha_cierre->greaterThan(now()->subDays(7));
+    }
 }
