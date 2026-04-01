@@ -300,7 +300,7 @@ class PanelAgente extends Page implements HasForms
             'created_at' => now(),
         ]);
 
-        if ($ticket->asignado_a && $ticket->agente) {
+        if ($ticket->asignado_a && $ticket->agente && $ticket->agente->notif_tickets) {
             $ticketUrl = url("admin/{$ticket->empresa?->ruc}/tickets/{$ticket->id}");
 
             dispatch(SendEmailJob::fromTemplate(
