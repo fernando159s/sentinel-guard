@@ -9,7 +9,7 @@ use Filament\Widgets\Widget;
 
 class QuickAccessFormatos extends Widget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 5;
 
     protected string $view = 'filament.widgets.quick-access-formatos';
 
