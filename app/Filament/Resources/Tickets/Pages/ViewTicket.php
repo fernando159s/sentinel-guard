@@ -263,7 +263,7 @@ class ViewTicket extends ViewRecord
 
                     if ($this->record->asignado_a) {
                         $agente = $this->record->agente;
-                        if ($agente) {
+                        if ($agente && $agente->notif_tickets) {
                             $ticketUrl = url("admin/{$this->record->empresa?->ruc}/tickets/{$this->record->id}");
 
                             dispatch(SendEmailJob::fromTemplate(

@@ -44,7 +44,7 @@ class AdminPanelProvider extends PanelProvider
 
                 return null;
             })
-            ->profile()
+            ->profile(\App\Filament\Pages\Auth\EditProfile::class)
             ->tenant(Empresa::class, slugAttribute: 'ruc')
             ->tenantRegistration(false)
             ->colors([

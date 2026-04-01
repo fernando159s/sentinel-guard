@@ -26,6 +26,7 @@ class RegistroObserver
         $admins = User::where('empresa_id', $registro->empresa_id)
             ->role('admin_empresa')
             ->where('estado', 'activo')
+            ->where('notif_incidencias', true)
             ->get();
 
         if ($admins->isEmpty()) {
