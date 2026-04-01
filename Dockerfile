@@ -26,7 +26,8 @@ RUN apt-get update && apt-get install -y \
         bcmath \
         exif \
         pcntl \
-        redis \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Instalar Node.js 20 LTS (necesario para Vite / assets de Filament)
