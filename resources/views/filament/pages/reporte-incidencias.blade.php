@@ -1,25 +1,36 @@
 <x-filament-panels::page>
-    <form wire:submit="generateReport">
-        <div class="flex items-end gap-4">
-            <div>
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Mes</label>
-                <select wire:model="mes" class="mt-1 block rounded-lg border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    @for ($m = 1; $m <= 12; $m++)
-                        <option value="{{ $m }}">{{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}</option>
-                    @endfor
-                </select>
+    <x-filament::section>
+        <form wire:submit="generateReport">
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end;">
+                {{ $this->form }}
+
+                <div style="padding-bottom: 2px;">
+                    <x-filament::button type="submit" icon="heroicon-o-document-arrow-down" size="lg">
+                        Generar PDF
+                    </x-filament::button>
+                </div>
             </div>
-            <div>
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Año</label>
-                <select wire:model="anio" class="mt-1 block rounded-lg border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    @for ($y = now()->year; $y >= now()->year - 3; $y--)
-                        <option value="{{ $y }}">{{ $y }}</option>
-                    @endfor
-                </select>
+        </form>
+    </x-filament::section>
+
+    <x-filament::section heading="Información" icon="heroicon-o-information-circle">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #818cf8; font-weight: 600; margin-bottom: 8px;">
+                    F09 — Incidencias
+                </div>
+                <p style="font-size: 14px; color: #d1d5db; margin: 0;">
+                    Reporte de notificaciones de incidencias de seguridad registradas en el mes seleccionado, según política PSC000001 / PSC000-25.
+                </p>
             </div>
-            <x-filament::button type="submit" icon="heroicon-o-document-arrow-down">
-                Generar PDF
-            </x-filament::button>
+            <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px;">
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #34d399; font-weight: 600; margin-bottom: 8px;">
+                    F10 — Resoluciones
+                </div>
+                <p style="font-size: 14px; color: #d1d5db; margin: 0;">
+                    Reporte de resoluciones de incidencias registradas en el mes seleccionado, según política PSC000-25.
+                </p>
+            </div>
         </div>
-    </form>
+    </x-filament::section>
 </x-filament-panels::page>

@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Models\Contracts\HasName;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Empresa extends Model implements HasName
+class Empresa extends Model implements HasName, HasAvatar
 {
     protected $fillable = [
         'ruc',
@@ -45,5 +46,14 @@ class Empresa extends Model implements HasName
     public function getFilamentName(): string
     {
         return $this->razon_social;
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        if ($this->logo_path) {
+            return route('logos.show', $this->logo_path);
+        }
+
+        return null;
     }
 }
