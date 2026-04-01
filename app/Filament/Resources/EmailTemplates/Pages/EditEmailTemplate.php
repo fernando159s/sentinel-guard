@@ -28,9 +28,19 @@ class EditEmailTemplate extends EditRecord
                     $asunto = $record->renderAsunto($sampleVars);
                     $cuerpo = $record->renderContenido($sampleVars);
 
+                    $htmlPreview = view('emails.securiform', [
+                        'asunto' => $asunto,
+                        'saludo' => 'Hola ' . ($sampleVars['nombre'] ?? 'Usuario') . ',',
+                        'cuerpo' => $cuerpo,
+                        'actionUrl' => '#',
+                        'actionLabel' => 'Ver en SecuriForm',
+                        'piePagina' => 'Vista previa con datos de ejemplo',
+                    ])->render();
+
                     return view('filament.pages.email-preview', [
                         'asunto' => $asunto,
-                        'cuerpo' => $cuerpo,
+                        'para' => $sampleVars['email'] ?? ($sampleVars['nombre'] ?? 'usuario') . '@empresa.com',
+                        'htmlPreview' => $htmlPreview,
                     ]);
                 }),
 
