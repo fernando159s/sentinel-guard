@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\ApplyTenantBranding;
 use App\Models\Empresa;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -18,6 +20,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -31,12 +34,58 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->brandName('SecuriForm')
+            ->brandLogo(function () {
+                $tenant = Filament::getTenant();
+                if ($tenant?->logo_path) {
+                    $url = Storage::disk('logos')->url($tenant->logo_path);
+
+                    return view('filament.brand-logo', ['url' => $url, 'name' => $tenant->nombre_portal ?? $tenant->razon_social]);
+                }
+
+                return null;
+            })
             ->profile()
             ->tenant(Empresa::class, slugAttribute: 'ruc')
             ->tenantRegistration(false)
             ->colors([
                 'primary' => Color::Indigo,
             ])
+            ->tenantMiddleware([
+                ApplyTenantBranding::class,
+            ], isPersistent: true)
+            ->renderHook('panels::head.end', function () {
+                $tenant = Filament::getTenant();
+                if (! $tenant?->color_sidebar) {
+                    return '';
+                }
+
+                $sidebarColor = e($tenant->color_sidebar);
+
+                return new \Illuminate\Support\HtmlString(
+                    "<style>
+                        :root {
+                            --sidebar-bg: {$sidebarColor};
+                        }
+                        .fi-sidebar {
+                            background-color: var(--sidebar-bg) !important;
+                        }
+                        .fi-sidebar .fi-sidebar-nav .fi-sidebar-item a {
+                            color: rgba(255, 255, 255, 0.85) !important;
+                        }
+                        .fi-sidebar .fi-sidebar-nav .fi-sidebar-item a:hover,
+                        .fi-sidebar .fi-sidebar-nav .fi-sidebar-item a.fi-active {
+                            color: #ffffff !important;
+                            background-color: rgba(255, 255, 255, 0.1) !important;
+                        }
+                        .fi-sidebar .fi-sidebar-header {
+                            color: #ffffff !important;
+                        }
+                        .fi-sidebar .fi-sidebar-nav .fi-sidebar-group-label {
+                            color: rgba(255, 255, 255, 0.6) !important;
+                        }
+                    </style>"
+                );
+            })
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

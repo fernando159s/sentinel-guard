@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Empresas\Schemas;
 
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
@@ -44,16 +45,31 @@ class EmpresaForm
                             ->maxLength(300)
                             ->columnSpanFull(),
                     ]),
-                Section::make('Configuración')
+                Section::make('Personalización del Portal')
+                    ->description('Configura la apariencia del portal para esta empresa')
                     ->columns(2)
+                    ->collapsible()
                     ->schema([
                         FileUpload::make('logo_path')
-                            ->label('Logo')
+                            ->label('Logo de la empresa')
                             ->image()
                             ->disk('logos')
                             ->directory('/')
                             ->maxSize(2048)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/svg+xml']),
+                        TextInput::make('nombre_portal')
+                            ->label('Nombre visible en el portal')
+                            ->maxLength(100)
+                            ->placeholder('Ej: Estudio Palacios'),
+                        ColorPicker::make('color_primario')
+                            ->label('Color primario (header/botones)'),
+                        ColorPicker::make('color_secundario')
+                            ->label('Color secundario (acentos)'),
+                        ColorPicker::make('color_sidebar')
+                            ->label('Color del sidebar'),
+                    ]),
+                Section::make('Configuración')
+                    ->schema([
                         Select::make('estado')
                             ->label('Estado')
                             ->options([
