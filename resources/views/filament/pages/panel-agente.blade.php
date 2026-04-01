@@ -1,44 +1,22 @@
 <x-filament-panels::page>
-    {{-- Counters --}}
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <button wire:click="$set('filtroAgente', 'sin_asignar')"
-                class="fi-wi-stats-overview-stat relative rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 text-left transition hover:ring-primary-500/50 {{ $filtroAgente === 'sin_asignar' ? 'ring-primary-500 ring-2' : '' }}">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Sin asignar</span>
-            <span class="mt-1 block text-2xl font-bold text-danger-600 dark:text-danger-400">{{ $this->counters['sin_asignar'] }}</span>
-        </button>
+    <div>@php
+        $trends = $this->counterTrends;
+        $cards = [
+            ['key' => 'total', 'label' => 'Total tickets', 'value' => $this->counters['total'], 'color' => '#22d3ee', 'wire' => "limpiarFiltros", 'active' => !$filtroEstado && !$filtroAgente && !$filtroEmpresa && !$busqueda],
+            ['key' => 'sin_asignar', 'label' => 'Sin asignar', 'value' => $this->counters['sin_asignar'], 'color' => '#ef4444', 'wire' => "\$set('filtroAgente', 'sin_asignar')", 'active' => $filtroAgente === 'sin_asignar'],
+            ['key' => 'nuevos_hoy', 'label' => 'Nuevos hoy', 'value' => $this->counters['nuevos_hoy'], 'color' => '#3b82f6', 'wire' => "\$set('filtroEstado', 'nuevo')", 'active' => $filtroEstado === 'nuevo'],
+            ['key' => 'mis_tickets', 'label' => 'Mis tickets', 'value' => $this->counters['mis_tickets'], 'color' => '#6366f1', 'wire' => "\$set('filtroAgente', 'mis')", 'active' => $filtroAgente === 'mis'],
+            ['key' => 'en_revision', 'label' => 'En revision', 'value' => $this->counters['en_revision'], 'color' => '#f59e0b', 'wire' => "\$set('filtroEstado', 'en_revision')", 'active' => $filtroEstado === 'en_revision'],
+            ['key' => 'esperando', 'label' => 'Esperando usuario', 'value' => $this->counters['esperando'], 'color' => '#6b7280', 'wire' => "\$set('filtroEstado', 'esperando_usuario')", 'active' => $filtroEstado === 'esperando_usuario'],
+            ['key' => 'total_abiertos', 'label' => 'Abiertos', 'value' => $this->counters['total_abiertos'], 'color' => '#8b5cf6', 'wire' => null, 'active' => false],
+        ];
+    @endphp
 
-        <button wire:click="$set('filtroEstado', 'nuevo')"
-                class="fi-wi-stats-overview-stat relative rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 text-left transition hover:ring-primary-500/50 {{ $filtroEstado === 'nuevo' ? 'ring-primary-500 ring-2' : '' }}">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Nuevos hoy</span>
-            <span class="mt-1 block text-2xl font-bold text-info-600 dark:text-info-400">{{ $this->counters['nuevos_hoy'] }}</span>
-        </button>
+    {{-- Main layout: Panel (left) + Counters (right) --}}
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12" style="min-height: 80vh;">
 
-        <button wire:click="$set('filtroAgente', 'mis')"
-                class="fi-wi-stats-overview-stat relative rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 text-left transition hover:ring-primary-500/50 {{ $filtroAgente === 'mis' ? 'ring-primary-500 ring-2' : '' }}">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Mis tickets</span>
-            <span class="mt-1 block text-2xl font-bold text-primary-600 dark:text-primary-400">{{ $this->counters['mis_tickets'] }}</span>
-        </button>
-
-        <button wire:click="$set('filtroEstado', 'en_revision')"
-                class="fi-wi-stats-overview-stat relative rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 text-left transition hover:ring-primary-500/50 {{ $filtroEstado === 'en_revision' ? 'ring-primary-500 ring-2' : '' }}">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">En revision</span>
-            <span class="mt-1 block text-2xl font-bold text-warning-600 dark:text-warning-400">{{ $this->counters['en_revision'] }}</span>
-        </button>
-
-        <button wire:click="$set('filtroEstado', 'esperando_usuario')"
-                class="fi-wi-stats-overview-stat relative rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 text-left transition hover:ring-primary-500/50 {{ $filtroEstado === 'esperando_usuario' ? 'ring-primary-500 ring-2' : '' }}">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Esperando usuario</span>
-            <span class="mt-1 block text-2xl font-bold text-gray-600 dark:text-gray-400">{{ $this->counters['esperando'] }}</span>
-        </button>
-
-        <div class="fi-wi-stats-overview-stat relative rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 text-left">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Total abiertos</span>
-            <span class="mt-1 block text-2xl font-bold text-gray-900 dark:text-white">{{ $this->counters['total_abiertos'] }}</span>
-        </div>
-    </div>
-
-    {{-- Split layout --}}
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-5" style="min-height: 70vh;">
+    {{-- LEFT: Ticket panel (list + detail) --}}
+    <div class="lg:col-span-9 grid grid-cols-1 gap-4 lg:grid-cols-5" style="min-height: 70vh;">
 
         {{-- LEFT: Ticket list --}}
         <div class="lg:col-span-2 flex flex-col rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
@@ -49,7 +27,7 @@
                     <input type="text"
                            wire:model.live.debounce.300ms="busqueda"
                            placeholder="Buscar ticket..."
-                           class="fi-input block w-full rounded-lg border-gray-300 text-sm shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white focus:border-primary-500 focus:ring-primary-500">
+                           class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-gray-500">
                     @if ($filtroEstado || $filtroPrioridad || $filtroAgente || $filtroEmpresa || $busqueda)
                         <button wire:click="limpiarFiltros"
                                 class="shrink-0 rounded-lg bg-gray-100 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
@@ -60,7 +38,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <select wire:model.live="filtroEstado"
-                            class="fi-input block w-full rounded-lg border-gray-300 text-xs shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 shadow-sm transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5 dark:text-white">
                         <option value="">Estado: Todos</option>
                         <option value="nuevo">Nuevo</option>
                         <option value="en_revision">En revision</option>
@@ -69,7 +47,7 @@
                         <option value="cerrado">Cerrado</option>
                     </select>
                     <select wire:model.live="filtroPrioridad"
-                            class="fi-input block w-full rounded-lg border-gray-300 text-xs shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 shadow-sm transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5 dark:text-white">
                         <option value="">Prioridad: Todas</option>
                         <option value="urgente">Urgente</option>
                         <option value="alta">Alta</option>
@@ -77,14 +55,14 @@
                         <option value="baja">Baja</option>
                     </select>
                     <select wire:model.live="filtroEmpresa"
-                            class="fi-input block w-full rounded-lg border-gray-300 text-xs shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 shadow-sm transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5 dark:text-white">
                         <option value="">Empresa: Todas</option>
                         @foreach ($this->empresas as $id => $nombre)
                             <option value="{{ $id }}">{{ $nombre }}</option>
                         @endforeach
                     </select>
                     <select wire:model.live="filtroAgente"
-                            class="fi-input block w-full rounded-lg border-gray-300 text-xs shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
+                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 shadow-sm transition focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5 dark:text-white">
                         <option value="">Agente: Todos</option>
                         <option value="sin_asignar">Sin asignar</option>
                         <option value="mis">Mis tickets</option>
@@ -226,7 +204,7 @@
                         {{-- Quick actions --}}
                         <div class="flex items-center gap-2 shrink-0">
                             @if (! $ticket->asignado_a || $ticket->asignado_a !== auth()->id())
-                                <x-filament::button size="sm" color="info" wire:click="asignarAMi" icon="heroicon-m-hand-raised">
+                                <x-filament::button size="sm" color="info" wire:click="asignarAMi" wire:loading.attr="disabled" icon="heroicon-m-hand-raised">
                                     Tomar
                                 </x-filament::button>
                             @endif
@@ -262,9 +240,10 @@
                                         Formato sugerido
                                     </x-filament::dropdown.header>
                                     <x-filament::dropdown.list>
-                                        @foreach ($this->formatosSugeridos as $tipoEnum => $label)
+                                        @foreach ($this->formatosSugeridos as $tipoValue => $label)
                                             <x-filament::dropdown.list.item
-                                                wire:click="crearRegistroDesdeTicket('{{ $tipoEnum->value }}')"
+                                                wire:click="crearRegistroDesdeTicket('{{ $tipoValue }}')"
+                                                wire:loading.attr="disabled"
                                                 icon="heroicon-m-document-text">
                                                 {{ $label }}
                                             </x-filament::dropdown.list.item>
@@ -287,21 +266,18 @@
 
                 {{-- Conversation --}}
                 <div class="flex-1 overflow-y-auto p-4" style="max-height: calc(70vh - 220px);">
-                    <div style="max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px;">
+                    <div class="mx-auto flex max-w-[640px] flex-col gap-3">
 
                         {{-- Original description --}}
-                        <div style="display: flex; justify-content: flex-start;">
-                            <div style="max-width: 80%;">
-                                <div style="font-size: 11px; font-weight: 600; color: #818cf8; margin-bottom: 2px; margin-left: 8px;">
+                        <div class="flex justify-start">
+                            <div class="max-w-[80%]">
+                                <div class="mb-0.5 ml-2 text-[11px] font-semibold text-indigo-400">
                                     {{ $ticket->creador?->name ?? 'Usuario' }}
                                 </div>
-                                <div style="background: rgba(255,255,255,0.08); border-radius: 16px 16px 16px 4px; padding: 10px 16px;">
-                                    <div style="font-size: 14px; line-height: 1.5; color: #e5e7eb; overflow: hidden;">
-                                        <style>.chat-desc img { max-width: 160px !important; height: auto !important; border-radius: 8px; display: block; margin: 4px 0; }</style>
-                                        <div class="chat-desc">{!! strip_tags($ticket->descripcion, '<p><br><strong><em><u><a><img><ul><ol><li>') !!}</div>
-                                    </div>
-                                    <div style="text-align: right; margin-top: 4px;">
-                                        <span style="font-size: 10px; color: #6b7280;">{{ $ticket->created_at->format('d/m/Y H:i') }}</span>
+                                <div class="rounded-2xl rounded-bl-sm bg-gray-100 px-4 py-2.5 dark:bg-white/8">
+                                    <div class="m-0 text-sm leading-relaxed text-gray-800 dark:text-gray-200">{!! $this->sanitizeHtml($ticket->descripcion ?? '') !!}</div>
+                                    <div class="mt-1 text-right">
+                                        <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ $ticket->created_at->format('d/m/Y H:i') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -314,16 +290,16 @@
 
                             @if ($mensaje->isInterno())
                                 {{-- Internal note --}}
-                                <div style="display: flex; justify-content: center;">
-                                    <div style="max-width: 85%; width: 100%;">
-                                        <div style="background: rgba(245,158,11,0.08); border: 1px dashed rgba(245,158,11,0.3); border-radius: 12px; padding: 10px 16px;">
-                                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                                <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #f59e0b;">&#128274; Nota interna</span>
-                                                <span style="font-size: 10px; color: rgba(245,158,11,0.6);">&middot; {{ $mensaje->autor?->name ?? 'Agente' }}</span>
+                                <div class="flex justify-center">
+                                    <div class="w-full max-w-[85%]">
+                                        <div class="rounded-xl border border-dashed border-warning-300/30 bg-warning-50/50 px-4 py-2.5 dark:border-warning-500/30 dark:bg-warning-500/[0.08]">
+                                            <div class="mb-1 flex items-center gap-1.5">
+                                                <span class="text-[10px] font-bold uppercase tracking-wide text-warning-500">&#128274; Nota interna</span>
+                                                <span class="text-[10px] text-warning-400/60 dark:text-warning-500/60">&middot; {{ $mensaje->autor?->name ?? 'Agente' }}</span>
                                             </div>
-                                            <p style="font-size: 14px; color: #fde68a; margin: 0;">{{ $mensaje->contenido }}</p>
-                                            <div style="text-align: right; margin-top: 4px;">
-                                                <span style="font-size: 10px; color: rgba(245,158,11,0.4);">{{ $mensaje->created_at->format('d/m/Y H:i') }}</span>
+                                            <p class="m-0 text-sm text-warning-700 dark:text-warning-200">{{ $mensaje->contenido }}</p>
+                                            <div class="mt-1 text-right">
+                                                <span class="text-[10px] text-warning-300 dark:text-warning-500/40">{{ $mensaje->created_at->format('d/m/Y H:i') }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -331,27 +307,27 @@
 
                             @elseif ($isAgent)
                                 {{-- Agent message --}}
-                                <div style="display: flex; justify-content: flex-end;">
-                                    <div style="max-width: 80%;">
-                                        <div style="font-size: 11px; font-weight: 600; color: #34d399; margin-bottom: 2px; text-align: right; margin-right: 8px;">
+                                <div class="flex justify-end">
+                                    <div class="max-w-[80%]">
+                                        <div class="mb-0.5 mr-2 text-right text-[11px] font-semibold text-success-500 dark:text-success-400">
                                             &#9989; {{ $mensaje->autor?->name ?? 'Agente' }}
                                         </div>
-                                        <div style="background: rgba(16,185,129,0.12); border-radius: 16px 4px 16px 16px; padding: 10px 16px;">
-                                            <p style="font-size: 14px; color: #e5e7eb; margin: 0; line-height: 1.5;">{{ $mensaje->contenido }}</p>
+                                        <div class="rounded-2xl rounded-tr-sm bg-success-50 px-4 py-2.5 dark:bg-success-500/[0.12]">
+                                            <p class="m-0 text-sm leading-relaxed text-gray-800 dark:text-gray-200">{{ $mensaje->contenido }}</p>
                                             @if ($mensaje->adjuntos->isNotEmpty())
-                                                <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                                                <div class="mt-2 flex flex-col gap-1">
                                                     @foreach ($mensaje->adjuntos as $adjunto)
                                                         <a href="{{ route('tickets.adjunto.download', $adjunto) }}"
-                                                           style="display: flex; align-items: center; gap: 8px; background: rgba(16,185,129,0.1); border-radius: 8px; padding: 6px 10px; text-decoration: none;">
-                                                            <span style="font-size: 14px;">&#128206;</span>
-                                                            <span style="font-size: 12px; color: #6ee7b7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">{{ $adjunto->nombre_original }}</span>
-                                                            <span style="font-size: 10px; color: rgba(16,185,129,0.5); margin-left: auto;">{{ number_format($adjunto->tamano / 1024, 0) }}KB</span>
+                                                           class="flex items-center gap-2 rounded-lg bg-success-100/50 px-2.5 py-1.5 no-underline dark:bg-success-500/10">
+                                                            <span class="text-sm">&#128206;</span>
+                                                            <span class="max-w-[180px] truncate text-xs text-success-700 dark:text-success-300">{{ $adjunto->nombre_original }}</span>
+                                                            <span class="ml-auto text-[10px] text-success-400 dark:text-success-500/50">{{ number_format($adjunto->tamano / 1024, 0) }}KB</span>
                                                         </a>
                                                     @endforeach
                                                 </div>
                                             @endif
-                                            <div style="text-align: right; margin-top: 4px;">
-                                                <span style="font-size: 10px; color: rgba(16,185,129,0.4);">{{ $mensaje->created_at->format('d/m/Y H:i') }}</span>
+                                            <div class="mt-1 text-right">
+                                                <span class="text-[10px] text-success-300 dark:text-success-500/40">{{ $mensaje->created_at->format('d/m/Y H:i') }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -359,27 +335,27 @@
 
                             @else
                                 {{-- User message --}}
-                                <div style="display: flex; justify-content: flex-start;">
-                                    <div style="max-width: 80%;">
-                                        <div style="font-size: 11px; font-weight: 600; color: #818cf8; margin-bottom: 2px; margin-left: 8px;">
+                                <div class="flex justify-start">
+                                    <div class="max-w-[80%]">
+                                        <div class="mb-0.5 ml-2 text-[11px] font-semibold text-indigo-400">
                                             {{ $mensaje->autor?->name ?? 'Usuario' }}
                                         </div>
-                                        <div style="background: rgba(255,255,255,0.08); border-radius: 16px 16px 16px 4px; padding: 10px 16px;">
-                                            <p style="font-size: 14px; color: #e5e7eb; margin: 0; line-height: 1.5;">{{ $mensaje->contenido }}</p>
+                                        <div class="rounded-2xl rounded-bl-sm bg-gray-100 px-4 py-2.5 dark:bg-white/8">
+                                            <p class="m-0 text-sm leading-relaxed text-gray-800 dark:text-gray-200">{{ $mensaje->contenido }}</p>
                                             @if ($mensaje->adjuntos->isNotEmpty())
-                                                <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                                                <div class="mt-2 flex flex-col gap-1">
                                                     @foreach ($mensaje->adjuntos as $adjunto)
                                                         <a href="{{ route('tickets.adjunto.download', $adjunto) }}"
-                                                           style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 6px 10px; text-decoration: none;">
-                                                            <span style="font-size: 14px;">&#128206;</span>
-                                                            <span style="font-size: 12px; color: #d1d5db; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">{{ $adjunto->nombre_original }}</span>
-                                                            <span style="font-size: 10px; color: #6b7280; margin-left: auto;">{{ number_format($adjunto->tamano / 1024, 0) }}KB</span>
+                                                           class="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 no-underline dark:bg-white/5">
+                                                            <span class="text-sm">&#128206;</span>
+                                                            <span class="max-w-[180px] truncate text-xs text-gray-600 dark:text-gray-300">{{ $adjunto->nombre_original }}</span>
+                                                            <span class="ml-auto text-[10px] text-gray-400 dark:text-gray-500">{{ number_format($adjunto->tamano / 1024, 0) }}KB</span>
                                                         </a>
                                                     @endforeach
                                                 </div>
                                             @endif
-                                            <div style="text-align: right; margin-top: 4px;">
-                                                <span style="font-size: 10px; color: #6b7280;">{{ $mensaje->created_at->format('d/m/Y H:i') }}</span>
+                                            <div class="mt-1 text-right">
+                                                <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ $mensaje->created_at->format('d/m/Y H:i') }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -388,8 +364,8 @@
                         @endforeach
 
                         @if ($this->mensajes->isEmpty())
-                            <div style="text-align: center; padding: 24px 0;">
-                                <p style="font-size: 14px; color: #6b7280;">No hay mensajes aun.</p>
+                            <div class="py-6 text-center">
+                                <p class="text-sm text-gray-500">No hay mensajes aun.</p>
                             </div>
                         @endif
                     </div>
@@ -402,14 +378,14 @@
                             <textarea wire:model="respuestaContenido"
                                       rows="3"
                                       placeholder="Escribe tu respuesta..."
-                                      class="fi-input block w-full rounded-lg border-gray-300 text-sm shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white focus:border-primary-500 focus:ring-primary-500"></textarea>
+                                      class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-gray-500"></textarea>
                             <div class="mt-2 flex items-center justify-between">
                                 <label class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                     <input type="checkbox" wire:model="respuestaInterna"
-                                           class="fi-checkbox-input rounded border-gray-300 text-primary-600 shadow-sm dark:border-white/10 dark:bg-white/5">
+                                           class="rounded border border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500 dark:border-white/10 dark:bg-white/5">
                                     Nota interna
                                 </label>
-                                <x-filament::button type="submit" size="sm" icon="heroicon-m-paper-airplane">
+                                <x-filament::button type="submit" size="sm" icon="heroicon-m-paper-airplane" wire:loading.attr="disabled">
                                     Enviar
                                 </x-filament::button>
                             </div>
@@ -426,5 +402,68 @@
                 </div>
             @endif
         </div>
+    </div>{{-- /LEFT: ticket panel --}}
+
+    {{-- RIGHT: Counter cards with sparklines --}}
+    <div class="lg:col-span-3 flex flex-col gap-2">
+        @foreach ($cards as $i => $card)
+            @php
+                $trendData = $trends[$card['key']];
+                $today = end($trendData);
+                $yesterday = $trendData[count($trendData) - 2] ?? $today;
+                $delta = $today - $yesterday;
+            @endphp
+            <button
+                wire:click="{{ $card['wire'] ?? 'limpiarFiltros' }}"
+                class="relative overflow-hidden rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 text-left transition hover:ring-primary-500/50 {{ $card['active'] ? 'ring-primary-500 ring-2' : '' }}"
+                x-data="{
+                    init() {
+                        new Chart(this.$refs.spark{{ $i }}, {
+                            type: 'line',
+                            data: {
+                                labels: @js($trendData).map((_, i) => i),
+                                datasets: [{
+                                    data: @js($trendData),
+                                    borderColor: '{{ $card['color'] }}',
+                                    backgroundColor: '{{ $card['color'] }}18',
+                                    fill: true,
+                                    tension: 0.4,
+                                    pointRadius: 0,
+                                    borderWidth: 1.5,
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                                scales: { x: { display: false }, y: { display: false, beginAtZero: true } },
+                                animation: { duration: 500 },
+                            }
+                        });
+                    }
+                }">
+                <div class="flex items-center justify-between">
+                    <div class="min-w-0">
+                        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400">{{ $card['label'] }}</span>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-xl font-bold" style="color: {{ $card['color'] }}">{{ $card['value'] }}</span>
+                            @if ($delta > 0)
+                                <span class="text-[10px] font-semibold text-success-500">+{{ $delta }}</span>
+                            @elseif ($delta < 0)
+                                <span class="text-[10px] font-semibold text-danger-500">{{ $delta }}</span>
+                            @else
+                                <span class="text-[10px] text-gray-400">=</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div style="width: 72px; height: 30px;">
+                        <canvas x-ref="spark{{ $i }}"></canvas>
+                    </div>
+                </div>
+            </button>
+        @endforeach
     </div>
+
+    </div>{{-- /Main layout --}}
+    </div>{{-- /wrapper --}}
 </x-filament-panels::page>

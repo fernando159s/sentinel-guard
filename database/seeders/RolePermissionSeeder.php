@@ -62,6 +62,7 @@ class RolePermissionSeeder extends Seeder
             'ver_helpdesk', 'crear_helpdesk', 'editar_helpdesk',
             'ver_notas_internas', 'asignar_tickets',
             'ver_exportar', 'crear_exportar',
+            'crear_registros',
         ]);
 
         $soloLectura = Role::firstOrCreate(['name' => 'solo_lectura']);

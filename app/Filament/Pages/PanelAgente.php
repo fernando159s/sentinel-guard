@@ -12,6 +12,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\HtmlString;
 use Livewire\Attributes\Url;
 
 class PanelAgente extends Page implements HasForms
@@ -29,6 +30,11 @@ class PanelAgente extends Page implements HasForms
     protected static ?int $navigationSort = -1;
 
     protected string $view = 'filament.pages.panel-agente';
+
+    public function getMaxContentWidth(): ?string
+    {
+        return 'full';
+    }
 
     // Filters
     #[Url]
@@ -114,7 +120,52 @@ class PanelAgente extends Page implements HasForms
             'esperando' => (clone $base)->where('estado', 'esperando_usuario')->count(),
             'mis_tickets' => (clone $base)->where('asignado_a', auth()->id())->whereNotIn('estado', ['cerrado', 'resuelto'])->count(),
             'total_abiertos' => (clone $base)->whereNotIn('estado', ['cerrado', 'resuelto'])->count(),
+            'total' => (clone $base)->count(),
         ];
+    }
+
+    public function getCounterTrendsProperty(): array
+    {
+        $days = 7;
+        $trends = [
+            'sin_asignar' => [],
+            'nuevos_hoy' => [],
+            'mis_tickets' => [],
+            'en_revision' => [],
+            'esperando' => [],
+            'total_abiertos' => [],
+            'total' => [],
+        ];
+
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+
+            $trends['sin_asignar'][] = Ticket::withoutGlobalScopes()
+                ->whereNull('asignado_a')->whereNotIn('estado', ['cerrado', 'resuelto'])
+                ->whereDate('created_at', '<=', $date)->count();
+
+            $trends['nuevos_hoy'][] = Ticket::withoutGlobalScopes()
+                ->where('estado', 'nuevo')->whereDate('created_at', $date)->count();
+
+            $trends['mis_tickets'][] = Ticket::withoutGlobalScopes()
+                ->where('asignado_a', auth()->id())->whereNotIn('estado', ['cerrado', 'resuelto'])
+                ->whereDate('created_at', '<=', $date)->count();
+
+            $trends['en_revision'][] = Ticket::withoutGlobalScopes()
+                ->where('estado', 'en_revision')->whereDate('fecha_ultima_actividad', '<=', $date)->count();
+
+            $trends['esperando'][] = Ticket::withoutGlobalScopes()
+                ->where('estado', 'esperando_usuario')->whereDate('fecha_ultima_actividad', '<=', $date)->count();
+
+            $trends['total_abiertos'][] = Ticket::withoutGlobalScopes()
+                ->whereNotIn('estado', ['cerrado', 'resuelto'])
+                ->whereDate('created_at', '<=', $date)->count();
+
+            $trends['total'][] = Ticket::withoutGlobalScopes()
+                ->whereDate('created_at', '<=', $date)->count();
+        }
+
+        return $trends;
     }
 
     public function getSelectedTicketProperty(): ?Ticket
@@ -154,7 +205,7 @@ class PanelAgente extends Page implements HasForms
 
     public function enviarRespuesta(): void
     {
-        if (! $this->selectedTicket || ! trim($this->respuestaContenido)) {
+        if (! $this->selectedTicket || ! trim($this->respuestaContenido) || ! auth()->user()->can('editar_tickets')) {
             return;
         }
 
@@ -182,7 +233,7 @@ class PanelAgente extends Page implements HasForms
 
     public function asignarAMi(): void
     {
-        if (! $this->selectedTicket) {
+        if (! $this->selectedTicket || ! auth()->user()->can('editar_tickets')) {
             return;
         }
 
@@ -264,24 +315,24 @@ class PanelAgente extends Page implements HasForms
 
         $sugeridos = match ($categoria) {
             'problema_tecnico' => [
-                TipoFormato::F09 => 'F09 - Notificacion de incidencias',
-                TipoFormato::F10 => 'F10 - Resolucion de incidencias',
+                TipoFormato::F09->value => 'F09 - Notificacion de incidencias',
+                TipoFormato::F10->value => 'F10 - Resolucion de incidencias',
             ],
             'error_registro' => [
-                TipoFormato::F09 => 'F09 - Notificacion de incidencias',
-                TipoFormato::F10 => 'F10 - Resolucion de incidencias',
+                TipoFormato::F09->value => 'F09 - Notificacion de incidencias',
+                TipoFormato::F10->value => 'F10 - Resolucion de incidencias',
             ],
             'solicitud_acceso' => [
-                TipoFormato::F05 => 'F05 - Personal autorizado al BD',
-                TipoFormato::F06 => 'F06 - Acceso soporte no autorizado',
+                TipoFormato::F05->value => 'F05 - Personal autorizado al BD',
+                TipoFormato::F06->value => 'F06 - Acceso soporte no autorizado',
             ],
             default => [
-                TipoFormato::F09 => 'F09 - Notificacion de incidencias',
+                TipoFormato::F09->value => 'F09 - Notificacion de incidencias',
             ],
         };
 
         // Always offer F11 as option (recovery can happen in any context)
-        $sugeridos[TipoFormato::F11] = 'F11 - Recuperacion de datos';
+        $sugeridos[TipoFormato::F11->value] = 'F11 - Recuperacion de datos';
 
         return $sugeridos;
     }
@@ -293,7 +344,11 @@ class PanelAgente extends Page implements HasForms
     {
         $ticket = $this->selectedTicket;
 
-        if (! $ticket) {
+        if (! $ticket || ! auth()->user()->can('crear_registros')) {
+            return;
+        }
+
+        if (! in_array($ticket->estado, ['resuelto', 'cerrado', 'en_revision'])) {
             return;
         }
 
@@ -303,6 +358,24 @@ class PanelAgente extends Page implements HasForms
         }
 
         $empresaId = $ticket->empresa_id;
+
+        // Prevent duplicate: only one registro per ticket (any format)
+        $existente = Registro::withoutGlobalScopes()
+            ->where('empresa_id', $empresaId)
+            ->whereJsonContains('datos->ticket_referencia', $ticket->numero_ticket)
+            ->first();
+
+        if ($existente) {
+            $tipoExistente = TipoFormato::tryFrom($existente->tipo_formato);
+
+            Notification::make()
+                ->title('Este ticket ya tiene un registro')
+                ->body("Ya existe el registro {$existente->numero_registro} ({$tipoExistente?->label()}) vinculado al ticket {$ticket->numero_ticket}")
+                ->warning()
+                ->send();
+
+            return;
+        }
         $numero = RegistroNumberService::generate($empresaId, $tipo);
         $datos = $this->buildDatosFromTicket($ticket, $tipo);
 
@@ -322,7 +395,7 @@ class PanelAgente extends Page implements HasForms
             ->body("Se creo el registro {$tipo->label()} desde el ticket {$ticket->numero_ticket}")
             ->success()
             ->actions([
-                \Filament\Notifications\Actions\Action::make('ver_registro')
+                \Filament\Actions\Action::make('ver_registro')
                     ->label('Ver registro')
                     ->url($registroUrl)
                     ->openUrlInNewTab(),
@@ -339,15 +412,25 @@ class PanelAgente extends Page implements HasForms
         $descripcionPlana = strip_tags($ticket->descripcion);
         $agenteName = $ticket->agente?->name ?? auth()->user()->name;
         $creadorName = $ticket->creador?->name ?? 'Usuario';
+        $empresaNombre = $ticket->empresa?->razon_social ?? '';
+        $resumenMensajes = $this->extractResumenMensajes($ticket);
+        $impacto = $this->buildImpactoFromTicket($ticket);
+        $ticketUrl = url("admin/{$ticket->empresa?->ruc}/tickets/{$ticket->id}");
+        $observacion = "Registro generado automaticamente desde el ticket {$ticket->numero_ticket} ({$ticket->asunto}). Ver ticket: {$ticketUrl}";
 
         return match ($tipo) {
             TipoFormato::F09 => [
                 'fecha_evento' => $ticket->created_at->format('Y-m-d H:i:s'),
                 'tipo_incidencia' => $this->mapCategoriaTipoIncidencia($ticket->categoria),
-                'descripcion' => $ticket->descripcion,
-                'severidad' => $this->mapPrioridadSeveridad($ticket->prioridad),
+                'sistema_equipo' => "Ticket {$ticket->numero_ticket} - {$empresaNombre}",
+                'banco_datos' => '',
+                'descripcion' => $descripcionPlana ?: $ticket->asunto,
+                'medidas_inmediatas' => $resumenMensajes,
+                'personas_notificadas' => array_filter([$creadorName, $agenteName]),
+                'impacto_potencial' => $impacto,
                 'comunica_nombre' => $creadorName,
-                'medidas_inmediatas' => $this->extractResumenMensajes($ticket),
+                'severidad' => $this->mapPrioridadSeveridad($ticket->prioridad),
+                'observaciones' => $observacion,
                 'ticket_referencia' => $ticket->numero_ticket,
             ],
 
@@ -355,9 +438,13 @@ class PanelAgente extends Page implements HasForms
                 'incidencia_ref' => $this->findIncidenciaRefParaTicket($ticket),
                 'fecha_cierre' => ($ticket->fecha_cierre ?? now())->format('Y-m-d H:i:s'),
                 'clasificacion' => $this->mapPrioridadSeveridad($ticket->prioridad),
-                'medidas_adoptadas' => $this->extractResumenMensajes($ticket),
+                'requirio_recuperacion' => false,
+                'medidas_adoptadas' => $resumenMensajes ?: $descripcionPlana,
+                'resultado_verificacion' => $ticket->estado === 'resuelto' ? 'Ticket resuelto satisfactoriamente' : 'Ticket cerrado',
                 'ejecuto' => $agenteName,
+                'firma_responsable' => $agenteName,
                 'acciones_preventivas' => '',
+                'observaciones' => $observacion,
                 'ticket_referencia' => $ticket->numero_ticket,
             ],
 
@@ -365,29 +452,47 @@ class PanelAgente extends Page implements HasForms
                 'usuario' => $creadorName,
                 'fecha_asignacion' => ($ticket->fecha_cierre ?? now())->format('Y-m-d H:i:s'),
                 'banco_datos' => '',
+                'observaciones' => $observacion,
                 'ticket_referencia' => $ticket->numero_ticket,
             ],
 
             TipoFormato::F06 => [
-                'descripcion_soporte' => $descripcionPlana,
+                'descripcion_soporte' => $descripcionPlana ?: $ticket->asunto,
                 'persona_accede' => $creadorName,
                 'fecha_acceso' => $ticket->created_at->format('Y-m-d'),
                 'hora_acceso' => $ticket->created_at->format('H:i'),
+                'observaciones' => $observacion,
                 'ticket_referencia' => $ticket->numero_ticket,
             ],
 
             TipoFormato::F11 => [
                 'incidencia_relacionada' => $this->findIncidenciaRefParaTicket($ticket),
                 'fecha_realizacion' => ($ticket->fecha_cierre ?? now())->format('Y-m-d H:i:s'),
-                'proceso_realizado' => $this->extractResumenMensajes($ticket),
+                'autorizacion_escrita' => false,
+                'responsable_bd' => $agenteName,
+                'proceso_realizado' => $resumenMensajes ?: $descripcionPlana ?: $ticket->asunto,
                 'persona_ejecutora' => $agenteName,
+                'observaciones' => $observacion,
                 'ticket_referencia' => $ticket->numero_ticket,
             ],
 
             default => [
+                'observaciones' => $observacion,
                 'ticket_referencia' => $ticket->numero_ticket,
             ],
         };
+    }
+
+    private function buildImpactoFromTicket(Ticket $ticket): string
+    {
+        $nivel = match ($ticket->prioridad) {
+            'urgente' => 'Impacto critico',
+            'alta' => 'Impacto alto',
+            'media' => 'Impacto moderado',
+            default => 'Impacto bajo',
+        };
+
+        return "{$nivel} - {$ticket->asunto} ({$ticket->empresa?->razon_social})";
     }
 
     private function mapCategoriaTipoIncidencia(string $categoria): string
@@ -440,5 +545,35 @@ class PanelAgente extends Page implements HasForms
             ->first();
 
         return $registro?->numero_registro ?? '';
+    }
+
+    /**
+     * Sanitize HTML content: allow only safe tags with safe attributes.
+     * Images are rendered safely with src validated against local storage.
+     */
+    public function sanitizeHtml(string $html): HtmlString
+    {
+        // Strip all tags except safe formatting and images
+        $clean = strip_tags($html, '<p><br><strong><em><u><ul><ol><li><img>');
+
+        // Remove all attributes from tags except src on img (and only allow local URLs)
+        $clean = preg_replace_callback('/<img\s[^>]*>/i', function ($match) {
+            if (preg_match('/src=["\']([^"\']+)["\']/i', $match[0], $srcMatch)) {
+                $src = $srcMatch[1];
+                // Only allow local storage URLs
+                if (str_starts_with($src, '/storage/') || str_starts_with($src, url('/storage/'))) {
+                    $safeSrc = e($src);
+
+                    return '<img src="' . $safeSrc . '" style="max-width:320px;height:auto;border-radius:8px;margin:4px 0;" loading="lazy">';
+                }
+            }
+
+            return '';
+        }, $clean);
+
+        // Remove all attributes from non-img tags
+        $clean = preg_replace('/<(p|br|strong|em|u|ul|ol|li)\s[^>]*>/i', '<$1>', $clean);
+
+        return new HtmlString($clean);
     }
 }

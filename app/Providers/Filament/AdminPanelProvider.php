@@ -50,6 +50,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Indigo,
             ])
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->tenantMiddleware([
                 ApplyTenantBranding::class,
             ], isPersistent: true)
@@ -86,6 +87,9 @@ class AdminPanelProvider extends PanelProvider
                     </style>"
                 );
             })
+            ->renderHook('panels::head.end', fn () => new \Illuminate\Support\HtmlString(
+                '<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>'
+            ))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
