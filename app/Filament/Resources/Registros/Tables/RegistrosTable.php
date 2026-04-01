@@ -61,6 +61,7 @@ class RegistrosTable
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('gray')
                     ->action(function ($record) {
+                        $record->load('creador', 'empresa');
                         $path = PdfExportService::exportRegistro($record);
 
                         return response()->download($path)->deleteFileAfterSend();

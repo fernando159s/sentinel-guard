@@ -37,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(function () {
                 $tenant = Filament::getTenant();
                 if ($tenant?->logo_path) {
-                    $url = Storage::disk('logos')->url($tenant->logo_path);
+                    $url = route('logos.show', $tenant->logo_path);
 
                     return view('filament.brand-logo', ['url' => $url, 'name' => $tenant->nombre_portal ?? $tenant->razon_social]);
                 }

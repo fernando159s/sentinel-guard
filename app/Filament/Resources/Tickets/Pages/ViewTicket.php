@@ -15,8 +15,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\TextEntry;
 use Filament\Schemas\Schema;
 
 class ViewTicket extends ViewRecord
@@ -31,6 +31,7 @@ class ViewTicket extends ViewRecord
             ->schema([
                 Section::make('Detalle del ticket')
                     ->columns(3)
+                    ->columnSpanFull()
                     ->schema([
                         TextEntry::make('numero_ticket')
                             ->label('Número'),
@@ -104,10 +105,7 @@ class ViewTicket extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        $user = auth()->user();
-
-        return array_filter([
-            // Responder
+        return [
             Action::make('responder')
                 ->label('Responder')
                 ->icon('heroicon-o-chat-bubble-left-ellipsis')
@@ -123,6 +121,8 @@ class ViewTicket extends ViewRecord
                         ->label('Adjuntos')
                         ->multiple()
                         ->disk('tickets')
+                        ->directory('adjuntos')
+                        ->storeFileNamesIn('adjuntos_nombres')
                         ->maxSize(5120)
                         ->maxFiles(3)
                         ->acceptedFileTypes([
@@ -141,13 +141,19 @@ class ViewTicket extends ViewRecord
                         'created_at' => now(),
                     ]);
 
+                    $storage = \Illuminate\Support\Facades\Storage::disk('tickets');
+
                     if (! empty($data['adjuntos'])) {
-                        foreach ($data['adjuntos'] as $path) {
+                        $nombres = $data['adjuntos_nombres'] ?? [];
+
+                        foreach ($data['adjuntos'] as $key => $path) {
+                            $originalName = $nombres[$key] ?? basename($path);
+
                             $mensaje->adjuntos()->create([
-                                'nombre_original' => basename($path),
+                                'nombre_original' => $originalName,
                                 'nombre_almacenado' => $path,
-                                'tipo_mime' => \Illuminate\Support\Facades\Storage::disk('tickets')->mimeType($path),
-                                'tamano' => \Illuminate\Support\Facades\Storage::disk('tickets')->size($path),
+                                'tipo_mime' => $storage->mimeType($path),
+                                'tamano' => $storage->size($path),
                                 'created_at' => now(),
                             ]);
                         }
@@ -160,10 +166,9 @@ class ViewTicket extends ViewRecord
                         ->success()
                         ->send();
                 })
-                ->visible(fn () => ! in_array($this->record->estado, ['cerrado'])),
+                ->visible(fn () => $this->record->estado !== 'cerrado'),
 
-            // Asignar agente
-            $user->can('asignar_tickets') ? Action::make('asignar')
+            Action::make('asignar')
                 ->label('Asignar agente')
                 ->icon('heroicon-o-user-plus')
                 ->form([
@@ -190,10 +195,10 @@ class ViewTicket extends ViewRecord
                         ->title('Agente asignado')
                         ->success()
                         ->send();
-                }) : null,
+                })
+                ->visible(fn () => auth()->user()->can('asignar_tickets')),
 
-            // Cambiar estado
-            $user->can('editar_tickets') ? Action::make('cambiarEstado')
+            Action::make('cambiarEstado')
                 ->label('Cambiar estado')
                 ->icon('heroicon-o-arrow-path')
                 ->form([
@@ -224,7 +229,8 @@ class ViewTicket extends ViewRecord
                         ->title('Estado actualizado')
                         ->success()
                         ->send();
-                }) : null,
-        ]);
+                })
+                ->visible(fn () => auth()->user()->can('editar_tickets')),
+        ];
     }
 }

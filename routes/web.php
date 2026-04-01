@@ -1,7 +1,28 @@
 <?php
 
+use App\Models\TicketAdjunto;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/tickets/adjuntos/{adjunto}', function (TicketAdjunto $adjunto) {
+    $disk = Storage::disk('tickets');
+
+    abort_unless($disk->exists($adjunto->nombre_almacenado), 404);
+
+    return $disk->download($adjunto->nombre_almacenado, $adjunto->nombre_original);
+})->middleware('auth')->name('tickets.adjunto.download');
+
+Route::get('/logos/{path}', function (string $path) {
+    $disk = Storage::disk('logos');
+
+    abort_unless($disk->exists($path), 404);
+
+    return response($disk->get($path), 200, [
+        'Content-Type' => $disk->mimeType($path),
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+})->middleware('auth')->where('path', '.*')->name('logos.show');

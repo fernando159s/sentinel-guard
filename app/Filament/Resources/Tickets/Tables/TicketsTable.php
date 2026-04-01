@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\Tickets\Tables;
 
-use Filament\Tables\Actions\ViewAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;

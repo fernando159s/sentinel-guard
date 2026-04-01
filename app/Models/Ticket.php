@@ -39,12 +39,12 @@ class Ticket extends Model
 
     public function creador(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'creado_por');
+        return $this->belongsTo(User::class, 'creado_por')->withoutGlobalScopes();
     }
 
     public function agente(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'asignado_a');
+        return $this->belongsTo(User::class, 'asignado_a')->withoutGlobalScopes();
     }
 
     public function mensajes(): HasMany

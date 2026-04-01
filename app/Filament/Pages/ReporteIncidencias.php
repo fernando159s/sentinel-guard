@@ -26,21 +26,47 @@ class ReporteIncidencias extends Page implements HasForms
 
     protected string $view = 'filament.pages.reporte-incidencias';
 
-    public ?string $mes = null;
-
-    public ?string $anio = null;
+    public ?array $data = [];
 
     public function mount(): void
     {
-        $this->mes = (string) now()->month;
-        $this->anio = (string) now()->year;
+        $this->form->fill([
+            'mes' => (string) now()->month,
+            'anio' => (string) now()->year,
+        ]);
+    }
+
+    public function form(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
+    {
+        $months = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $months[(string) $m] = now()->setMonth($m)->translatedFormat('F');
+        }
+
+        $years = [];
+        for ($y = now()->year; $y >= now()->year - 3; $y--) {
+            $years[(string) $y] = (string) $y;
+        }
+
+        return $form
+            ->schema([
+                Select::make('mes')
+                    ->label('Mes')
+                    ->options($months)
+                    ->required(),
+                Select::make('anio')
+                    ->label('Año')
+                    ->options($years)
+                    ->required(),
+            ])
+            ->statePath('data');
     }
 
     public function generateReport(): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         $tenant = Filament::getTenant();
-        $month = (int) $this->mes;
-        $year = (int) $this->anio;
+        $month = (int) $this->data['mes'];
+        $year = (int) $this->data['anio'];
 
         $incidencias = Registro::withoutGlobalScopes()
             ->where('empresa_id', $tenant->id)

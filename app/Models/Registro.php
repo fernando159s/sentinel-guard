@@ -35,11 +35,11 @@ class Registro extends Model
 
     public function creador(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'creado_por');
+        return $this->belongsTo(User::class, 'creado_por')->withoutGlobalScopes();
     }
 
     public function modificador(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'modificado_por');
+        return $this->belongsTo(User::class, 'modificado_por')->withoutGlobalScopes();
     }
 }

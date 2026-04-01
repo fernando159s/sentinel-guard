@@ -62,7 +62,7 @@ class PdfExportService
         <p><strong>N° Registro:</strong> {$registro->numero_registro} &nbsp;&nbsp; <strong>Política:</strong> {$tipo->psc()}</p>
         <table>{$fieldsHtml}</table>
         <div class='footer'>
-            <p>Creado por: {$creador->name} | Fecha: {$registro->created_at->format('d/m/Y H:i')} | Exportado: " . now()->format('d/m/Y H:i') . "</p>
+            <p>Creado por: " . ($creador?->name ?? 'N/A') . " | Fecha: {$registro->created_at->format('d/m/Y H:i')} | Exportado: " . now()->format('d/m/Y H:i') . "</p>
         </div>";
     }
 
