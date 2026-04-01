@@ -19,6 +19,10 @@ class RegistroObserver
 
     private function notifyAdminEmpresa(Registro $registro): void
     {
+        if (! $registro->empresa_id) {
+            return;
+        }
+
         $admins = User::where('empresa_id', $registro->empresa_id)
             ->role('admin_empresa')
             ->where('estado', 'activo')

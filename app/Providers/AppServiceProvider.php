@@ -29,8 +29,8 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        Registro::observe(\App\Observers\RegistroObserver::class);
         Registro::observe(AuditableObserver::class);
+        Registro::observe(\App\Observers\RegistroObserver::class);
         Ticket::observe(AuditableObserver::class);
         Empresa::observe(AuditableObserver::class);
         User::observe(AuditableObserver::class);
