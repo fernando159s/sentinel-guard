@@ -1,251 +1,241 @@
 # SecuriForm
 
-Sistema de gestión de formatos de seguridad multiempresa con helpdesk centralizado.
+Sistema web multiempresa para gestionar formatos de seguridad de la informacion (segun politicas PSC del Estudio Palacios Abogados S.A.C.) con helpdesk centralizado.
+
+Construido con **Laravel 11 + Filament 5 + Docker**.
 
 ---
 
-## Requisitos del servidor
+## Requisitos
 
-| Requisito | Mínimo | Recomendado |
-|-----------|--------|-------------|
-| PHP | 8.1 | 8.2+ |
-| MySQL | 5.7 | 8.0 / MariaDB 10.6 |
-| Extensiones PHP | pdo, pdo_mysql, mbstring, json, fileinfo, gd | + openssl, curl |
-| Espacio en disco | 50 MB | 500 MB (para uploads) |
-| Memoria PHP | 128 MB | 256 MB |
+### Con Docker (recomendado)
+- Docker Desktop 4.x+
+- Docker Compose v2+
+- Git
+
+### Sin Docker
+- PHP 8.2+ con extensiones: pdo, pdo_mysql, mbstring, json, fileinfo, gd, openssl, curl, redis
+- MariaDB 10.11+ o MySQL 8.0+
+- Redis 7+
+- Composer 2.x
+- Node.js 18+ con npm
 
 ---
 
-## Instalación
-
-### Paso 1 — Subir archivos
+## Instalacion rapida (Docker)
 
 ```bash
-# Opción A: FTP/SFTP al hosting
-# Subir el contenido de la carpeta /public/ al public_html del hosting
-# Subir el resto de carpetas FUERA del public_html
+# 1. Clonar el repositorio
+git clone https://github.com/fernando159s/sentinel-guard.git
+cd sentinel-guard
 
-# Estructura recomendada en el servidor:
-/home/tuusuario/
-├── public_html/        ← aquí va el contenido de /public/
-│   ├── index.php
-│   ├── .htaccess
-│   ├── css/
-│   └── js/
-├── securiform/         ← aquí va el resto (app, config, vendor, etc.)
-│   ├── app/
-│   ├── config/
-│   ├── vendor/
-│   └── uploads/
-```
-
-### Paso 2 — Configurar la base de datos
-
-1. Crear una base de datos MySQL en el panel de hosting (cPanel → MySQL Databases)
-2. Crear un usuario MySQL y asignarlo a la base de datos con todos los permisos
-3. Importar el schema:
-
-```bash
-# Desde terminal SSH:
-mysql -u USUARIO_BD -p NOMBRE_BD < install.sql
-mysql -u USUARIO_BD -p NOMBRE_BD < seed.sql
-
-# O desde cPanel → phpMyAdmin → Importar
-```
-
-### Paso 3 — Configurar variables de entorno
-
-Copiar `.env.example` a `.env` y editar:
-
-```bash
+# 2. Copiar variables de entorno
 cp .env.example .env
-nano .env   # o editar con cualquier editor
+
+# 3. Levantar todo con un comando
+make init
 ```
 
-Completar todos los campos marcados con `← CAMBIAR`.
+Esto crea los contenedores, instala dependencias, migra la BD, ejecuta seeders y compila assets.
 
-### Paso 4 — Ajustar la ruta de la aplicación
+### URLs de desarrollo
 
-En `public/index.php`, verificar que la ruta al directorio raíz sea correcta:
+| Servicio | URL |
+|----------|-----|
+| Aplicacion | http://localhost:8082 |
+| Panel admin | http://localhost:8082/admin |
+| phpMyAdmin | http://localhost:8081 |
+| MailHog (emails) | http://localhost:8025 |
 
-```php
-// Si securiform/ está en /home/tuusuario/securiform/
-define('APP_ROOT', '/home/tuusuario/securiform');
-```
+### Credenciales iniciales
 
-### Paso 5 — Verificar permisos
+| Usuario | Email | Contrasena | Rol |
+|---------|-------|------------|-----|
+| Super Admin | admin@securiform.local | Admin2024! | super_admin |
+| Carlos Palacios | carlos@palacios.pe | Test2024! | admin_empresa |
+| Ana Torres | ana@palacios.pe | Test2024! | usuario |
+
+---
+
+## Comandos de desarrollo
 
 ```bash
-# El directorio de uploads debe ser escribible por el servidor web
-chmod 755 uploads/
-chmod 755 uploads/logos/
-chmod 755 uploads/tickets/
-```
+make up              # Levantar servicios
+make down            # Parar servicios
+make shell           # Entrar al contenedor (bash)
+make logs            # Ver logs en tiempo real
+make tinker          # Laravel REPL
 
-### Paso 6 — Primer acceso
+make migrate         # Ejecutar migraciones
+make migrate-fresh   # Reset BD + seeders
+make seed            # Solo seeders
 
-Abrir el navegador en la URL del hosting. Las credenciales iniciales son:
+make npm-dev         # Vite en modo watch
+make npm-build       # Build para produccion
 
-```
-Email:      admin@securiform.local
-Contraseña: Admin2024!
-Empresa:    (cualquiera, es super admin)
-```
-
-**Cambiar la contraseña inmediatamente después del primer acceso.**
-
----
-
-## Instalación de dependencias PHP
-
-### Con Composer (recomendado)
-
-```bash
-composer install --no-dev --optimize-autoloader
-```
-
-### Sin Composer (hosting sin acceso SSH)
-
-Descargar manualmente e incluir:
-
-1. **PHPMailer** → https://github.com/PHPMailer/PHPMailer/releases
-   - Copiar `src/` a `vendor/phpmailer/phpmailer/src/`
-
-2. **mPDF** → https://github.com/mpdf/mpdf/releases
-   - Copiar a `vendor/mpdf/mpdf/`
-
-3. **PhpSpreadsheet** → https://github.com/PHPOffice/PhpSpreadsheet
-   - Copiar a `vendor/phpoffice/phpspreadsheet/`
-
----
-
-## Configuración de email
-
-En `.env`, configurar el servidor SMTP:
-
-```ini
-# Con Gmail (requiere contraseña de aplicación, no la contraseña normal)
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=tuemail@gmail.com
-MAIL_PASSWORD=xxxx-xxxx-xxxx-xxxx  # Contraseña de aplicación de Google
-MAIL_ENCRYPTION=tls
-
-# Con servidor del hosting (ej: cPanel)
-MAIL_HOST=mail.tudominio.com
-MAIL_PORT=587
-MAIL_USERNAME=noreply@tudominio.com
-MAIL_PASSWORD=tu_contraseña_email
-MAIL_ENCRYPTION=tls
+make test            # Ejecutar tests
+make cache-clear     # Limpiar caches Laravel
 ```
 
 ---
 
-## Estructura del proyecto
+## Stack tecnico
+
+| Capa | Tecnologia |
+|------|-----------|
+| Framework | Laravel 11 |
+| Admin panel | Filament 5 |
+| Reactividad | Livewire 3 |
+| Frontend | Tailwind CSS + Alpine.js |
+| Base de datos | MariaDB 10.11 |
+| Cache/Colas | Redis 7 |
+| PDF | mPDF 8.x |
+| Excel | PhpSpreadsheet |
+| Email | Laravel Mail (SMTP) + colas Redis |
+| Permisos | spatie/laravel-permission |
+| Multi-tenancy | Filament tenant isolation por empresa |
+
+---
+
+## Arquitectura
 
 ```
-securiform/
-├── CLAUDE.md          ← contexto para Claude Code (no subir a producción)
-├── README.md          ← este archivo
-├── .env               ← variables de entorno (NO commitear a git)
-├── .env.example       ← plantilla de variables (sí commitear)
-├── .gitignore
-├── composer.json
-├── install.sql        ← script de creación de tablas
-├── seed.sql           ← datos iniciales (super admin)
-│
-├── config/
-│   └── config.php     ← carga .env y define constantes
-│
-├── app/
-│   ├── controllers/   ← lógica de negocio
-│   ├── models/        ← acceso a datos
-│   ├── views/         ← templates PHP + layouts
-│   └── helpers/       ← Database, Auth, Router, Mailer, etc.
-│
-├── public/            ← WEBROOT (apuntar el hosting aquí)
-│   ├── index.php
-│   ├── .htaccess
-│   ├── css/
-│   └── js/
-│
-├── uploads/           ← archivos subidos (NO en webroot)
-│   ├── logos/
-│   └── tickets/
-│
-├── vendor/            ← dependencias composer
-│
-└── scripts/           ← herramientas de desarrollo
-    ├── linear_get_tasks.sh
-    ├── linear_update_status.sh
-    └── import_backlog.py
+app/
+  Enums/              Enums PHP (TipoFormato, etc.)
+  Filament/
+    Pages/            Paginas custom (PanelAgente, ReporteIncidencias)
+    Resources/        CRUDs (Registros, Tickets, Users, Empresas, EmailTemplates)
+    Widgets/          Widgets del dashboard (Stats, Charts, Tables)
+  Jobs/               Jobs para colas (SendEmailJob)
+  Mail/               Mailables (SecuriformMail)
+  Models/             Modelos Eloquent
+  Observers/          Observers (RegistroObserver para notif. F09)
+  Policies/           Autorizacion por modelo
+  Services/           Servicios (FormatoFields, RegistroNumber, PdfExport, ExcelExport)
+
+database/
+  migrations/         Migraciones Laravel
+  seeders/            Seeders (Users, Roles, Empresas, EmailTemplates)
+
+resources/
+  views/
+    filament/         Vistas custom Filament (panel-agente, view-ticket, widgets)
+    emails/           Templates de email
 ```
+
+---
+
+## Multi-tenancy
+
+Cada empresa es un **tenant** en Filament. Los usuarios solo ven datos de su empresa gracias a un **Global Scope** (`EmpresaScope`) que filtra automaticamente por `empresa_id`.
+
+Los roles `super_admin` y `agente_helpdesk` ven datos de todas las empresas.
 
 ---
 
 ## Roles de usuario
 
-| Rol | Descripción |
-|-----|-------------|
-| `super_admin` | Administrador global: gestiona empresas, usuarios de cualquier empresa, ve logs globales |
-| `admin_empresa` | Admin de una empresa: gestiona usuarios de su empresa, ve todos los registros de su empresa |
-| `usuario` | Usuario estándar: crea y consulta registros de su empresa |
-| `agente_helpdesk` | Equipo de soporte: atiende tickets de todas las empresas |
-| `solo_lectura` | Auditor: solo puede ver registros, no crear ni editar |
+| Rol | Que puede hacer |
+|-----|-----------------|
+| super_admin | Todo: gestionar empresas, usuarios, registros, tickets, plantillas email |
+| admin_empresa | Gestionar usuarios y registros de SU empresa |
+| usuario | Crear y ver registros de su empresa, abrir tickets |
+| agente_helpdesk | Atender tickets de TODAS las empresas, crear registros desde tickets |
+| solo_lectura | Solo ver registros y tickets, sin crear ni editar |
 
 ---
 
 ## Los 13 formatos de seguridad
 
-| Código | Formato | Política |
-|--------|---------|---------|
-| F01 | Registro de auditorías realizadas | PSC000001 |
-| F02 | Registro de banco de datos inscritos | PSC000001 |
-| F03 | Prestadores con acceso a datos personales | PSC000001 / PSC000002 |
-| F04 | Registro para datos sensibles | PSC000001 / PSC000-46 |
-| F05 | Personal autorizado al banco de datos | PSC000001 |
-| F06 | Acceso de soporte no autorizado | PSC000001 |
-| F07 | Inventario de soportes | PSC000003 / PSC000004 |
-| F08 | Ingreso y salida de soportes | PSC000003 |
-| F09 | Notificación de incidencias | PSC000001 / PSC000-25 |
-| F10 | Resolución de incidencias | PSC000-25 |
-| F11 | Recuperación de datos | PSC000001 / PSC000-25 |
-| F12 | Copias de seguridad | PSC000003 / PSC000-15 |
-| F13 | Destrucción de activos | PSC000003 / PSC000004 |
+| ID | Nombre | Para que sirve |
+|----|--------|---------------|
+| F01 | Auditorias realizadas | Control de revisiones de seguridad internas y externas |
+| F02 | Banco de datos inscritos | Inventario de bases de datos con informacion personal |
+| F03 | Prestadores con acceso | Registro de proveedores externos que ven datos personales |
+| F04 | Datos sensibles | Control de datos delicados (salud, religion, etc.) |
+| F05 | Personal autorizado | Lista de quien tiene permiso para ver las bases de datos |
+| F06 | Acceso no autorizado | Documentar accesos sospechosos de soporte tecnico |
+| F07 | Inventario de soportes | Lista de dispositivos donde se guardan datos |
+| F08 | Ingreso/salida soportes | Control de entrada y salida de dispositivos con datos |
+| F09 | Notificacion incidencias | Reporte inicial cuando ocurre un problema de seguridad |
+| F10 | Resolucion incidencias | Como se resolvio un problema reportado en F09 |
+| F11 | Recuperacion de datos | Registro de recuperacion de datos tras una incidencia |
+| F12 | Copias de seguridad | Control de backups realizados |
+| F13 | Destruccion de activos | Registro de destruccion segura de informacion |
 
 ---
 
-## Checklist de seguridad para producción
+## Sistema de notificaciones
 
-Antes de publicar, verificar:
-
-- [ ] `.env` tiene credenciales reales y no está accesible desde el navegador
-- [ ] `APP_ENV=production` en el `.env`
-- [ ] `APP_DEBUG=false` en el `.env`
-- [ ] El directorio `uploads/` no es accesible directamente desde el navegador
-- [ ] El directorio `app/` no es accesible desde el navegador
-- [ ] HTTPS activado en el hosting (certificado SSL)
-- [ ] La contraseña del super_admin inicial fue cambiada
-- [ ] Se probó que un usuario de empresa A no puede ver datos de empresa B
-- [ ] Los logs de PHP no muestran errores en producción
+- **Plantillas editables** desde el panel admin (Plantillas De Email)
+- **Cola Redis** para envio asincrono con reintentos (3 intentos)
+- **Notificacion automatica** al crear incidencia F09 → email al admin de empresa
+- **Preferencias por usuario**: cada usuario puede activar/desactivar notificaciones de tickets e incidencias desde su perfil
 
 ---
 
-## Actualización de versiones
+## Configuracion de email
 
-Para actualizar a una nueva versión:
+En `.env`:
 
-1. Hacer backup de la BD: `mysqldump -u usuario -p nombre_bd > backup_FECHA.sql`
-2. Hacer backup de `uploads/`
-3. Subir los nuevos archivos (no sobreescribir `.env`)
-4. Si hay migraciones, ejecutar: `mysql -u usuario -p nombre_bd < migrations/vX.X.sql`
-5. Verificar que todo funciona antes de confirmar la actualización
+```ini
+# Desarrollo (MailHog incluido en Docker)
+MAIL_MAILER=smtp
+MAIL_HOST=mail
+MAIL_PORT=1025
+
+# Produccion (ejemplo con Gmail)
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=tuemail@gmail.com
+MAIL_PASSWORD=xxxx-xxxx-xxxx-xxxx
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=noreply@tudominio.com
+```
 
 ---
 
-## Soporte y desarrollo
+## Checklist de seguridad para produccion
 
-- Documentación técnica: `docs/`
-- Backlog de tareas: `docs/02_BACKLOG_SecuriForm.md`
-- Tareas en Linear: ver `scripts/linear_get_tasks.sh`
-- Contexto para Claude Code: `CLAUDE.md`
+- [ ] `APP_ENV=production` y `APP_DEBUG=false`
+- [ ] `.env` no accesible desde el navegador
+- [ ] HTTPS activado (SSL)
+- [ ] Contrasena del super_admin cambiada
+- [ ] Redis protegido con contrasena
+- [ ] `storage/` y `bootstrap/cache/` con permisos de escritura
+- [ ] Un usuario de empresa A no puede ver datos de empresa B
+- [ ] Headers de seguridad activos (CSP, X-Frame-Options, etc.)
+- [ ] Queue worker corriendo: `php artisan queue:work redis`
+
+---
+
+## Desarrollo
+
+```bash
+# Crear migracion
+php artisan make:migration create_tabla_table
+
+# Crear Filament Resource
+php artisan make:filament-resource NombreModelo --generate
+
+# Crear widget
+php artisan make:filament-widget NombreWidget
+
+# Ejecutar tests
+php artisan test
+```
+
+### Integracion con Linear
+
+```bash
+export LINEAR_API_KEY="lin_api_xxxx"
+./scripts/linear_get_tasks.sh "In Progress"
+./scripts/linear_update_status.sh SEN-42 "Done"
+```
+
+---
+
+## Licencia
+
+Proyecto privado — Estudio Palacios Abogados S.A.C.
