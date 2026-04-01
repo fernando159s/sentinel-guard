@@ -8,7 +8,7 @@
                         {{ $formato['prefix'] }}
                     </div>
                     <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-medium text-gray-900 dark:text-white">{{ $formato['value'] }}</p>
+                        <p class="truncate text-sm font-medium text-gray-900 dark:text-white">{{ $formato['label'] }}</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">{{ $formato['count'] }} registros</p>
                     </div>
                 </a>
