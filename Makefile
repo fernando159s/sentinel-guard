@@ -4,8 +4,9 @@
 # ============================================================
 
 .PHONY: help init up down restart build shell db-shell redis-shell \
-        migrate migrate-fresh seed tinker logs queue test \
-        filament-user npm-dev npm-build clean
+        migrate migrate-fresh seed tinker logs logs-app logs-queue \
+        queue queue-restart queue-failed queue-retry queue-flush \
+        test filament-user npm-dev npm-build clean cache-clear
 
 # Colores
 YELLOW=\033[1;33m
@@ -123,8 +124,23 @@ seed: ## Ejecutar seeders
 test: ## Ejecutar tests (PHPUnit/Pest)
 	docker compose exec app php artisan test
 
-queue: ## Procesar cola de trabajos
-	docker compose exec app php artisan queue:work --tries=3
+queue: ## Procesar cola de trabajos (foreground)
+	docker compose exec app php artisan queue:work redis --tries=3
+
+queue-restart: ## Reiniciar el worker de cola (contenedor dedicado)
+	docker compose restart queue
+
+queue-failed: ## Ver jobs fallidos
+	docker compose exec app php artisan queue:failed
+
+queue-retry: ## Reintentar todos los jobs fallidos
+	docker compose exec app php artisan queue:retry all
+
+queue-flush: ## Eliminar todos los jobs fallidos
+	docker compose exec app php artisan queue:flush
+
+logs-queue: ## Ver logs del queue worker
+	docker compose logs -f queue
 
 # ── FILAMENT ──────────────────────────────────────────────────
 
