@@ -284,13 +284,17 @@ class ViewTicket extends ViewRecord
                         }
                     }
 
+                    $notifBody = $this->record->asignado_a
+                        ? 'El agente ha sido notificado por email.'
+                        : 'No hay agente asignado, no se envio notificacion.';
+
                     Notification::make()
                         ->title('Ticket reabierto')
-                        ->body('El agente ha sido notificado por email.')
+                        ->body($notifBody)
                         ->success()
                         ->send();
                 })
-                ->visible(fn () => $this->record->puedeReabrirse()),
+                ->visible(fn () => $this->record->puedeReabrirse() && auth()->user()->can('editar_tickets')),
         ];
     }
 }

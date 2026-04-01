@@ -283,7 +283,7 @@ class PanelAgente extends Page implements HasForms
     {
         $ticket = $this->selectedTicket;
 
-        if (! $ticket || ! $ticket->puedeReabrirse()) {
+        if (! $ticket || ! $ticket->puedeReabrirse() || ! auth()->user()->can('editar_tickets')) {
             return;
         }
 

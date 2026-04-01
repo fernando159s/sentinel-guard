@@ -62,6 +62,6 @@ class Ticket extends Model
             return false;
         }
 
-        return $this->fecha_cierre->diffInDays(now()) <= 7;
+        return $this->fecha_cierre->greaterThan(now()->subDays(7));
     }
 }
