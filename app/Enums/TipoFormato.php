@@ -75,6 +75,25 @@ enum TipoFormato: string
         };
     }
 
+    public function description(): string
+    {
+        return match ($this) {
+            self::F01 => 'Documenta las auditorias internas y externas realizadas sobre los sistemas de informacion, registrando responsables, resultados y acciones correctivas.',
+            self::F02 => 'Inventario de los bancos de datos personales inscritos ante la Autoridad, incluyendo su categoria, areas con acceso y descripcion.',
+            self::F03 => 'Registro de prestadores de servicios (terceros) que tienen acceso a datos personales, con detalle de contrato y datos facilitados.',
+            self::F04 => 'Inventario de datos sensibles que maneja la organizacion, su ubicacion y las areas autorizadas para acceder a ellos.',
+            self::F05 => 'Control del personal autorizado para acceder a los bancos de datos, con fecha de asignacion y banco correspondiente.',
+            self::F06 => 'Registro de accesos de soporte tecnico no autorizado o sospechoso, documentando quien accedio, cuando y desde donde.',
+            self::F07 => 'Inventario de soportes fisicos y digitales (discos, USB, servidores, expedientes) que contienen datos personales.',
+            self::F08 => 'Control de ingresos y salidas de soportes fisicos/digitales, con trazabilidad de origen, destino y autorizacion.',
+            self::F09 => 'Notificacion y documentacion de incidencias de seguridad (accesos no autorizados, perdida de datos, malware, fallos de sistema).',
+            self::F10 => 'Documentacion de la resolucion de incidencias previamente reportadas (F09), incluyendo medidas adoptadas y acciones preventivas.',
+            self::F11 => 'Registro de procesos de recuperacion de datos tras una incidencia, con autorizacion, responsable y proceso ejecutado.',
+            self::F12 => 'Control de las copias de seguridad (backups) realizadas, su contenido, periodicidad y fecha de ejecucion.',
+            self::F13 => 'Registro de destruccion segura de activos de informacion, documentando metodo, responsable y autorizacion.',
+        };
+    }
+
     public static function options(): array
     {
         return collect(self::cases())
