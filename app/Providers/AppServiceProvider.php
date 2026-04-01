@@ -30,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Registro::observe(AuditableObserver::class);
+        Registro::observe(\App\Observers\RegistroObserver::class);
         Ticket::observe(AuditableObserver::class);
         Empresa::observe(AuditableObserver::class);
         User::observe(AuditableObserver::class);
