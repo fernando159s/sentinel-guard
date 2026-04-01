@@ -7,6 +7,7 @@ use App\Models\Ticket;
 use App\Models\TicketAdjunto;
 use App\Models\TicketMensaje;
 use App\Models\User;
+use App\Jobs\SendEmailJob;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
@@ -231,6 +232,65 @@ class ViewTicket extends ViewRecord
                         ->send();
                 })
                 ->visible(fn () => auth()->user()->can('editar_tickets')),
+
+            Action::make('reabrir')
+                ->label('Reabrir ticket')
+                ->icon('heroicon-o-arrow-uturn-left')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Reabrir ticket')
+                ->modalDescription('El ticket sera reabierto y el agente asignado sera notificado por email.')
+                ->form([
+                    Textarea::make('motivo')
+                        ->label('Motivo de reapertura')
+                        ->required()
+                        ->rows(3)
+                        ->placeholder('Explica por que necesitas reabrir este ticket...'),
+                ])
+                ->action(function (array $data) {
+                    $this->record->update([
+                        'estado' => 'en_revision',
+                        'fecha_ultima_actividad' => now(),
+                        'fecha_cierre' => null,
+                    ]);
+
+                    $this->record->mensajes()->create([
+                        'autor_id' => auth()->id(),
+                        'tipo' => 'interno',
+                        'contenido' => "TICKET REABIERTO por " . auth()->user()->name . ".\nMotivo: {$data['motivo']}",
+                        'created_at' => now(),
+                    ]);
+
+                    if ($this->record->asignado_a) {
+                        $agente = $this->record->agente;
+                        if ($agente) {
+                            $ticketUrl = url("admin/{$this->record->empresa?->ruc}/tickets/{$this->record->id}");
+
+                            dispatch(SendEmailJob::fromTemplate(
+                                destinatario: $agente->email,
+                                nombreDestino: $agente->name,
+                                templateSlug: 'ticket_reabierto',
+                                templateVariables: [
+                                    'nombre' => $agente->name,
+                                    'numero_ticket' => $this->record->numero_ticket,
+                                    'asunto' => $this->record->asunto,
+                                    'quien_reabrio' => auth()->user()->name,
+                                    'motivo' => $data['motivo'],
+                                    'enlace_ticket' => $ticketUrl,
+                                ],
+                                actionUrl: $ticketUrl,
+                                actionLabel: 'Ver ticket',
+                            ));
+                        }
+                    }
+
+                    Notification::make()
+                        ->title('Ticket reabierto')
+                        ->body('El agente ha sido notificado por email.')
+                        ->success()
+                        ->send();
+                })
+                ->visible(fn () => $this->record->puedeReabrirse()),
         ];
     }
 }

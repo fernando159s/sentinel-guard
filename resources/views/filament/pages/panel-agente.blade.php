@@ -252,6 +252,12 @@
                                 </x-filament::dropdown>
                             @endif
 
+                            @if ($ticket->puedeReabrirse())
+                                <x-filament::button size="sm" color="warning" wire:click="reabrirTicket" wire:loading.attr="disabled" icon="heroicon-m-arrow-uturn-left">
+                                    Reabrir
+                                </x-filament::button>
+                            @endif
+
                             <x-filament::link
                                 :href="url('admin/' . ($ticket->empresa?->ruc ?? '') . '/tickets/' . $ticket->id)"
                                 size="sm"
