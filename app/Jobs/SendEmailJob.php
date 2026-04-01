@@ -38,15 +38,47 @@ class SendEmailJob implements ShouldQueue
         public ?string $actionUrl = null,
         public ?string $actionLabel = null,
         public ?string $piePagina = null,
+        public ?string $templateSlug = null,
+        public array $templateVariables = [],
     ) {}
+
+    /**
+     * Dispatch a job using a database email template.
+     * The template is resolved at send-time, not at dispatch-time.
+     */
+    public static function fromTemplate(
+        string $destinatario,
+        string $nombreDestino,
+        string $templateSlug,
+        array $templateVariables = [],
+        string $saludo = '',
+        ?string $actionUrl = null,
+        ?string $actionLabel = null,
+        ?string $piePagina = null,
+    ): self {
+        return new self(
+            destinatario: $destinatario,
+            nombreDestino: $nombreDestino,
+            asunto: '',
+            saludo: $saludo,
+            cuerpo: '',
+            actionUrl: $actionUrl,
+            actionLabel: $actionLabel,
+            piePagina: $piePagina,
+            templateSlug: $templateSlug,
+            templateVariables: $templateVariables,
+        );
+    }
 
     public function handle(): void
     {
+        $mailable = $this->buildMailable();
+
         $notificacion = NotificacionEmail::create([
             'destinatario' => $this->destinatario,
             'nombre_destino' => $this->nombreDestino,
-            'asunto' => $this->asunto,
-            'cuerpo_html' => $this->cuerpo,
+            'asunto' => $mailable->asunto,
+            'cuerpo_html' => $mailable->cuerpo,
             'estado' => 'pendiente',
             'intentos' => $this->attempts(),
             'fecha_programada' => now(),
@@ -54,15 +86,6 @@ class SendEmailJob implements ShouldQueue
         ]);
 
         try {
-            $mailable = new SecuriformMail(
-                asunto: $this->asunto,
-                saludo: $this->saludo,
-                cuerpo: $this->cuerpo,
-                actionUrl: $this->actionUrl,
-                actionLabel: $this->actionLabel,
-                piePagina: $this->piePagina,
-            );
-
             Mail::to($this->destinatario, $this->nombreDestino)->send($mailable);
 
             $notificacion->update([
@@ -79,12 +102,12 @@ class SendEmailJob implements ShouldQueue
 
             Log::error('SendEmailJob failed', [
                 'to' => $this->destinatario,
-                'subject' => $this->asunto,
+                'subject' => $mailable->asunto,
                 'attempt' => $this->attempts(),
                 'error' => $e->getMessage(),
             ]);
 
-            throw $e; // Re-throw so Laravel retries
+            throw $e;
         }
     }
 
@@ -98,5 +121,30 @@ class SendEmailJob implements ShouldQueue
             'subject' => $this->asunto,
             'error' => $exception?->getMessage(),
         ]);
+    }
+
+    private function buildMailable(): SecuriformMail
+    {
+        if ($this->templateSlug) {
+            return SecuriformMail::fromTemplate(
+                slug: $this->templateSlug,
+                variables: $this->templateVariables,
+                fallbackAsunto: $this->asunto,
+                fallbackCuerpo: $this->cuerpo,
+                saludo: $this->saludo,
+                actionUrl: $this->actionUrl,
+                actionLabel: $this->actionLabel,
+                piePagina: $this->piePagina,
+            );
+        }
+
+        return new SecuriformMail(
+            asunto: $this->asunto,
+            saludo: $this->saludo,
+            cuerpo: $this->cuerpo,
+            actionUrl: $this->actionUrl,
+            actionLabel: $this->actionLabel,
+            piePagina: $this->piePagina,
+        );
     }
 }

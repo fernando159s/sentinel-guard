@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             EmpresaSeeder::class,
             UserSeeder::class,
+            EmailTemplateSeeder::class,
         ]);
     }
 }
