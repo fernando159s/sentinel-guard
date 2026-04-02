@@ -23,4 +23,13 @@ class CreateTicket extends CreateRecord
 
         return $data;
     }
+
+    protected function afterCreate(): void
+    {
+        $equipos = $this->data['equipos'] ?? [];
+
+        if (! empty($equipos)) {
+            $this->record->equipos()->sync($equipos);
+        }
+    }
 }

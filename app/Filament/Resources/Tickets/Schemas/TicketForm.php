@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Tickets\Schemas;
 
+use App\Models\Equipo;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -48,6 +50,21 @@ class TicketForm
                             ])
                             ->default('media')
                             ->required(),
+                        Select::make('equipos')
+                            ->label('Equipo afectado')
+                            ->multiple()
+                            ->options(function () {
+                                $empresa = Filament::getTenant();
+
+                                return Equipo::where('empresa_id', $empresa?->id)
+                                    ->where('estado', 'activo')
+                                    ->get()
+                                    ->mapWithKeys(fn ($e) => [$e->id => "{$e->codigo_interno} — {$e->marca} {$e->modelo}"])
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->helperText('Opcional: selecciona los equipos relacionados con el problema')
+                            ->columnSpanFull(),
                         RichEditor::make('descripcion')
                             ->label('Descripción')
                             ->required()
