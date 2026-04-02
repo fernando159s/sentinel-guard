@@ -136,6 +136,19 @@ HTML,
 <p><a href="{{enlace_ticket}}">Ver ticket</a></p>
 HTML,
             ],
+            [
+                'slug' => 'nueva_politica',
+                'nombre' => 'Nueva politica publicada',
+                'asunto' => 'Nueva politica: {{titulo_politica}} (v{{version}})',
+                'variables_disponibles' => ['nombre', 'titulo_politica', 'version', 'enlace_plataforma'],
+                'contenido' => <<<'HTML'
+<p>Hola <strong>{{nombre}}</strong>,</p>
+<p>Se ha publicado una nueva politica de seguridad que requiere tu aceptacion:</p>
+<p><strong>{{titulo_politica}}</strong> (version {{version}})</p>
+<p>Es necesario que leas y aceptes esta politica para poder seguir usando la plataforma.</p>
+<p><a href="{{enlace_plataforma}}">Ir a aceptar</a></p>
+HTML,
+            ],
         ];
     }
 }

@@ -34,5 +34,6 @@ class AppServiceProvider extends ServiceProvider
         Ticket::observe(AuditableObserver::class);
         Empresa::observe(AuditableObserver::class);
         User::observe(AuditableObserver::class);
+        \App\Models\Politica::observe(\App\Observers\PoliticaObserver::class);
     }
 }
