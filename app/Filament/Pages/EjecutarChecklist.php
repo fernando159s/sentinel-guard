@@ -6,12 +6,18 @@ use App\Models\ChecklistEjecucion;
 use App\Models\ChecklistPlantilla;
 use App\Models\Equipo;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Schema;
 use Livewire\Attributes\Url;
 
-class EjecutarChecklist extends Page
+class EjecutarChecklist extends Page implements HasForms
 {
+    use InteractsWithForms;
+
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static bool $shouldRegisterNavigation = false;
@@ -35,11 +41,52 @@ class EjecutarChecklist extends Page
 
     public string $observaciones_generales = '';
 
+    public array $selectorData = [];
+
     public function mount(): void
     {
         if ($this->equipo_id) {
             $this->equipo = Equipo::find($this->equipo_id);
+            $this->selectorData['equipo_id'] = $this->equipo_id;
         }
+    }
+
+    public function selectorForm(Schema $schema): Schema
+    {
+        $empresaId = Filament::getTenant()?->id;
+
+        return $schema
+            ->statePath('selectorData')
+            ->components([
+                Select::make('equipo_id')
+                    ->label('Equipo')
+                    ->options(
+                        Equipo::where('empresa_id', $empresaId)
+                            ->where('estado', 'activo')
+                            ->get()
+                            ->mapWithKeys(fn ($e) => [$e->id => "{$e->codigo_interno} — {$e->marca} {$e->modelo}"])
+                    )
+                    ->default($this->equipo_id)
+                    ->searchable()
+                    ->live()
+                    ->afterStateUpdated(function ($state) {
+                        $this->equipo_id = $state;
+                        $this->equipo = $state ? Equipo::find($state) : null;
+                    }),
+                Select::make('plantilla_id')
+                    ->label('Plantilla de checklist')
+                    ->options(
+                        ChecklistPlantilla::where('empresa_id', $empresaId)
+                            ->where('activa', true)
+                            ->pluck('nombre', 'id')
+                    )
+                    ->searchable()
+                    ->live()
+                    ->afterStateUpdated(function ($state) {
+                        $this->plantilla_id = $state;
+                        $this->loadItems();
+                    }),
+            ]);
     }
 
     public function getPlantillasProperty(): array
