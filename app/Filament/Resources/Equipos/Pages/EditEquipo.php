@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources\Equipos\Pages;
 
+use App\Enums\TipoFormato;
 use App\Filament\Resources\Equipos\EquipoResource;
 use App\Models\EquipoAsignacion;
+use App\Models\Registro;
 use App\Models\User;
+use App\Services\RegistroNumberService;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
@@ -160,6 +163,94 @@ class EditEquipo extends EditRecord
                         ->send();
                 })
                 ->visible(fn () => $this->record->estaAsignado()),
+
+            Action::make('dar_de_baja')
+                ->label('Dar de baja')
+                ->icon('heroicon-o-trash')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Dar de baja equipo')
+                ->modalDescription('El equipo sera marcado como dado de baja y se generara un registro F13 (Destruccion de activos).')
+                ->form([
+                    Select::make('motivo')
+                        ->label('Motivo de baja')
+                        ->options([
+                            'obsoleto' => 'Obsoleto',
+                            'danado' => 'Danado',
+                            'destruido' => 'Destruido',
+                            'perdido' => 'Perdido',
+                            'robado' => 'Robado',
+                        ])
+                        ->required(),
+                    Select::make('metodo_destruccion')
+                        ->label('Metodo de destruccion (si aplica)')
+                        ->options([
+                            'borrado_seguro' => 'Borrado seguro',
+                            'destruccion_fisica' => 'Destruccion fisica',
+                            'desmagnetizacion' => 'Desmagnetizacion',
+                            'trituracion' => 'Trituracion',
+                            'proveedor_certificado' => 'Proveedor certificado',
+                            'no_aplica' => 'No aplica',
+                        ])
+                        ->default('no_aplica')
+                        ->required(),
+                    Textarea::make('notas')
+                        ->label('Notas')
+                        ->rows(2),
+                ])
+                ->action(function (array $data) {
+                    DB::transaction(function () use ($data) {
+                        // Close current assignment if any
+                        $vigente = $this->record->asignacionVigente;
+                        if ($vigente) {
+                            $vigente->update(['fecha_fin' => now()]);
+                        }
+
+                        // Record baja in assignments
+                        EquipoAsignacion::create([
+                            'equipo_id' => $this->record->id,
+                            'user_id' => $vigente?->user_id ?? auth()->id(),
+                            'tipo' => 'baja',
+                            'fecha_inicio' => now(),
+                            'fecha_fin' => now(),
+                            'condicion_entrega' => 'malo',
+                            'notas' => "Baja: {$data['motivo']}. " . ($data['notas'] ?? ''),
+                            'asignado_por' => auth()->id(),
+                        ]);
+
+                        // Update equipo status
+                        $this->record->update(['estado' => 'dado_de_baja']);
+
+                        // Generate F13 registro
+                        $empresaId = $this->record->empresa_id;
+                        $tipo = TipoFormato::F13;
+                        $numero = RegistroNumberService::generate($empresaId, $tipo);
+                        $descripcion = trim("{$this->record->tipo} {$this->record->marca} {$this->record->modelo} (S/N: {$this->record->numero_serie}, Codigo: {$this->record->codigo_interno})");
+
+                        Registro::create([
+                            'empresa_id' => $empresaId,
+                            'tipo_formato' => $tipo->value,
+                            'numero_registro' => $numero,
+                            'datos' => [
+                                'fecha_destruccion' => now()->format('Y-m-d'),
+                                'descripcion_activo' => $descripcion,
+                                'metodo' => $data['metodo_destruccion'] !== 'no_aplica' ? $data['metodo_destruccion'] : null,
+                                'responsable' => auth()->user()->name,
+                                'autoriza' => auth()->user()->name,
+                                'observaciones' => "Baja de equipo por: {$data['motivo']}. " . ($data['notas'] ?? ''),
+                            ],
+                            'estado' => 'activo',
+                            'creado_por' => auth()->id(),
+                        ]);
+                    });
+
+                    Notification::make()
+                        ->title('Equipo dado de baja')
+                        ->body('Se genero automaticamente un registro F13 de destruccion.')
+                        ->success()
+                        ->send();
+                })
+                ->visible(fn () => $this->record->estado !== 'dado_de_baja'),
 
             DeleteAction::make()->label('Desactivar'),
             RestoreAction::make(),
