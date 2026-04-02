@@ -98,6 +98,20 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             ->whereIn('tipo', ['asignacion', 'transferencia']);
     }
 
+    public function aceptacionesPolitica(): HasMany
+    {
+        return $this->hasMany(AceptacionPolitica::class, 'user_id');
+    }
+
+    public function tienePoliticasPendientes(): bool
+    {
+        if (! $this->empresa_id) {
+            return false;
+        }
+
+        return Politica::pendientesPara($this->id, $this->empresa_id)->isNotEmpty();
+    }
+
     public function isActivo(): bool
     {
         return $this->estado === 'activo';
