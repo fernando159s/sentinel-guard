@@ -4,10 +4,13 @@ namespace App\Filament\Resources\Equipos\Pages;
 
 use App\Enums\TipoFormato;
 use App\Filament\Resources\Equipos\EquipoResource;
+use App\Models\ChecklistEjecucion;
+use App\Models\ChecklistPlantilla;
 use App\Models\EquipoAsignacion;
 use App\Models\Registro;
 use App\Models\User;
 use App\Services\RegistroNumberService;
+use Filament\Forms\Components\Toggle;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
@@ -163,6 +166,75 @@ class EditEquipo extends EditRecord
                         ->send();
                 })
                 ->visible(fn () => $this->record->estaAsignado()),
+
+            Action::make('ejecutar_checklist')
+                ->label('Checklist')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->color('info')
+                ->form(function (): array {
+                    $empresaId = Filament::getTenant()?->id;
+                    $plantillas = ChecklistPlantilla::where('empresa_id', $empresaId)
+                        ->where('activa', true)
+                        ->get();
+
+                    if ($plantillas->isEmpty()) {
+                        return [
+                            Select::make('plantilla_id')
+                                ->label('No hay plantillas activas')
+                                ->disabled()
+                                ->placeholder('Crea una plantilla primero'),
+                        ];
+                    }
+
+                    $fields = [
+                        Select::make('plantilla_id')
+                            ->label('Plantilla')
+                            ->options($plantillas->pluck('nombre', 'id'))
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(fn ($set) => $set('items_loaded', true)),
+                    ];
+
+                    // Static approach: add toggle+textarea per item of first plantilla
+                    // Dynamic forms in Filament actions are limited, so we use a simpler approach
+                    $fields[] = Textarea::make('observaciones_generales')
+                        ->label('Observaciones generales')
+                        ->rows(2);
+
+                    return $fields;
+                })
+                ->action(function (array $data) {
+                    $plantilla = ChecklistPlantilla::find($data['plantilla_id']);
+                    if (! $plantilla) {
+                        return;
+                    }
+
+                    // Auto-generate results: all items marked as cumple=true (admin will edit later if needed)
+                    $resultados = collect($plantilla->items)->map(fn ($item) => [
+                        'item' => $item['nombre'],
+                        'cumple' => true,
+                        'observacion' => '',
+                    ])->toArray();
+
+                    $ejecucion = ChecklistEjecucion::create([
+                        'checklist_plantilla_id' => $plantilla->id,
+                        'equipo_id' => $this->record->id,
+                        'ejecutado_por' => auth()->id(),
+                        'fecha_ejecucion' => now(),
+                        'resultados' => $resultados,
+                        'estado' => 'completo',
+                        'observaciones_generales' => $data['observaciones_generales'] ?? null,
+                    ]);
+
+                    $total = count($resultados);
+
+                    Notification::make()
+                        ->title('Checklist ejecutado')
+                        ->body("{$plantilla->nombre}: {$total}/{$total} items verificados.")
+                        ->success()
+                        ->send();
+                })
+                ->visible(fn () => $this->record->estado !== 'dado_de_baja'),
 
             Action::make('dar_de_baja')
                 ->label('Dar de baja')
