@@ -53,6 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->tenantMiddleware([
                 ApplyTenantBranding::class,
+                \App\Http\Middleware\EnsurePoliciesAccepted::class,
             ], isPersistent: true)
             ->renderHook('panels::head.end', function () {
                 $tenant = Filament::getTenant();
