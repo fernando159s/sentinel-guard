@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Equipos\Schemas;
 
+use App\Models\ChecklistEjecucion;
 use App\Models\Equipo;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
@@ -188,6 +189,59 @@ class EquipoForm
                                     . '</tr></thead><tbody>' . $rows . '</tbody></table>';
 
                                 return new HtmlString($currentHtml . $table);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (string $operation): bool => $operation === 'edit')
+                    ->collapsible(),
+
+                Section::make('Historial de checklists')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->description('Verificaciones de cumplimiento realizadas en este equipo.')
+                    ->schema([
+                        Placeholder::make('checklist_historial')
+                            ->label('')
+                            ->content(function ($record): HtmlString {
+                                if (! $record instanceof Equipo) {
+                                    return new HtmlString('<p class="text-sm text-gray-500">Guarda el equipo primero.</p>');
+                                }
+
+                                $ejecuciones = ChecklistEjecucion::where('equipo_id', $record->id)
+                                    ->with(['plantilla', 'ejecutor'])
+                                    ->orderBy('fecha_ejecucion', 'desc')
+                                    ->limit(10)
+                                    ->get();
+
+                                if ($ejecuciones->isEmpty()) {
+                                    return new HtmlString('<p class="text-sm text-gray-500">Sin checklists ejecutados. Usa el boton "Checklist" para ejecutar uno.</p>');
+                                }
+
+                                $rows = '';
+                                foreach ($ejecuciones as $e) {
+                                    $estadoColor = match ($e->estado) {
+                                        'completo' => 'success',
+                                        'con_observaciones' => 'warning',
+                                        default => 'gray',
+                                    };
+                                    $cumple = $e->itemsCumplen();
+                                    $total = $e->totalItems();
+                                    $rows .= '<tr class="border-b border-gray-100 dark:border-gray-800">'
+                                        . '<td class="py-2 px-2 text-xs text-gray-700 dark:text-gray-300">' . e($e->plantilla?->nombre ?? '—') . '</td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-500">' . $e->fecha_ejecucion->format('d/m/Y H:i') . '</td>'
+                                        . '<td class="py-2 px-2 text-xs"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-' . $estadoColor . '-100 text-' . $estadoColor . '-700 dark:bg-' . $estadoColor . '-500/20 dark:text-' . $estadoColor . '-400">' . $cumple . '/' . $total . '</span></td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-500">' . e($e->ejecutor?->name ?? '—') . '</td>'
+                                        . '</tr>';
+                                }
+
+                                return new HtmlString(
+                                    '<table class="w-full text-left">'
+                                    . '<thead><tr class="border-b border-gray-200 dark:border-gray-700">'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Checklist</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Fecha</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Resultado</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Ejecutado por</th>'
+                                    . '</tr></thead><tbody>' . $rows . '</tbody></table>'
+                                );
                             })
                             ->columnSpanFull(),
                     ])

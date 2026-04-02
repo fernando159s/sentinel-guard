@@ -71,6 +71,11 @@ class Equipo extends Model
         return $this->belongsToMany(Ticket::class, 'ticket_equipo');
     }
 
+    public function checklistEjecuciones(): HasMany
+    {
+        return $this->hasMany(ChecklistEjecucion::class, 'equipo_id');
+    }
+
     public function estaAsignado(): bool
     {
         return $this->asignacionVigente()->exists();
