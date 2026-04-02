@@ -2,13 +2,16 @@
 
 namespace App\Filament\Resources\Equipos\Schemas;
 
+use App\Models\Equipo;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
 
 class EquipoForm
 {
@@ -118,6 +121,78 @@ class EquipoForm
                     ])
                     ->collapsible()
                     ->collapsed(),
+
+                Section::make('Historial de asignaciones')
+                    ->icon('heroicon-o-clock')
+                    ->description('Registro de todas las asignaciones, transferencias y devoluciones.')
+                    ->schema([
+                        Placeholder::make('asignacion_actual')
+                            ->label('')
+                            ->content(function ($record): HtmlString {
+                                if (! $record instanceof Equipo) {
+                                    return new HtmlString('<p class="text-sm text-gray-500">Guarda el equipo primero para ver el historial.</p>');
+                                }
+
+                                $vigente = $record->asignacionVigente;
+                                $currentHtml = $vigente
+                                    ? '<div class="rounded-lg border border-success-200 bg-success-50 p-3 dark:border-success-800 dark:bg-success-950/50 mb-4">'
+                                      . '<p class="text-sm font-semibold text-success-700 dark:text-success-400">Asignado a: ' . e($vigente->user?->name ?? '—') . '</p>'
+                                      . '<p class="text-xs text-success-600 dark:text-success-500">Desde: ' . $vigente->fecha_inicio->format('d/m/Y H:i') . ' | Condicion: ' . e($vigente->condicion_entrega ?? '—') . '</p>'
+                                      . '</div>'
+                                    : '<div class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800 mb-4">'
+                                      . '<p class="text-sm text-gray-500 dark:text-gray-400">Sin asignar</p></div>';
+
+                                $asignaciones = $record->asignaciones()
+                                    ->with(['user', 'asignador'])
+                                    ->orderBy('created_at', 'desc')
+                                    ->get();
+
+                                if ($asignaciones->isEmpty()) {
+                                    return new HtmlString($currentHtml . '<p class="text-sm text-gray-500">Sin historial.</p>');
+                                }
+
+                                $rows = '';
+                                foreach ($asignaciones as $a) {
+                                    $tipoColor = match ($a->tipo) {
+                                        'asignacion' => 'success',
+                                        'transferencia' => 'warning',
+                                        'devolucion' => 'gray',
+                                        'baja' => 'danger',
+                                        default => 'gray',
+                                    };
+                                    $tipoLabel = match ($a->tipo) {
+                                        'asignacion' => 'Asignacion',
+                                        'transferencia' => 'Transferencia',
+                                        'devolucion' => 'Devolucion',
+                                        'baja' => 'Baja',
+                                        default => $a->tipo,
+                                    };
+                                    $rows .= '<tr class="border-b border-gray-100 dark:border-gray-800">'
+                                        . '<td class="py-2 px-2 text-xs"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-' . $tipoColor . '-100 text-' . $tipoColor . '-700 dark:bg-' . $tipoColor . '-500/20 dark:text-' . $tipoColor . '-400">' . $tipoLabel . '</span></td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-700 dark:text-gray-300">' . e($a->user?->name ?? '—') . '</td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-500">' . $a->fecha_inicio->format('d/m/Y H:i') . '</td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-500">' . ($a->fecha_fin?->format('d/m/Y H:i') ?? '—') . '</td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-500">' . e($a->condicion_entrega ?? '') . '</td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-500">' . e($a->asignador?->name ?? '—') . '</td>'
+                                        . '</tr>';
+                                }
+
+                                $table = '<table class="w-full text-left">'
+                                    . '<thead><tr class="border-b border-gray-200 dark:border-gray-700">'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Tipo</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Usuario</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Inicio</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Fin</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Condicion</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Realizado por</th>'
+                                    . '</tr></thead><tbody>' . $rows . '</tbody></table>';
+
+                                return new HtmlString($currentHtml . $table);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (string $operation): bool => $operation === 'edit')
+                    ->collapsible(),
             ]);
     }
 }
