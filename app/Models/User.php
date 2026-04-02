@@ -86,6 +86,18 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->hasMany(Ticket::class, 'asignado_a');
     }
 
+    public function equipoAsignaciones(): HasMany
+    {
+        return $this->hasMany(EquipoAsignacion::class, 'user_id');
+    }
+
+    public function equiposAsignados(): HasMany
+    {
+        return $this->hasMany(EquipoAsignacion::class, 'user_id')
+            ->whereNull('fecha_fin')
+            ->whereIn('tipo', ['asignacion', 'transferencia']);
+    }
+
     public function isActivo(): bool
     {
         return $this->estado === 'activo';

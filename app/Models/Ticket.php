@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToEmpresa;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
@@ -50,6 +51,11 @@ class Ticket extends Model
     public function mensajes(): HasMany
     {
         return $this->hasMany(TicketMensaje::class, 'ticket_id');
+    }
+
+    public function equipos(): BelongsToMany
+    {
+        return $this->belongsToMany(Equipo::class, 'ticket_equipo');
     }
 
     public function puedeReabrirse(): bool
