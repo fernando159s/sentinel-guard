@@ -1,30 +1,11 @@
 <x-filament-panels::page>
     <div class="mx-auto max-w-3xl space-y-6">
 
-        {{-- Selectors --}}
+        {{-- Selectors (Filament form) --}}
         <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
             <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Seleccionar equipo y checklist</h3>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Equipo</label>
-                    <select wire:model.live="equipo_id"
-                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
-                        <option value="">Seleccionar equipo...</option>
-                        @foreach ($this->equipos as $id => $nombre)
-                            <option value="{{ $id }}">{{ $nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Plantilla de checklist</label>
-                    <select wire:model.live="plantilla_id"
-                            class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
-                        <option value="">Seleccionar checklist...</option>
-                        @foreach ($this->plantillas as $id => $nombre)
-                            <option value="{{ $id }}">{{ $nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                {{ $this->selectorForm }}
             </div>
 
             @if ($equipo)
