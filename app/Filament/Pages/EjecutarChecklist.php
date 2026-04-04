@@ -6,18 +6,12 @@ use App\Models\ChecklistEjecucion;
 use App\Models\ChecklistPlantilla;
 use App\Models\Equipo;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Schemas\Schema;
 use Livewire\Attributes\Url;
 
-class EjecutarChecklist extends Page implements HasForms
+class EjecutarChecklist extends Page
 {
-    use InteractsWithForms;
-
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static bool $shouldRegisterNavigation = false;
@@ -29,9 +23,9 @@ class EjecutarChecklist extends Page implements HasForms
     protected string $view = 'filament.pages.ejecutar-checklist';
 
     #[Url]
-    public ?int $equipo_id = null;
+    public ?string $equipo_id = null;
 
-    public ?int $plantilla_id = null;
+    public ?string $plantilla_id = null;
 
     public ?Equipo $equipo = null;
 
@@ -41,52 +35,11 @@ class EjecutarChecklist extends Page implements HasForms
 
     public string $observaciones_generales = '';
 
-    public array $selectorData = [];
-
     public function mount(): void
     {
         if ($this->equipo_id) {
             $this->equipo = Equipo::find($this->equipo_id);
-            $this->selectorData['equipo_id'] = $this->equipo_id;
         }
-    }
-
-    public function selectorForm(Schema $schema): Schema
-    {
-        $empresaId = Filament::getTenant()?->id;
-
-        return $schema
-            ->statePath('selectorData')
-            ->components([
-                Select::make('equipo_id')
-                    ->label('Equipo')
-                    ->options(
-                        Equipo::where('empresa_id', $empresaId)
-                            ->where('estado', 'activo')
-                            ->get()
-                            ->mapWithKeys(fn ($e) => [$e->id => "{$e->codigo_interno} — {$e->marca} {$e->modelo}"])
-                    )
-                    ->default($this->equipo_id)
-                    ->searchable()
-                    ->live()
-                    ->afterStateUpdated(function ($state) {
-                        $this->equipo_id = $state;
-                        $this->equipo = $state ? Equipo::find($state) : null;
-                    }),
-                Select::make('plantilla_id')
-                    ->label('Plantilla de checklist')
-                    ->options(
-                        ChecklistPlantilla::where('empresa_id', $empresaId)
-                            ->where('activa', true)
-                            ->pluck('nombre', 'id')
-                    )
-                    ->searchable()
-                    ->live()
-                    ->afterStateUpdated(function ($state) {
-                        $this->plantilla_id = $state;
-                        $this->loadItems();
-                    }),
-            ]);
     }
 
     public function getPlantillasProperty(): array
@@ -117,15 +70,14 @@ class EjecutarChecklist extends Page implements HasForms
 
     public function updatedEquipoId(): void
     {
-        if ($this->equipo_id) {
-            $this->equipo = Equipo::find($this->equipo_id);
-        }
+        $this->equipo = $this->equipo_id ? Equipo::find($this->equipo_id) : null;
     }
 
     public function loadItems(): void
     {
         if (! $this->plantilla_id) {
             $this->items = [];
+            $this->plantilla = null;
 
             return;
         }
@@ -164,7 +116,6 @@ class EjecutarChecklist extends Page implements HasForms
             'observacion' => $item['observacion'] ?? '',
         ])->toArray();
 
-        // Calculate estado
         $obligatoriosFallidos = collect($this->items)
             ->where('obligatorio', true)
             ->where('cumple', false)
@@ -187,8 +138,7 @@ class EjecutarChecklist extends Page implements HasForms
 
         Notification::make()
             ->title('Checklist guardado')
-            ->body("{$this->plantilla->nombre}: {$cumple}/{$total} items cumplen. Estado: {$estado}")
-            ->color($estado === 'completo' ? 'success' : 'warning')
+            ->body("{$this->plantilla->nombre}: {$cumple}/{$total} items cumplen.")
             ->success()
             ->send();
 
