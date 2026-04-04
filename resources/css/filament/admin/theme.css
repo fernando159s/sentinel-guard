@@ -2,3 +2,52 @@
 
 @source '../../../../app/Filament/**/*.php';
 @source '../../../../resources/views/filament/**/*.blade.php';
+
+/* Sidebar refinements */
+.fi-sidebar {
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fi-sidebar-nav {
+    padding: 0.5rem;
+}
+
+.fi-sidebar-item a {
+    border-radius: 0.5rem;
+    transition: all 0.15s ease;
+}
+
+.fi-sidebar-group-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem 0.25rem;
+}
+
+/* Topbar refinements */
+.fi-topbar {
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Card refinements */
+.fi-section {
+    border-radius: 0.75rem;
+}
+
+/* Table row hover */
+.fi-ta-row:hover {
+    transition: background-color 0.15s ease;
+}
+
+/* Badge refinements */
+.fi-badge {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* Smooth page transitions */
+.fi-main {
+    transition: padding 0.2s ease;
+}
