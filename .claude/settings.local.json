@@ -1,28 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "mcp__linear__linear_getTeams",
-      "mcp__linear__linear_searchIssues",
-      "mcp__linear__linear_getOrganization",
-      "mcp__linear__linear_getViewer",
-      "mcp__linear__linear_getProjects",
-      "mcp__linear__linear_getCycles",
-      "mcp__linear__linear_getIssues",
-      "mcp__linear__linear_getWorkflowStates",
-      "mcp__linear__linear_getActiveCycle",
-      "mcp__linear__linear_getLabels",
-      "mcp__linear__linear_updateIssue",
-      "Bash(gh pr:*)",
-      "Bash(find /c/Users/Fernando/Repositories/sentinel-guard -type f -name .env*)",
-      "Bash(find /c/Users/Fernando/Repositories/sentinel-guard -type f -name *.md)",
-      "Bash(python -c \"import requests; print\\(''requests OK''\\)\")",
-      "Bash(/c/Users/Fernando/AppData/Local/Programs/Python/Python312/python.exe --version)",
-      "Read(//c/Users/Fernando/AppData/Local/Programs/Python//**)",
-      "Bash(ls /c/Python3*/python.exe)",
-      "Bash(where python:*)",
-      "Bash(export LINEAR_API_KEY=\"lin_api_o0AUviCPIS5qMvTlPDL0VQ9ODBWRAcXpjfkplWYF\")",
-      "Bash(/c/Users/Fernando/AppData/Local/Programs/Python/Python312/python.exe scripts/setup_linear.py)",
-      "Bash(export PYTHONIOENCODING=utf-8)"
+      "Bash(gh pr:*)"
     ]
   }
 }
