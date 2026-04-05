@@ -10,13 +10,13 @@ use Illuminate\Support\Carbon;
 
 class RegistrosPorTipoChart extends ChartWidget
 {
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 3;
 
     protected ?string $heading = 'Registros por formato';
 
     protected ?string $description = 'Ultimos 6 meses';
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 1;
 
     protected ?string $maxHeight = '300px';
 

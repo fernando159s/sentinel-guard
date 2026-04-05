@@ -8,11 +8,11 @@ use Filament\Widgets\ChartWidget;
 
 class TicketsTendenciaChart extends ChartWidget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 4;
 
     protected ?string $heading = 'Tendencia de tickets';
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 1;
 
     protected ?string $maxHeight = '250px';
 
