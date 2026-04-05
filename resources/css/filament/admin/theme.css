@@ -84,3 +84,18 @@
     padding: 0.6rem !important;
     justify-content: center;
 }
+
+/* Dashboard masonry layout */
+.fi-page-main > .fi-grid.lg\:fi-grid-cols {
+    display: block !important;
+    columns: 2;
+    column-gap: 1rem;
+}
+.fi-page-main > .fi-grid.lg\:fi-grid-cols > .fi-wi-widget {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+}
+/* Stats overview: always full width */
+.fi-page-main > .fi-grid.lg\:fi-grid-cols > .fi-wi-stats-overview {
+    column-span: all;
+}
