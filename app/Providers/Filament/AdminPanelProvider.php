@@ -34,16 +34,6 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->passwordReset()
             ->brandName('SecuriForm')
-            ->brandLogo(function () {
-                $tenant = Filament::getTenant();
-                if ($tenant?->logo_path) {
-                    $url = route('logos.show', $tenant->logo_path);
-
-                    return view('filament.brand-logo', ['url' => $url, 'name' => $tenant->nombre_portal ?? $tenant->razon_social]);
-                }
-
-                return null;
-            })
             ->favicon(null)
             ->profile(\App\Filament\Pages\Auth\EditProfile::class)
             ->tenant(Empresa::class, slugAttribute: 'ruc')
@@ -96,6 +86,7 @@ class AdminPanelProvider extends PanelProvider
             })
             ->renderHook(\Filament\View\PanelsRenderHook::TOPBAR_START, function () {
                 $user = auth()->user();
+                $tenant = Filament::getTenant();
                 if (! $user) {
                     return '';
                 }
@@ -107,11 +98,20 @@ class AdminPanelProvider extends PanelProvider
                     default => 'Buenas noches',
                 };
                 $nombre = e(explode(' ', $user->name)[0]);
+                $empresaNombre = e($tenant?->razon_social ?? 'SecuriForm');
+                $logoUrl = $tenant?->logo_path ? route('logos.show', $tenant->logo_path) : null;
+
+                $logoHtml = $logoUrl
+                    ? '<img src="' . e($logoUrl) . '" alt="" style="height:28px;width:28px;border-radius:6px;object-fit:cover;">'
+                    : '<div style="height:28px;width:28px;border-radius:6px;background:rgba(139,92,246,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#a78bfa;">' . mb_strtoupper(mb_substr($empresaNombre, 0, 2)) . '</div>';
 
                 return new \Illuminate\Support\HtmlString(
-                    '<div class="flex items-center gap-2 px-2">'
-                    . '<span class="text-sm text-gray-500 dark:text-gray-400">' . $saludo . ',</span>'
-                    . '<span class="text-sm font-semibold text-gray-900 dark:text-white">' . $nombre . '</span>'
+                    '<div style="display:flex;align-items:center;gap:10px;padding:0 8px;">'
+                    . $logoHtml
+                    . '<div>'
+                    . '<p style="font-size:13px;font-weight:600;color:white;line-height:1.2;margin:0;">' . $empresaNombre . '</p>'
+                    . '<p style="font-size:10px;color:#9ca3af;margin:0;">' . $saludo . ', ' . $nombre . '</p>'
+                    . '</div>'
                     . '</div>'
                 );
             })
