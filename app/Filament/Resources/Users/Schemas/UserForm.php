@@ -24,11 +24,12 @@ class UserForm
         $isSuperAdmin = auth()->user()?->hasRole('super_admin');
 
         return $schema
-            ->columns(1)
+            ->columns(2)
             ->components([
                 Section::make('Datos del usuario')
                     ->icon('heroicon-o-user')
                     ->columns(2)
+                    ->columnSpan(1)
                     ->schema([
                         TextInput::make('name')
                             ->label('Nombre completo')
@@ -61,6 +62,7 @@ class UserForm
                 Section::make('Rol y estado')
                     ->icon('heroicon-o-shield-check')
                     ->columns(2)
+                    ->columnSpan(1)
                     ->schema([
                         Select::make('rol')
                             ->label('Rol')
@@ -88,6 +90,7 @@ class UserForm
                 Section::make('Notificaciones')
                     ->icon('heroicon-o-bell')
                     ->columns(2)
+                    ->columnSpan(1)
                     ->schema([
                         Toggle::make('notif_tickets')->label('Notificaciones de tickets')->default(true),
                         Toggle::make('notif_incidencias')->label('Notificaciones de incidencias')->default(true),
@@ -99,6 +102,7 @@ class UserForm
                     ->icon('heroicon-o-computer-desktop')
                     ->visible(fn (string $operation): bool => $operation === 'edit')
                     ->collapsible()
+                    ->columnSpan(1)
                     ->schema([
                         Placeholder::make('equipo_info')
                             ->label('')
@@ -138,6 +142,7 @@ class UserForm
                     ->icon('heroicon-o-document-check')
                     ->visible(fn (string $operation): bool => $operation === 'edit')
                     ->collapsible()
+                    ->columnSpan(1)
                     ->schema([
                         Placeholder::make('politicas_info')
                             ->label('')
@@ -182,6 +187,7 @@ class UserForm
                     ->visible(fn (string $operation): bool => $operation === 'edit')
                     ->collapsible()
                     ->collapsed()
+                    ->columnSpan(1)
                     ->schema([
                         Placeholder::make('tickets_info')
                             ->label('')
@@ -232,6 +238,7 @@ class UserForm
                     ->visible(fn (string $operation): bool => $operation === 'edit')
                     ->collapsible()
                     ->collapsed()
+                    ->columnSpan(1)
                     ->schema([
                         Placeholder::make('registros_info')
                             ->label('')
