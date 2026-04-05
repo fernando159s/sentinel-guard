@@ -3,11 +3,40 @@
 @source '../../../../app/Filament/**/*.php';
 @source '../../../../resources/views/filament/**/*.blade.php';
 
-/* Minimal overrides — Shadcn theme handles the rest */
+/* Sidebar: compact + invisible scrollbar */
+.fi-sidebar-nav {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+.fi-sidebar-nav::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
 
+/* Sidebar group labels: compact uppercase */
 .fi-sidebar-group-label {
-    font-size: 0.65rem;
-    letter-spacing: 0.05em;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    font-weight: 600;
+    font-weight: 700;
+    padding: 0.5rem 0.5rem 0.15rem;
+}
+
+/* Sidebar items: tighter spacing */
+.fi-sidebar-item {
+    margin-bottom: -2px;
+}
+.fi-sidebar-item a {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    font-size: 0.8125rem;
+}
+
+/* Sidebar header: compact */
+.fi-sidebar-header {
+    padding: 0.5rem 0.75rem;
+}
+
+/* Hide tenant selector text in sidebar, keep only in topbar */
+.fi-sidebar .fi-tenant-menu-trigger span {
+    font-size: 0.75rem;
 }

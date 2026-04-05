@@ -57,7 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Inter')
             ->sidebarCollapsibleOnDesktop()
-            ->sidebarWidth('16rem')
+            ->sidebarWidth('14rem')
             ->collapsedSidebarWidth('4.5rem')
             ->navigationGroups([
                 NavigationGroup::make('Soporte')->collapsible(),
@@ -93,6 +93,27 @@ class AdminPanelProvider extends PanelProvider
                 }
 
                 return new \Illuminate\Support\HtmlString($css);
+            })
+            ->renderHook(\Filament\View\PanelsRenderHook::TOPBAR_START, function () {
+                $user = auth()->user();
+                if (! $user) {
+                    return '';
+                }
+
+                $hora = now()->hour;
+                $saludo = match (true) {
+                    $hora < 12 => 'Buenos dias',
+                    $hora < 18 => 'Buenas tardes',
+                    default => 'Buenas noches',
+                };
+                $nombre = e(explode(' ', $user->name)[0]);
+
+                return new \Illuminate\Support\HtmlString(
+                    '<div class="flex items-center gap-2 px-2">'
+                    . '<span class="text-sm text-gray-500 dark:text-gray-400">' . $saludo . ',</span>'
+                    . '<span class="text-sm font-semibold text-gray-900 dark:text-white">' . $nombre . '</span>'
+                    . '</div>'
+                );
             })
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
