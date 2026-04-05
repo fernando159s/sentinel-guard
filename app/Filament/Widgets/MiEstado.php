@@ -15,6 +15,11 @@ class MiEstado extends Widget
 
     protected int|string|array $columnSpan = 1;
 
+    public static function canView(): bool
+    {
+        return ! auth()->user()?->hasRole(['super_admin', 'admin_empresa']);
+    }
+
     public function getData(): array
     {
         $user = auth()->user();
