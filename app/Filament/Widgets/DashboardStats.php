@@ -14,6 +14,11 @@ class DashboardStats extends BaseWidget
 {
     protected static ?int $sort = 0;
 
+    protected function getColumns(): int
+    {
+        return 6;
+    }
+
     protected function getStats(): array
     {
         $empresa = Filament::getTenant();
