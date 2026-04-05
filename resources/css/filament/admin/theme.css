@@ -31,12 +31,9 @@
     font-size: 0.8125rem;
 }
 
-/* Sidebar header: compact */
-.fi-sidebar-header {
-    padding: 0.5rem 0.75rem;
-}
-
-/* Hide tenant selector text in sidebar, keep only in topbar */
-.fi-sidebar .fi-tenant-menu-trigger span {
-    font-size: 0.75rem;
+/* Hide tenant selector from sidebar — moved to navbar */
+.fi-sidebar-header-ctn,
+.fi-sidebar .fi-tenant-menu-trigger,
+.fi-sidebar .fi-dropdown:has(.fi-tenant-menu-trigger) {
+    display: none !important;
 }
