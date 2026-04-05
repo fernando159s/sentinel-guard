@@ -33,7 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->passwordReset()
-            ->brandName('SecuriForm')
+            ->brandName('')
             ->favicon(null)
             ->profile(\App\Filament\Pages\Auth\EditProfile::class)
             ->tenant(Empresa::class, slugAttribute: 'ruc')
@@ -92,13 +92,8 @@ class AdminPanelProvider extends PanelProvider
                     return '';
                 }
 
-                $hora = now()->hour;
-                $saludo = match (true) {
-                    $hora < 12 => 'Buenos dias',
-                    $hora < 18 => 'Buenas tardes',
-                    default => 'Buenas noches',
-                };
-                $nombre = e(explode(' ', $user->name)[0]);
+                $fecha = now()->translatedFormat('D, d M Y');
+                $hora = now()->format('H:i');
                 $empresaNombre = e($tenant?->razon_social ?? 'SecuriForm');
                 $logoUrl = $tenant?->logo_path ? route('logos.show', $tenant->logo_path) : null;
 
@@ -107,11 +102,36 @@ class AdminPanelProvider extends PanelProvider
                     : '<div style="height:28px;width:28px;border-radius:6px;background:rgba(139,92,246,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#a78bfa;">' . mb_strtoupper(mb_substr($empresaNombre, 0, 2)) . '</div>';
 
                 return new \Illuminate\Support\HtmlString(
-                    '<div style="display:flex;align-items:center;gap:10px;padding:0 8px;">'
+                    '<div style="display:flex;align-items:center;gap:12px;padding:0 8px;">'
                     . $logoHtml
                     . '<div>'
                     . '<p style="font-size:13px;font-weight:600;color:white;line-height:1.2;margin:0;">' . $empresaNombre . '</p>'
-                    . '<p style="font-size:10px;color:#9ca3af;margin:0;">' . $saludo . ', ' . $nombre . '</p>'
+                    . '<p style="font-size:10px;color:#9ca3af;margin:0;">' . $fecha . ' · ' . $hora . '</p>'
+                    . '</div>'
+                    . '</div>'
+                );
+            })
+            ->renderHook(\Filament\View\PanelsRenderHook::TOPBAR_END, function () {
+                $user = auth()->user();
+                if (! $user) {
+                    return '';
+                }
+
+                $nombre = e($user->name);
+                $rol = e($user->roles->first()?->name ?? 'usuario');
+                $rolLabel = match ($rol) {
+                    'super_admin' => 'Super Admin',
+                    'admin_empresa' => 'Admin Empresa',
+                    'agente_helpdesk' => 'Agente Helpdesk',
+                    'solo_lectura' => 'Solo Lectura',
+                    default => 'Usuario',
+                };
+
+                return new \Illuminate\Support\HtmlString(
+                    '<div style="display:flex;align-items:center;gap:8px;padding:0 8px;">'
+                    . '<div style="text-align:right;">'
+                    . '<p style="font-size:12px;font-weight:600;color:white;line-height:1.2;margin:0;">' . $nombre . '</p>'
+                    . '<p style="font-size:10px;color:#a78bfa;margin:0;font-weight:500;">' . $rolLabel . '</p>'
                     . '</div>'
                     . '</div>'
                 );
