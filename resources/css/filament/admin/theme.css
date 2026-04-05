@@ -3,37 +3,70 @@
 @source '../../../../app/Filament/**/*.php';
 @source '../../../../resources/views/filament/**/*.blade.php';
 
-/* Sidebar: compact + invisible scrollbar */
+/* Sidebar: invisible scrollbar */
 .fi-sidebar-nav {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0.25rem 0.4rem !important;
 }
 .fi-sidebar-nav::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
+    display: none;
 }
 
-/* Sidebar group labels: compact uppercase */
-.fi-sidebar-group-label {
-    font-size: 0.6rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-weight: 700;
-    padding: 0.5rem 0.5rem 0.15rem;
-}
-
-/* Sidebar items: tighter spacing */
-.fi-sidebar-item {
-    margin-bottom: -2px;
-}
-.fi-sidebar-item a {
-    padding-top: 0.35rem;
-    padding-bottom: 0.35rem;
-    font-size: 0.8125rem;
-}
-
-/* Hide tenant selector from sidebar — moved to navbar */
+/* Hide tenant selector from sidebar */
 .fi-sidebar-header-ctn,
 .fi-sidebar .fi-tenant-menu-trigger,
 .fi-sidebar .fi-dropdown:has(.fi-tenant-menu-trigger) {
     display: none !important;
+}
+
+/* Groups: tight labels */
+.fi-sidebar-group {
+    margin-bottom: 0.1rem !important;
+}
+.fi-sidebar-group-label {
+    font-size: 0.55rem !important;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    opacity: 0.5;
+    padding: 0.4rem 0.5rem 0.1rem !important;
+    margin: 0 !important;
+}
+.fi-sidebar-group-items {
+    margin-top: 0 !important;
+    gap: 0 !important;
+}
+
+/* Items: ultra compact */
+.fi-sidebar-item {
+    margin: 0 !important;
+}
+.fi-sidebar-item a,
+.fi-sidebar-item button {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    gap: 0.5rem !important;
+    border-radius: 0.375rem;
+    min-height: unset !important;
+}
+.fi-sidebar-item-icon {
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+/* Active item */
+.fi-sidebar-item.fi-active a {
+    font-weight: 600;
+}
+
+/* Collapse toggle: smaller */
+.fi-sidebar-group-collapse-button {
+    padding: 0 !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+.fi-sidebar-group-collapse-button svg {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
 }
