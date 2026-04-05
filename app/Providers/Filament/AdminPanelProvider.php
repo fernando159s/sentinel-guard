@@ -15,7 +15,7 @@ use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
+use Openplain\FilamentShadcnTheme\Color as ShadcnColor;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -49,34 +49,22 @@ class AdminPanelProvider extends PanelProvider
             ->tenant(Empresa::class, slugAttribute: 'ruc')
             ->tenantRegistration(false)
             ->colors([
-                'primary' => Color::Indigo,
-                'danger' => Color::Rose,
-                'info' => Color::Sky,
-                'success' => Color::Emerald,
-                'warning' => Color::Amber,
+                'primary' => ShadcnColor::Violet,
+                'danger' => ShadcnColor::Red,
+                'info' => ShadcnColor::Blue,
+                'success' => ShadcnColor::Green,
+                'warning' => ShadcnColor::Orange,
             ])
             ->font('Inter')
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('16rem')
             ->collapsedSidebarWidth('4.5rem')
             ->navigationGroups([
-                NavigationGroup::make('Soporte')
-                    ->icon('heroicon-o-lifebuoy')
-                    ->collapsible(),
-                NavigationGroup::make('Reportes')
-                    ->icon('heroicon-o-chart-bar')
-                    ->collapsible()
-                    ->collapsed(),
-                NavigationGroup::make('Activos')
-                    ->icon('heroicon-o-computer-desktop')
-                    ->collapsible(),
-                NavigationGroup::make('Seguridad')
-                    ->icon('heroicon-o-shield-check')
-                    ->collapsible(),
-                NavigationGroup::make('Administración')
-                    ->icon('heroicon-o-cog-6-tooth')
-                    ->collapsible()
-                    ->collapsed(),
+                NavigationGroup::make('Soporte')->collapsible(),
+                NavigationGroup::make('Reportes')->collapsible()->collapsed(),
+                NavigationGroup::make('Activos')->collapsible(),
+                NavigationGroup::make('Seguridad')->collapsible(),
+                NavigationGroup::make('Administración')->collapsible()->collapsed(),
             ])
             ->globalSearch(true)
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
