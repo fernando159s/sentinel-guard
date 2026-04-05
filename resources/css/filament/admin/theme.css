@@ -3,11 +3,14 @@
 @source '../../../../app/Filament/**/*.php';
 @source '../../../../resources/views/filament/**/*.blade.php';
 
-/* Sidebar: invisible scrollbar */
+/* Sidebar: invisible scrollbar + kill group gap */
 .fi-sidebar-nav {
     scrollbar-width: none;
     -ms-overflow-style: none;
     padding: 0.25rem 0.4rem !important;
+}
+.fi-sidebar-nav > ul {
+    gap: 0.25rem !important;
 }
 .fi-sidebar-nav::-webkit-scrollbar {
     display: none;
