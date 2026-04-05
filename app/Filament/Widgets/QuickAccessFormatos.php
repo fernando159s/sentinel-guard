@@ -9,11 +9,11 @@ use Filament\Widgets\Widget;
 
 class QuickAccessFormatos extends Widget
 {
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 7;
 
     protected string $view = 'filament.widgets.quick-access-formatos';
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 1;
 
     public function getFormatos(): array
     {

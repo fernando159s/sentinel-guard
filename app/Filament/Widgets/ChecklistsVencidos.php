@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ChecklistsVencidos extends BaseWidget
 {
-    protected static ?int $sort = 7;
+    protected static ?int $sort = 9;
 
     protected int|string|array $columnSpan = 'full';
 

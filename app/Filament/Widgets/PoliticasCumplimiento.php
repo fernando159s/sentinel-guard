@@ -9,11 +9,11 @@ use Filament\Widgets\Widget;
 
 class PoliticasCumplimiento extends Widget
 {
-    protected static ?int $sort = 6;
+    protected static ?int $sort = 8;
 
     protected string $view = 'filament.widgets.politicas-cumplimiento';
 
-    protected int|string|array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 1;
 
     public static function canView(): bool
     {
