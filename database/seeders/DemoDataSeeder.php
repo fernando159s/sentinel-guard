@@ -117,6 +117,42 @@ class DemoDataSeeder extends Seeder
             $count++;
         }
 
+        // Periféricos extra asignados a algunos usuarios
+        $perifericos = [
+            ['marca' => 'Sony', 'modelo' => 'WH-1000XM5', 'tipo' => 'otro', 'codigo' => 'EQ-PER-001', 'ubicacion' => 'Oficina principal - Piso 1', 'user_idx' => 0],
+            ['marca' => 'Logitech', 'modelo' => 'MX Master 3S', 'tipo' => 'otro', 'codigo' => 'EQ-PER-002', 'ubicacion' => 'Oficina principal - Piso 2', 'user_idx' => 1],
+            ['marca' => 'Jabra', 'modelo' => 'Evolve2 75', 'tipo' => 'otro', 'codigo' => 'EQ-PER-003', 'ubicacion' => 'Oficina principal - Piso 1', 'user_idx' => 2],
+        ];
+
+        foreach ($perifericos as $p) {
+            $eq = Equipo::firstOrCreate(
+                ['empresa_id' => $this->empresaId, 'codigo_interno' => $p['codigo']],
+                [
+                    'tipo' => $p['tipo'],
+                    'marca' => $p['marca'],
+                    'modelo' => $p['modelo'],
+                    'numero_serie' => 'SN-PAL-' . strtoupper(substr(md5($p['codigo']), 0, 8)),
+                    'estado' => 'activo',
+                    'ubicacion' => $p['ubicacion'],
+                    'nivel_sensibilidad' => 'publico',
+                    'fecha_adquisicion' => now()->subMonths(rand(3, 12))->toDateString(),
+                ]
+            );
+            if (isset($usuarios[$p['user_idx']])) {
+                EquipoAsignacion::firstOrCreate(
+                    ['equipo_id' => $eq->id, 'user_id' => $usuarios[$p['user_idx']], 'fecha_fin' => null],
+                    [
+                        'tipo' => 'asignacion',
+                        'fecha_inicio' => now()->subMonths(rand(1, 3)),
+                        'condicion_entrega' => 'bueno',
+                        'asignado_por' => $adminId,
+                        'notas' => 'Periferico asignado',
+                    ]
+                );
+            }
+            $count++;
+        }
+
         $this->command->info("  + {$count} equipos creados y asignados");
     }
 

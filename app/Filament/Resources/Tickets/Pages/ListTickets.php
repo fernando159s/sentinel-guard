@@ -10,6 +10,13 @@ class ListTickets extends ListRecords
 {
     protected static string $resource = TicketResource::class;
 
+    public function getTitle(): string
+    {
+        return auth()->user()?->hasRole(['usuario', 'solo_lectura'])
+            ? 'Mis Tickets'
+            : 'Tickets';
+    }
+
     protected function getHeaderActions(): array
     {
         return [
