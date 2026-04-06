@@ -45,18 +45,18 @@ class FormatoFieldsService
                 ->options(['conforme' => 'Conforme', 'no_conforme' => 'No conforme', 'con_observaciones' => 'Con observaciones'])->required(),
             Select::make('datos.acciones_correctivas')->label('Acciones correctivas')
                 ->options(['si' => 'Si', 'no' => 'No'])->required(),
-            Textarea::make('datos.observaciones')->label('Observaciones')->rows(3)->columnSpanFull(),
+            Textarea::make('datos.observaciones')->label('Observaciones')->rows(4)->columnSpanFull(),
         ];
     }
 
     private static function f02(): array
     {
         return [
-            TextInput::make('datos.nombre_bd')->label('Nombre del banco de datos')->required()->columnSpanFull(),
+            TextInput::make('datos.nombre_bd')->label('Nombre del banco de datos')->required(),
             TextInput::make('datos.codigo_registro')->label('Codigo / Registro'),
             Select::make('datos.categoria')->label('Categoria / Nivel')
                 ->options(['publica' => 'Publica', 'interna' => 'Interna', 'confidencial' => 'Confidencial', 'sensible' => 'Sensible'])->required(),
-            Textarea::make('datos.descripcion')->label('Descripcion')->rows(3)->required()->columnSpanFull(),
+            Textarea::make('datos.descripcion')->label('Descripcion')->rows(4)->required()->columnSpanFull(),
             TagsInput::make('datos.areas_acceso')->label('Unidades / Areas con acceso')->columnSpanFull(),
         ];
     }
@@ -64,25 +64,25 @@ class FormatoFieldsService
     private static function f03(): array
     {
         return [
-            TextInput::make('datos.prestador')->label('Prestador del servicio')->required()->columnSpanFull(),
-            Textarea::make('datos.finalidad')->label('Finalidad')->rows(2)->required()->columnSpanFull(),
-            TagsInput::make('datos.datos_facilitados')->label('Datos facilitados (tipo)')->columnSpanFull(),
+            TextInput::make('datos.prestador')->label('Prestador del servicio')->required(),
             DatePicker::make('datos.fecha_contrato')->label('Fecha de contrato'),
             DatePicker::make('datos.vigencia')->label('Vigencia'),
-            Textarea::make('datos.observaciones')->label('Observaciones')->rows(3)->columnSpanFull(),
+            Textarea::make('datos.finalidad')->label('Finalidad')->rows(4)->required()->columnSpanFull(),
+            TagsInput::make('datos.datos_facilitados')->label('Datos facilitados (tipo)')->columnSpanFull(),
+            Textarea::make('datos.observaciones')->label('Observaciones')->rows(4)->columnSpanFull(),
         ];
     }
 
     private static function f04(): array
     {
         return [
-            TextInput::make('datos.nombre')->label('Nombre')->required()->columnSpanFull(),
-            Textarea::make('datos.descripcion')->label('Descripcion')->rows(3)->required()->columnSpanFull(),
+            TextInput::make('datos.nombre')->label('Nombre')->required(),
             Select::make('datos.ubicacion_tipo')->label('Ubicacion tipo')
                 ->options(['fisica' => 'Fisica', 'digital' => 'Digital', 'mixta' => 'Mixta'])->required(),
-            TextInput::make('datos.ubicacion_detalle')->label('Ubicacion detalle'),
             Select::make('datos.categoria')->label('Categoria / Nivel')
                 ->options(['publica' => 'Publica', 'interna' => 'Interna', 'confidencial' => 'Confidencial', 'sensible' => 'Sensible'])->required(),
+            TextInput::make('datos.ubicacion_detalle')->label('Ubicacion detalle')->columnSpanFull(),
+            Textarea::make('datos.descripcion')->label('Descripcion')->rows(4)->required()->columnSpanFull(),
             TagsInput::make('datos.areas_acceso')->label('Usuarios / Areas con acceso')->columnSpanFull(),
         ];
     }
@@ -92,17 +92,17 @@ class FormatoFieldsService
         return [
             TextInput::make('datos.usuario')->label('Usuario')->required(),
             TextInput::make('datos.banco_datos')->label('Banco de datos')->required(),
-            DateTimePicker::make('datos.fecha_asignacion')->label('Fecha y hora de asignacion')->required()->columnSpanFull(),
+            DateTimePicker::make('datos.fecha_asignacion')->label('Fecha y hora de asignacion')->required(),
         ];
     }
 
     private static function f06(): array
     {
         return [
-            TextInput::make('datos.persona_accede')->label('Persona que accede')->required()->columnSpanFull(),
-            Textarea::make('datos.descripcion_soporte')->label('Descripcion del soporte')->rows(3)->required()->columnSpanFull(),
+            TextInput::make('datos.persona_accede')->label('Persona que accede')->required(),
             DatePicker::make('datos.fecha_acceso')->label('Fecha de acceso')->required(),
             TimePicker::make('datos.hora_acceso')->label('Hora de acceso')->required(),
+            Textarea::make('datos.descripcion_soporte')->label('Descripcion del soporte')->rows(4)->required()->columnSpanFull(),
         ];
     }
 
@@ -116,8 +116,8 @@ class FormatoFieldsService
                     'dvd' => 'DVD', 'expediente_fisico' => 'Expediente fisico', 'otro' => 'Otro',
                 ])->required(),
             TextInput::make('datos.ubicacion')->label('Ubicacion')->required(),
-            Textarea::make('datos.contenido')->label('Contenido')->rows(3)->required()->columnSpanFull(),
             DatePicker::make('datos.fecha_inventariado')->label('Fecha de inventariado')->required(),
+            Textarea::make('datos.contenido')->label('Contenido')->rows(4)->required()->columnSpanFull(),
         ];
     }
 
@@ -132,14 +132,14 @@ class FormatoFieldsService
             Select::make('datos.estado_soporte')->label('Estado del soporte')
                 ->options(['bueno' => 'Bueno', 'regular' => 'Regular', 'malo' => 'Malo'])->required(),
             TextInput::make('datos.banco_datos')->label('Banco de datos'),
-            Textarea::make('datos.contenido')->label('Contenido')->rows(2)->columnSpanFull(),
             TextInput::make('datos.origen_remitente')->label('Origen / Remitente'),
             TextInput::make('datos.destinatario')->label('Destinatario'),
-            Textarea::make('datos.finalidad')->label('Finalidad')->rows(2)->columnSpanFull(),
             TextInput::make('datos.medio_transporte')->label('Medio de transporte'),
+            Textarea::make('datos.contenido')->label('Contenido')->rows(4)->columnSpanFull(),
+            Textarea::make('datos.finalidad')->label('Finalidad')->rows(4)->columnSpanFull(),
             TextInput::make('datos.autoriza')->label('Autoriza'),
             TextInput::make('datos.recibe')->label('Recibe'),
-            Textarea::make('datos.precauciones')->label('Precauciones')->rows(2)->columnSpanFull(),
+            Textarea::make('datos.precauciones')->label('Precauciones')->rows(4)->columnSpanFull(),
         ];
     }
 
@@ -153,14 +153,14 @@ class FormatoFieldsService
                     'fuga_informacion' => 'Fuga de informacion', 'malware' => 'Malware/Virus',
                     'fallo_sistema' => 'Fallo de sistema', 'otro' => 'Otro',
                 ])->required(),
-            TextInput::make('datos.sistema_equipo')->label('Sistema / Equipo / Lugar'),
-            TextInput::make('datos.banco_datos')->label('Banco de datos'),
-            RichEditor::make('datos.descripcion')->label('Descripcion')->required()->columnSpanFull(),
-            Textarea::make('datos.medidas_inmediatas')->label('Medidas inmediatas')->rows(3)->columnSpanFull(),
-            TagsInput::make('datos.personas_notificadas')->label('Personas notificadas'),
             Select::make('datos.severidad')->label('Severidad')
                 ->options(['alta' => 'Alta', 'media' => 'Media', 'baja' => 'Baja'])->required(),
-            Textarea::make('datos.impacto_potencial')->label('Impacto potencial')->rows(2)->columnSpanFull(),
+            TextInput::make('datos.sistema_equipo')->label('Sistema / Equipo / Lugar'),
+            TextInput::make('datos.banco_datos')->label('Banco de datos'),
+            TagsInput::make('datos.personas_notificadas')->label('Personas notificadas'),
+            RichEditor::make('datos.descripcion')->label('Descripcion')->required()->columnSpanFull(),
+            Textarea::make('datos.medidas_inmediatas')->label('Medidas inmediatas')->rows(4)->columnSpanFull(),
+            Textarea::make('datos.impacto_potencial')->label('Impacto potencial')->rows(4)->columnSpanFull(),
             TextInput::make('datos.comunica_nombre')->label('Comunica (nombre y cargo)')->columnSpanFull(),
         ];
     }
@@ -172,12 +172,12 @@ class FormatoFieldsService
             DateTimePicker::make('datos.fecha_cierre')->label('Fecha / Hora de cierre')->required(),
             Select::make('datos.clasificacion')->label('Clasificacion')
                 ->options(['baja' => 'Baja', 'media' => 'Media', 'alta' => 'Alta'])->required(),
-            Toggle::make('datos.requirio_recuperacion')->label('Requirio recuperacion'),
-            Textarea::make('datos.medidas_adoptadas')->label('Medidas adoptadas')->rows(3)->required()->columnSpanFull(),
-            Textarea::make('datos.resultado_verificacion')->label('Resultado / Verificacion')->rows(3)->columnSpanFull(),
             TextInput::make('datos.ejecuto')->label('Ejecuto (nombre y cargo)'),
             TextInput::make('datos.firma_responsable')->label('Firma responsable de seguridad'),
-            Textarea::make('datos.acciones_preventivas')->label('Acciones preventivas')->rows(3)->columnSpanFull(),
+            Toggle::make('datos.requirio_recuperacion')->label('Requirio recuperacion'),
+            Textarea::make('datos.medidas_adoptadas')->label('Medidas adoptadas')->rows(4)->required()->columnSpanFull(),
+            Textarea::make('datos.resultado_verificacion')->label('Resultado / Verificacion')->rows(4)->columnSpanFull(),
+            Textarea::make('datos.acciones_preventivas')->label('Acciones preventivas')->rows(4)->columnSpanFull(),
         ];
     }
 
@@ -186,32 +186,31 @@ class FormatoFieldsService
         return [
             TextInput::make('datos.incidencia_relacionada')->label('Incidencia relacionada'),
             DateTimePicker::make('datos.fecha_realizacion')->label('Fecha / Hora de realizacion')->required(),
-            Toggle::make('datos.autorizacion_escrita')->label('Autorizacion por escrito'),
             TextInput::make('datos.responsable_bd')->label('Responsable BD que autoriza'),
-            Textarea::make('datos.proceso_realizado')->label('Proceso realizado')->rows(3)->required()->columnSpanFull(),
-            TextInput::make('datos.persona_ejecutora')->label('Persona ejecutora')->columnSpanFull(),
-            Textarea::make('datos.observaciones')->label('Observaciones')->rows(3)->columnSpanFull(),
+            TextInput::make('datos.persona_ejecutora')->label('Persona ejecutora'),
+            Toggle::make('datos.autorizacion_escrita')->label('Autorizacion por escrito'),
+            Textarea::make('datos.proceso_realizado')->label('Proceso realizado')->rows(4)->required()->columnSpanFull(),
+            Textarea::make('datos.observaciones')->label('Observaciones')->rows(4)->columnSpanFull(),
         ];
     }
 
     private static function f12(): array
     {
         return [
-            TextInput::make('datos.nombre_backup')->label('Nombre del backup')->required()->columnSpanFull(),
-            Textarea::make('datos.descripcion_contenido')->label('Descripcion del contenido')->rows(3)->required()->columnSpanFull(),
+            TextInput::make('datos.nombre_backup')->label('Nombre del backup')->required(),
             DatePicker::make('datos.fecha_copia')->label('Fecha de copia')->required(),
             Select::make('datos.periodicidad')->label('Periodicidad')
                 ->options([
                     'diaria' => 'Diaria', 'semanal' => 'Semanal', 'quincenal' => 'Quincenal',
                     'mensual' => 'Mensual', 'trimestral' => 'Trimestral', 'puntual' => 'Puntual',
                 ])->required(),
+            Textarea::make('datos.descripcion_contenido')->label('Descripcion del contenido')->rows(4)->required()->columnSpanFull(),
         ];
     }
 
     private static function f13(): array
     {
         return [
-            Textarea::make('datos.descripcion_activo')->label('Descripcion del activo')->rows(3)->required()->columnSpanFull(),
             DatePicker::make('datos.fecha_destruccion')->label('Fecha de destruccion')->required(),
             Select::make('datos.metodo')->label('Metodo de destruccion')
                 ->options([
@@ -219,9 +218,10 @@ class FormatoFieldsService
                     'desmagnetizacion' => 'Desmagnetizacion', 'incineracion' => 'Incineracion',
                     'trituracion' => 'Trituracion', 'proveedor_certificado' => 'Proveedor certificado',
                 ])->required(),
+            DatePicker::make('datos.proxima_revision')->label('Proxima revision'),
             TextInput::make('datos.responsable')->label('Responsable')->required(),
             TextInput::make('datos.autoriza')->label('Autoriza')->required(),
-            DatePicker::make('datos.proxima_revision')->label('Proxima revision'),
+            Textarea::make('datos.descripcion_activo')->label('Descripcion del activo')->rows(4)->required()->columnSpanFull(),
         ];
     }
 }
