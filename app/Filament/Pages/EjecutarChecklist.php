@@ -16,6 +16,11 @@ class EjecutarChecklist extends Page
 
     protected static bool $shouldRegisterNavigation = false;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+    }
+
     protected static ?string $title = 'Ejecutar checklist';
 
     protected static ?string $slug = 'ejecutar-checklist';

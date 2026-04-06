@@ -30,6 +30,11 @@ class EquipoResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return EquipoForm::configure($schema);

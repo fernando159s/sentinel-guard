@@ -16,6 +16,11 @@ class ReporteIncidencias extends Page implements HasForms
 {
     use InteractsWithForms;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa', 'agente_helpdesk']) ?? false;
+    }
+
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Reportes';
