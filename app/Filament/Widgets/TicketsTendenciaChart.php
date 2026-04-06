@@ -18,6 +18,11 @@ class TicketsTendenciaChart extends ChartWidget
 
     public ?string $filter = '30';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa', 'agente_helpdesk']) ?? false;
+    }
+
     protected function getType(): string
     {
         return 'line';

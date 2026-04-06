@@ -22,6 +22,11 @@ class RegistrosPorTipoChart extends ChartWidget
 
     public ?string $filter = '6';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+    }
+
     protected function getType(): string
     {
         return 'bar';

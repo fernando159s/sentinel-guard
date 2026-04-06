@@ -15,6 +15,11 @@ class QuickAccessFormatos extends Widget
 
     protected int|string|array $columnSpan = 1;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+    }
+
     public function getFormatos(): array
     {
         $empresa = Filament::getTenant();

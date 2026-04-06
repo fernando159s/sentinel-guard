@@ -17,6 +17,11 @@ class LatestRegistros extends BaseWidget
 
     protected static ?string $heading = 'Ultimos registros';
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+    }
+
     public function table(Table $table): Table
     {
         $empresa = Filament::getTenant();

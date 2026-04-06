@@ -14,6 +14,11 @@ class DashboardStats extends BaseWidget
 {
     protected static ?int $sort = 0;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa', 'agente_helpdesk']) ?? false;
+    }
+
     protected function getColumns(): int
     {
         return 6;
