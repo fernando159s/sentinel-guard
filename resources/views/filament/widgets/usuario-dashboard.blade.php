@@ -1,7 +1,7 @@
 @php $d = $this->getData(); @endphp
 
 <x-filament-widgets::widget>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div style="column-span:all; display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%;">
 
         {{-- LEFT COL --}}
         <div style="display:flex; flex-direction:column; gap:16px;">
