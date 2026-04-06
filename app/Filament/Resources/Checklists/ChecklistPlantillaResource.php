@@ -42,6 +42,7 @@ class ChecklistPlantillaResource extends Resource
                 Section::make('Informacion del checklist')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->description('Define el nombre, periodicidad y los items que se verificaran en cada equipo.')
+                    ->columnSpanFull()
                     ->schema([
                         TextInput::make('nombre')
                             ->label('Nombre de la plantilla')
@@ -73,6 +74,7 @@ class ChecklistPlantillaResource extends Resource
                 Section::make('Items a verificar')
                     ->icon('heroicon-o-list-bullet')
                     ->description('Agrega los puntos que se deben revisar. Los items obligatorios determinan si el checklist pasa o falla.')
+                    ->columnSpanFull()
                     ->schema([
                         Repeater::make('items')
                             ->label('')
