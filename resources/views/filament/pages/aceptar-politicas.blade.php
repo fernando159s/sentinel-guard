@@ -49,51 +49,91 @@
                             canvas: null,
                             ctx: null,
                             drawing: false,
+                            paths: [],
+                            currentPath: [],
+                            neonColor: '#00ff88',
                             init() {
                                 this.canvas = this.$refs.signaturePad;
                                 this.ctx = this.canvas.getContext('2d');
-                                this.ctx.strokeStyle = '#1a1a1a';
-                                this.ctx.lineWidth = 2;
-                                this.ctx.lineCap = 'round';
+                                this.setupCtx();
 
-                                // Check saved signature
                                 const saved = @js($firmaDataUrl);
                                 if (saved) {
                                     const img = new Image();
-                                    img.onload = () => this.ctx.drawImage(img, 0, 0);
+                                    img.onload = () => { this.ctx.drawImage(img, 0, 0); };
                                     img.src = saved;
                                 }
                             },
+                            setupCtx() {
+                                this.ctx.strokeStyle = this.neonColor;
+                                this.ctx.lineWidth = 3;
+                                this.ctx.lineCap = 'round';
+                                this.ctx.lineJoin = 'round';
+                                this.ctx.shadowColor = this.neonColor;
+                                this.ctx.shadowBlur = 6;
+                            },
+                            getPos(e) {
+                                const rect = this.canvas.getBoundingClientRect();
+                                const scaleX = this.canvas.width / rect.width;
+                                const scaleY = this.canvas.height / rect.height;
+                                const cx = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+                                const cy = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+                                return { x: cx * scaleX, y: cy * scaleY };
+                            },
                             startDraw(e) {
                                 this.drawing = true;
-                                const rect = this.canvas.getBoundingClientRect();
-                                const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-                                const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+                                this.currentPath = [];
+                                const p = this.getPos(e);
+                                this.currentPath.push(p);
                                 this.ctx.beginPath();
-                                this.ctx.moveTo(x, y);
+                                this.ctx.moveTo(p.x, p.y);
                             },
                             draw(e) {
                                 if (!this.drawing) return;
                                 e.preventDefault();
-                                const rect = this.canvas.getBoundingClientRect();
-                                const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-                                const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
-                                this.ctx.lineTo(x, y);
+                                const p = this.getPos(e);
+                                this.currentPath.push(p);
+                                this.ctx.lineTo(p.x, p.y);
                                 this.ctx.stroke();
                             },
                             stopDraw() {
+                                if (!this.drawing) return;
                                 this.drawing = false;
-                                $wire.set('firmaDataUrl', this.canvas.toDataURL('image/png'));
+                                if (this.currentPath.length > 1) {
+                                    this.paths.push([...this.currentPath]);
+                                }
+                                this.exportBlack();
+                            },
+                            exportBlack() {
+                                // Redraw all paths in black on a temp canvas for export
+                                const tmp = document.createElement('canvas');
+                                tmp.width = this.canvas.width;
+                                tmp.height = this.canvas.height;
+                                const tCtx = tmp.getContext('2d');
+                                tCtx.strokeStyle = '#000000';
+                                tCtx.lineWidth = 2.5;
+                                tCtx.lineCap = 'round';
+                                tCtx.lineJoin = 'round';
+                                for (const path of this.paths) {
+                                    tCtx.beginPath();
+                                    tCtx.moveTo(path[0].x, path[0].y);
+                                    for (let i = 1; i < path.length; i++) {
+                                        tCtx.lineTo(path[i].x, path[i].y);
+                                    }
+                                    tCtx.stroke();
+                                }
+                                $wire.set('firmaDataUrl', tmp.toDataURL('image/png'));
                             },
                             clear() {
+                                this.paths = [];
                                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                                 $wire.call('limpiarFirma');
                             }
                         }">
-                            <div class="rounded-lg border-2 border-dashed border-gray-300 bg-white p-1 dark:border-gray-600 dark:bg-gray-900">
-                                <canvas x-ref="signaturePad" width="500" height="120"
-                                        class="w-full cursor-crosshair rounded"
-                                        style="touch-action: none;"
+                            <div class="rounded-lg border-2 border-dashed border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-950" style="padding:2px;">
+                                <canvas x-ref="signaturePad" width="600" height="150"
+                                        class="w-full rounded cursor-crosshair"
+                                        style="touch-action:none; background: rgba(0,0,0,0.02);"
                                         @mousedown="startDraw($event)"
                                         @mousemove="draw($event)"
                                         @mouseup="stopDraw()"
@@ -103,9 +143,9 @@
                                         @touchend="stopDraw()">
                                 </canvas>
                             </div>
-                            <div class="mt-1 flex justify-between">
-                                <span class="text-[10px] text-gray-400">Dibuja tu firma con el mouse o dedo</span>
-                                <button @click="clear()" class="text-[10px] text-danger-500 hover:underline">Limpiar</button>
+                            <div class="mt-1.5 flex items-center justify-between">
+                                <span class="text-[10px] text-gray-400 dark:text-gray-500">Dibuja tu firma con el mouse o dedo</span>
+                                <button @click="clear()" class="rounded px-2 py-0.5 text-[10px] font-medium text-danger-600 transition hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-500/10">Limpiar</button>
                             </div>
                         </div>
                     @else
