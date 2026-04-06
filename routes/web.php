@@ -26,3 +26,7 @@ Route::get('/logos/{path}', function (string $path) {
         'Cache-Control' => 'public, max-age=86400',
     ]);
 })->middleware('auth')->where('path', '.*')->name('logos.show');
+
+Route::get('/politicas/{politica}/pdf', [\App\Http\Controllers\PoliticaPdfController::class, 'download'])
+    ->middleware('auth')
+    ->name('politicas.pdf');
