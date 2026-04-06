@@ -1,4 +1,8 @@
 <x-filament-panels::page>
+    <style>
+        .fi-main, .fi-page, .fi-page-main, body { overflow: hidden !important; max-height: 100vh !important; }
+        .fi-header { display: none !important; }
+    </style>
     <div>@php
         $trends = $this->counterTrends;
         $cards = [

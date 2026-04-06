@@ -1,5 +1,8 @@
 <x-filament-panels::page>
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3" style="height: calc(100vh - 10rem);">
+    <style>
+        .fi-main, .fi-page, .fi-page-main, body { overflow: hidden !important; max-height: 100vh !important; }
+    </style>
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3" style="height: calc(100vh - 8rem);">
 
         {{-- LEFT: Ticket info --}}
         <div class="lg:col-span-1 flex flex-col gap-3 overflow-y-auto">
