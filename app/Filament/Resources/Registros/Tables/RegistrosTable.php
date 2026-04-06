@@ -68,20 +68,7 @@ class RegistrosTable
                     }),
                 EditAction::make(),
             ])
-            ->headerActions([
-                Action::make('exportExcel')
-                    ->label('Exportar Excel')
-                    ->icon('heroicon-o-table-cells')
-                    ->color('success')
-                    ->action(function () use ($table) {
-                        $query = $table->getQuery();
-                        $registros = $query->with('creador')->limit(5000)->get();
-                        $empresa = Filament::getTenant();
-                        $path = ExcelExportService::exportRegistros($registros, $empresa?->razon_social);
-
-                        return response()->download($path)->deleteFileAfterSend();
-                    }),
-            ])
+            ->headerActions([])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

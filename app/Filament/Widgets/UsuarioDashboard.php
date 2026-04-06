@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\AceptacionPolitica;
+use App\Models\ChecklistEjecucion;
 use App\Models\EquipoAsignacion;
 use App\Models\Politica;
 use App\Models\Registro;
@@ -28,12 +30,23 @@ class UsuarioDashboard extends Widget
         $empresa = Filament::getTenant();
         $empresaId = $empresa?->id;
 
-        // Equipo
-        $equipo = EquipoAsignacion::where('user_id', $user->id)
+        // Equipos asignados
+        $equipos = EquipoAsignacion::where('user_id', $user->id)
             ->whereNull('fecha_fin')
             ->whereIn('tipo', ['asignacion', 'transferencia'])
             ->with('equipo')
-            ->first()?->equipo;
+            ->get()
+            ->pluck('equipo')
+            ->filter();
+
+        // Último checklist por equipo
+        $equipoIds = $equipos->pluck('id')->toArray();
+        $checklists = ChecklistEjecucion::whereIn('equipo_id', $equipoIds)
+            ->with('plantilla')
+            ->latest('fecha_ejecucion')
+            ->get()
+            ->groupBy('equipo_id')
+            ->map(fn ($group) => $group->first());
 
         // Politicas
         $politicasTotal = Politica::where('empresa_id', $empresaId)->where('obligatoria', true)->where('activa', true)->count();
@@ -64,9 +77,17 @@ class UsuarioDashboard extends Widget
             ->whereMonth('created_at', now()->month)
             ->count();
 
+        // Documentos firmados
+        $documentosFirmados = AceptacionPolitica::where('user_id', $user->id)
+            ->whereHas('politica', fn ($q) => $q->where('empresa_id', $empresaId))
+            ->with('politica')
+            ->latest('fecha_aceptacion')
+            ->get();
+
         return [
             'user' => $user,
-            'equipo' => $equipo,
+            'equipos' => $equipos,
+            'checklists' => $checklists,
             'politicasOk' => $politicasPendientes === 0 && $politicasTotal > 0,
             'politicasPendientes' => $politicasPendientes,
             'politicasTotal' => $politicasTotal,
@@ -74,6 +95,7 @@ class UsuarioDashboard extends Widget
             'misTickets' => $misTickets,
             'misRegistros' => $misRegistros,
             'registrosMes' => $registrosMes,
+            'documentosFirmados' => $documentosFirmados,
             'tenant' => $empresa,
         ];
     }

@@ -24,7 +24,8 @@ class TicketsTable
                 TextColumn::make('empresa.razon_social')
                     ->label('Empresa')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visible(fn () => auth()->user()?->hasRole('super_admin')),
                 TextColumn::make('categoria')
                     ->label('Categoría')
                     ->badge()
