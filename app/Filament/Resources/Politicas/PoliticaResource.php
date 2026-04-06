@@ -35,6 +35,11 @@ class PoliticaResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
