@@ -69,6 +69,7 @@ class PoliticaPdfController extends Controller
             'margin_bottom' => 20,
             'margin_left' => 20,
             'margin_right' => 20,
+            'tempDir' => storage_path('app/temp'),
         ]);
 
         $mpdf->SetTitle($politica->titulo . ' v' . $politica->version);
