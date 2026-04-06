@@ -16,7 +16,12 @@ class AceptarPoliticas extends Page
 
     protected static bool $shouldRegisterNavigation = false;
 
-    protected static ?string $title = 'Aceptar politicas';
+    protected static ?string $title = '';
+
+    public function getMaxContentWidth(): ?string
+    {
+        return 'full';
+    }
 
     protected static ?string $slug = 'aceptar-politicas';
 
