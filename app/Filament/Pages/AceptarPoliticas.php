@@ -116,6 +116,8 @@ class AceptarPoliticas extends Page
         $this->acepto = false;
         $this->firmaDataUrl = '';
         $this->firmaUpload = null;
+        $this->firmaCargo = '';
+        $this->dispatch('firma-cleared');
 
         $pendientes = Politica::pendientesPara($user->id, $user->empresa_id);
 
