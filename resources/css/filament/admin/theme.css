@@ -3,14 +3,14 @@
 @source '../../../../app/Filament/**/*.php';
 @source '../../../../resources/views/filament/**/*.blade.php';
 
-/* Sidebar: invisible scrollbar + kill group gap */
+/* Sidebar: invisible scrollbar */
 .fi-sidebar-nav {
     scrollbar-width: none;
     -ms-overflow-style: none;
-    padding: 0.25rem 0.4rem !important;
+    padding: 0.5rem 0.6rem !important;
 }
 .fi-sidebar-nav > ul {
-    gap: 0.25rem !important;
+    gap: 0.5rem !important;
 }
 .fi-sidebar-nav::-webkit-scrollbar {
     display: none;
@@ -23,39 +23,39 @@
     display: none !important;
 }
 
-/* Groups: tight labels */
+/* Groups */
 .fi-sidebar-group {
-    margin-bottom: 0.1rem !important;
+    margin-bottom: 0 !important;
 }
 .fi-sidebar-group-label {
-    font-size: 0.55rem !important;
-    letter-spacing: 0.08em;
+    font-size: 0.6rem !important;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
     font-weight: 700;
-    opacity: 0.5;
-    padding: 0.4rem 0.5rem 0.1rem !important;
+    opacity: 0.45;
+    padding: 0.35rem 0.75rem 0.2rem !important;
     margin: 0 !important;
 }
 .fi-sidebar-group-items {
-    margin-top: 0 !important;
-    gap: 0 !important;
+    margin-top: 0.15rem !important;
+    gap: 0.1rem !important;
 }
 
-/* Items: ultra compact */
+/* Items */
 .fi-sidebar-item {
     margin: 0 !important;
 }
 .fi-sidebar-item a,
 .fi-sidebar-item button {
-    padding: 0.3rem 0.5rem !important;
-    font-size: 0.8rem !important;
-    gap: 0.5rem !important;
-    border-radius: 0.375rem;
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.8125rem !important;
+    gap: 0.6rem !important;
+    border-radius: 0.5rem;
     min-height: unset !important;
 }
 .fi-sidebar-item-icon {
-    width: 1rem !important;
-    height: 1rem !important;
+    width: 1.1rem !important;
+    height: 1.1rem !important;
 }
 
 /* Active item */
@@ -63,9 +63,9 @@
     font-weight: 600;
 }
 
-/* Collapse toggle: smaller */
+/* Collapse toggle */
 .fi-sidebar-group-collapse-button {
-    padding: 0 !important;
+    padding: 0.15rem !important;
     width: 1.25rem !important;
     height: 1.25rem !important;
 }
@@ -74,7 +74,7 @@
     height: 0.75rem !important;
 }
 
-/* Collapsed sidebar: bigger icons + more padding */
+/* Collapsed sidebar: bigger icons */
 .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-icon {
     width: 1.5rem !important;
     height: 1.5rem !important;
