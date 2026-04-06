@@ -17,7 +17,7 @@ class MiEstado extends Widget
 
     public static function canView(): bool
     {
-        return ! auth()->user()?->hasRole(['super_admin', 'admin_empresa']);
+        return false; // Replaced by UsuarioDashboard
     }
 
     public function getData(): array
