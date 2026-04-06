@@ -12,14 +12,14 @@
         ];
     @endphp
 
-    {{-- Main layout: Panel (left) + Counters (right) --}}
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-12" style="min-height: 80vh;">
+    {{-- Main layout: Panel (left) + Counters (right) — fixed viewport, no page scroll --}}
+    <div class="grid grid-cols-1 gap-3 lg:grid-cols-12" style="height: calc(100vh - 7rem); overflow: hidden;">
 
     {{-- LEFT: Ticket panel (list + detail) --}}
-    <div class="lg:col-span-9 grid grid-cols-1 gap-4 lg:grid-cols-5" style="min-height: 70vh;">
+    <div class="lg:col-span-9 grid grid-cols-1 gap-3 lg:grid-cols-5 overflow-hidden">
 
         {{-- LEFT: Ticket list --}}
-        <div class="lg:col-span-2 flex flex-col rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+        <div class="lg:col-span-2 flex flex-col rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 overflow-hidden">
 
             {{-- Filters bar --}}
             <div class="border-b border-gray-200 dark:border-white/10 p-3 space-y-2">
@@ -148,7 +148,7 @@
         </div>
 
         {{-- RIGHT: Ticket detail --}}
-        <div class="lg:col-span-3 flex flex-col rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+        <div class="lg:col-span-3 flex flex-col rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 overflow-hidden">
             @if ($this->selectedTicket)
                 @php $ticket = $this->selectedTicket; @endphp
 
@@ -271,7 +271,7 @@
                 </div>
 
                 {{-- Conversation --}}
-                <div class="flex-1 overflow-y-auto p-4" style="max-height: calc(70vh - 220px);">
+                <div class="flex-1 overflow-y-auto p-4">
                     <div class="mx-auto flex max-w-[640px] flex-col gap-3">
 
                         {{-- Original description --}}
@@ -411,7 +411,7 @@
     </div>{{-- /LEFT: ticket panel --}}
 
     {{-- RIGHT: Counter cards with sparklines --}}
-    <div class="lg:col-span-3 flex flex-col gap-2">
+    <div class="lg:col-span-3 flex flex-col gap-2 overflow-y-auto">
         @foreach ($cards as $i => $card)
             @php
                 $trendData = $trends[$card['key']];
