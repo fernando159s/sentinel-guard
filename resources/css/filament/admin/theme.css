@@ -95,7 +95,13 @@
     break-inside: avoid;
     margin-bottom: 1rem;
 }
-/* Stats overview + full-span items: always full width */
+/* Stats overview: force full width single row above masonry */
 .fi-grid.lg\:fi-grid-cols > .fi-wi-stats-overview {
     column-span: all;
+    margin-bottom: 0.75rem;
+}
+/* Stats internal grid: always single row */
+.fi-wi-stats-overview .fi-grid {
+    display: grid !important;
+    columns: unset !important;
 }
