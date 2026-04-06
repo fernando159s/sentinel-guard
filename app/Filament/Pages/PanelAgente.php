@@ -26,7 +26,7 @@ class PanelAgente extends Page implements HasForms
 
     protected static ?string $navigationLabel = 'Panel de Agente';
 
-    protected static ?string $title = 'Panel de Agente Helpdesk';
+    protected static ?string $title = '';
 
     protected static ?int $navigationSort = -1;
 
