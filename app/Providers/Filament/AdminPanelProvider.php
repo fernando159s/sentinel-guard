@@ -102,11 +102,11 @@ class AdminPanelProvider extends PanelProvider
                     : '<div style="height:28px;width:28px;border-radius:6px;background:rgba(139,92,246,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#a78bfa;">' . mb_strtoupper(mb_substr($empresaNombre, 0, 2)) . '</div>';
 
                 return new \Illuminate\Support\HtmlString(
-                    '<div style="display:flex;align-items:center;gap:12px;padding:0 8px;">'
+                    '<div style="display:flex;align-items:center;gap:10px;padding:0 8px;">'
                     . $logoHtml
                     . '<div>'
-                    . '<p style="font-size:13px;font-weight:600;color:white;line-height:1.2;margin:0;">' . $empresaNombre . '</p>'
-                    . '<p style="font-size:10px;color:#9ca3af;margin:0;">' . $fecha . ' · ' . $hora . '</p>'
+                    . '<p style="font-size:13px;font-weight:600;line-height:1.2;margin:0;" class="text-gray-900 dark:text-white">' . $empresaNombre . '</p>'
+                    . '<p style="font-size:10px;margin:0;" class="text-gray-500 dark:text-gray-400">' . $fecha . ' · ' . $hora . '</p>'
                     . '</div>'
                     . '</div>'
                 );
@@ -130,8 +130,8 @@ class AdminPanelProvider extends PanelProvider
                 return new \Illuminate\Support\HtmlString(
                     '<div style="display:flex;align-items:center;gap:8px;padding:0 8px;">'
                     . '<div style="text-align:right;">'
-                    . '<p style="font-size:12px;font-weight:600;color:white;line-height:1.2;margin:0;">' . $nombre . '</p>'
-                    . '<p style="font-size:10px;color:#a78bfa;margin:0;font-weight:500;">' . $rolLabel . '</p>'
+                    . '<p style="font-size:12px;font-weight:600;line-height:1.2;margin:0;" class="text-gray-900 dark:text-white">' . $nombre . '</p>'
+                    . '<p style="font-size:10px;margin:0;font-weight:500;" class="text-primary-600 dark:text-primary-400">' . $rolLabel . '</p>'
                     . '</div>'
                     . '</div>'
                 );

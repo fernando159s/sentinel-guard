@@ -41,33 +41,37 @@ class PoliticaResource extends Resource
                 Section::make('Informacion de la politica')
                     ->icon('heroicon-o-document-text')
                     ->description('Define el titulo y contenido de la politica o NDA.')
+                    ->columnSpanFull()
                     ->schema([
                         TextInput::make('titulo')
                             ->label('Titulo')
                             ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
+                            ->maxLength(255),
                         TextInput::make('version')
                             ->label('Version')
                             ->default('1.0')
                             ->required()
-                            ->helperText('Incrementa la version al hacer cambios importantes para que los usuarios deban re-aceptar.'),
-                        RichEditor::make('contenido')
-                            ->label('Contenido completo')
-                            ->required()
-                            ->columnSpanFull(),
-                    ])->columns(2),
-
-                Section::make('Configuracion')
-                    ->schema([
+                            ->helperText('Incrementa la version al hacer cambios importantes.'),
                         Toggle::make('obligatoria')
                             ->label('Obligatoria')
-                            ->helperText('Si esta activa, los usuarios no podran usar el sistema sin aceptar esta politica.')
-                            ->default(true),
+                            ->helperText('Los usuarios no podran usar el sistema sin aceptar.')
+                            ->default(true)
+                            ->inline(false),
                         Toggle::make('activa')
                             ->label('Activa')
-                            ->helperText('Las politicas inactivas no se muestran a los usuarios.')
-                            ->default(true),
+                            ->default(true)
+                            ->inline(false),
+                    ])->columns(4),
+
+                Section::make('Contenido de la politica')
+                    ->icon('heroicon-o-pencil-square')
+                    ->description('Redacta el texto completo del NDA o politica. Este es el texto que los usuarios veran y deberan aceptar.')
+                    ->columnSpanFull()
+                    ->schema([
+                        RichEditor::make('contenido')
+                            ->label('')
+                            ->required()
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
