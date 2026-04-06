@@ -26,6 +26,11 @@ class ViewTicket extends ViewRecord
 
     protected string $view = 'filament.pages.view-ticket';
 
+    public function getMaxContentWidth(): ?string
+    {
+        return 'full';
+    }
+
     public function infolist(Schema $schema): Schema
     {
         return $schema
