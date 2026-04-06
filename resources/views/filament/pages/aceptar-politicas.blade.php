@@ -25,7 +25,16 @@
                         </span>
                     </label>
 
-                    <div class="mt-4 flex justify-end">
+                    <div class="mt-4 flex items-center justify-between">
+                        <x-filament::link
+                            :href="route('politicas.pdf', $politicaActual)"
+                            target="_blank"
+                            size="sm"
+                            color="gray"
+                            icon="heroicon-m-arrow-down-tray">
+                            Descargar PDF
+                        </x-filament::link>
+
                         <x-filament::button wire:click="aceptar" wire:loading.attr="disabled" icon="heroicon-m-check" size="lg">
                             Aceptar y continuar
                         </x-filament::button>

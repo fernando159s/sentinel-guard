@@ -16,6 +16,8 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -108,6 +110,15 @@ class PoliticaResource extends Resource
             ->filters([
                 SelectFilter::make('activa')
                     ->options(['1' => 'Activas', '0' => 'Inactivas']),
+            ])
+            ->recordActions([
+                Action::make('descargar_pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->url(fn ($record) => route('politicas.pdf', $record))
+                    ->openUrlInNewTab(),
+                EditAction::make(),
             ]);
     }
 
