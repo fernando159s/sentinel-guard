@@ -16,6 +16,9 @@ class AceptacionPolitica extends Model
         'fecha_aceptacion',
         'ip_address',
         'user_agent',
+        'firma_imagen',
+        'firma_nombre',
+        'firma_cargo',
     ];
 
     protected function casts(): array

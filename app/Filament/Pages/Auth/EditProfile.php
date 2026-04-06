@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Auth;
 
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
@@ -31,7 +32,7 @@ class EditProfile extends BaseEditProfile
                     ->collapsed(),
                 Section::make('Preferencias de notificacion')
                     ->icon('heroicon-o-bell')
-                    ->description('Elige que notificaciones quieres recibir por email. Las notificaciones de cuenta (bienvenida, contrasena) no se pueden desactivar.')
+                    ->description('Elige que notificaciones quieres recibir por email.')
                     ->schema([
                         Toggle::make('notif_tickets')
                             ->label('Notificaciones de tickets')
@@ -40,6 +41,20 @@ class EditProfile extends BaseEditProfile
                             ->label('Notificaciones de incidencias')
                             ->helperText('Recibir emails cuando se registra una nueva incidencia de seguridad (F09).'),
                     ]),
+                Section::make('Mi firma')
+                    ->icon('heroicon-o-pencil')
+                    ->description('Sube una imagen de tu firma para usarla al firmar documentos. Se pre-llenara automaticamente.')
+                    ->schema([
+                        FileUpload::make('firma_guardada_file')
+                            ->label('Imagen de firma')
+                            ->image()
+                            ->disk('public')
+                            ->directory('firmas')
+                            ->maxSize(1024)
+                            ->helperText('PNG o JPG, max 1MB. Fondo transparente recomendado.'),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
             ]);
     }
 }
