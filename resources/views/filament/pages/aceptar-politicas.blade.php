@@ -1,11 +1,10 @@
 <x-filament-panels::page>
     <style>
-        .fi-header { display: none !important; }
-        .fi-main, .fi-page, .fi-page-main, body { overflow: hidden !important; max-height: 100vh !important; }
+        .fi-page-main { padding: 0 !important; }
     </style>
 
     @if ($politicaActual)
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-5" style="height: calc(100vh - 5rem);">
+        <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-5" style="height: calc(100vh - 7rem);">
 
             {{-- LEFT: Document content (3/5) --}}
             <div class="lg:col-span-3 flex flex-col rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 overflow-hidden">
@@ -131,7 +130,7 @@
             </div>
         </div>
     @else
-        <div class="flex items-center justify-center" style="height: calc(100vh - 8rem);">
+        <div class="flex items-center justify-center p-4" style="height: calc(100vh - 8rem);">
             <div class="text-center">
                 <x-heroicon-o-check-circle class="mx-auto h-16 w-16 text-success-500 mb-3" />
                 <p class="text-lg font-medium text-gray-900 dark:text-white">No tienes politicas pendientes</p>
