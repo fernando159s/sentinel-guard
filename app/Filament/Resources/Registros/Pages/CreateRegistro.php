@@ -20,7 +20,10 @@ class CreateRegistro extends CreateRecord
 
         \Filament\Support\Facades\FilamentView::registerRenderHook(
             PanelsRenderHook::HEAD_END,
-            fn () => new HtmlString('<style>.fi-grid.lg\:fi-grid-cols { columns: 1 !important; }</style>'),
+            fn () => new HtmlString('<style>
+                .fi-sc-form .fi-grid.lg\:fi-grid-cols { display: grid !important; columns: unset !important; break-inside: unset !important; }
+                .fi-sc-form .fi-grid.lg\:fi-grid-cols > * { break-inside: unset !important; margin-bottom: 0 !important; }
+            </style>'),
         );
     }
 
