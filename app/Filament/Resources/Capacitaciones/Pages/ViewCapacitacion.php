@@ -112,7 +112,7 @@ class ViewCapacitacion extends ViewRecord implements HasTable
                         }
                     }),
             ] : [])
-            ->defaultSort('user.name');
+            ->defaultSort('user_id');
     }
 
     public function confirmarAsistencia(): void
