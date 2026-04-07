@@ -21,6 +21,20 @@ class EquiposTable
                     ->label('Codigo')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('categoria')
+                    ->label('Categoria')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'tecnologico' => 'info',
+                        'no_tecnologico' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'tecnologico' => 'Tecnologico',
+                        'no_tecnologico' => 'No tecnologico',
+                        default => $state,
+                    })
+                    ->toggleable(),
                 TextColumn::make('tipo')
                     ->label('Tipo')
                     ->badge()
@@ -30,6 +44,13 @@ class EquiposTable
                         'impresora' => 'gray',
                         'servidor' => 'warning',
                         'usb' => 'danger',
+                        'disco_externo' => 'danger',
+                        'telefono' => 'primary',
+                        'tablet' => 'primary',
+                        'dispositivo_red' => 'warning',
+                        'dvd_cd' => 'gray',
+                        'expediente_fisico' => 'gray',
+                        'soporte_nube' => 'info',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
@@ -38,6 +59,13 @@ class EquiposTable
                         'impresora' => 'Impresora',
                         'servidor' => 'Servidor',
                         'usb' => 'USB',
+                        'disco_externo' => 'Disco externo',
+                        'telefono' => 'Telefono',
+                        'tablet' => 'Tablet',
+                        'dispositivo_red' => 'Disp. red',
+                        'dvd_cd' => 'DVD/CD',
+                        'expediente_fisico' => 'Expediente',
+                        'soporte_nube' => 'Cloud',
                         'otro' => 'Otro',
                         default => $state,
                     }),
@@ -94,6 +122,12 @@ class EquiposTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                SelectFilter::make('categoria')
+                    ->label('Categoria')
+                    ->options([
+                        'tecnologico' => 'Tecnologico',
+                        'no_tecnologico' => 'No tecnologico',
+                    ]),
                 SelectFilter::make('tipo')
                     ->label('Tipo')
                     ->options([
@@ -102,6 +136,13 @@ class EquiposTable
                         'impresora' => 'Impresora',
                         'servidor' => 'Servidor',
                         'usb' => 'USB',
+                        'disco_externo' => 'Disco externo',
+                        'telefono' => 'Telefono',
+                        'tablet' => 'Tablet',
+                        'dispositivo_red' => 'Disp. red',
+                        'dvd_cd' => 'DVD/CD',
+                        'expediente_fisico' => 'Expediente',
+                        'soporte_nube' => 'Cloud',
                         'otro' => 'Otro',
                     ]),
                 SelectFilter::make('estado')

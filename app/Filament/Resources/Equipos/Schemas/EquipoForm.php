@@ -29,12 +29,23 @@ class EquipoForm
                         Select::make('tipo')
                             ->label('Tipo de equipo')
                             ->options([
-                                'pc_escritorio' => 'PC de escritorio',
-                                'laptop' => 'Laptop',
-                                'impresora' => 'Impresora',
-                                'servidor' => 'Servidor',
-                                'usb' => 'Dispositivo USB',
-                                'otro' => 'Otro',
+                                'Tecnologicos' => [
+                                    'pc_escritorio' => 'PC de escritorio',
+                                    'laptop' => 'Laptop',
+                                    'impresora' => 'Impresora',
+                                    'servidor' => 'Servidor',
+                                    'usb' => 'Dispositivo USB',
+                                    'disco_externo' => 'Disco externo',
+                                    'telefono' => 'Telefono',
+                                    'tablet' => 'Tablet',
+                                    'dispositivo_red' => 'Dispositivo de red',
+                                ],
+                                'No tecnologicos' => [
+                                    'dvd_cd' => 'DVD / CD',
+                                    'expediente_fisico' => 'Expediente fisico',
+                                    'soporte_nube' => 'Servicio cloud',
+                                    'otro' => 'Otro',
+                                ],
                             ])
                             ->required()
                             ->live()
@@ -54,11 +65,44 @@ class EquipoForm
                             ->placeholder('ThinkPad T14, ProBook 450...'),
                     ]),
 
+                Section::make('Clasificacion de soporte')
+                    ->icon('heroicon-o-archive-box')
+                    ->description('Categoriza el activo segun el tipo de soporte de informacion.')
+                    ->columns(3)
+                    ->schema([
+                        Select::make('categoria')
+                            ->label('Categoria')
+                            ->options([
+                                'tecnologico' => 'Tecnologico',
+                                'no_tecnologico' => 'No tecnologico',
+                            ])
+                            ->default('tecnologico')
+                            ->required()
+                            ->live(),
+                        Select::make('clasificacion_soporte')
+                            ->label('Clasificacion de soporte')
+                            ->options([
+                                'hdd_interno' => 'HDD interno',
+                                'hdd_externo' => 'HDD externo',
+                                'usb' => 'USB',
+                                'servidor' => 'Servidor',
+                                'nube' => 'Nube',
+                                'dvd' => 'DVD / CD',
+                                'expediente_fisico' => 'Expediente fisico',
+                                'otro' => 'Otro',
+                            ]),
+                        Textarea::make('contenido_datos')
+                            ->label('Contenido de datos')
+                            ->placeholder('Descripcion de los datos que almacena este activo')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                    ]),
+
                 Section::make('Especificaciones tecnicas')
                     ->icon('heroicon-o-cpu-chip')
-                    ->description('Detalles del hardware. Solo aplica para PCs, laptops y servidores.')
+                    ->description('Detalles del hardware. Solo aplica para equipos tecnologicos.')
                     ->columns(2)
-                    ->visible(fn (Get $get): bool => in_array($get('tipo'), ['pc_escritorio', 'laptop', 'servidor']))
+                    ->visible(fn (Get $get): bool => $get('categoria') === 'tecnologico' && in_array($get('tipo'), ['pc_escritorio', 'laptop', 'servidor', 'tablet', 'telefono', 'dispositivo_red']))
                     ->schema([
                         TextInput::make('sistema_operativo')
                             ->label('Sistema operativo')
