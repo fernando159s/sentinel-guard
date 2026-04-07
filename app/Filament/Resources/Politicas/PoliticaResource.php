@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Politicas;
 use App\Filament\Resources\Politicas\Pages\CreatePolitica;
 use App\Filament\Resources\Politicas\Pages\EditPolitica;
 use App\Filament\Resources\Politicas\Pages\ListPoliticas;
+use App\Filament\Resources\Politicas\Pages\ViewNdaFirmantes;
 use App\Filament\Resources\Politicas\RelationManagers\VersionesRelationManager;
 use App\Models\Politica;
 use BackedEnum;
@@ -165,6 +166,13 @@ class PoliticaResource extends Resource
                 IconColumn::make('activa')
                     ->label('Activa')
                     ->boolean(),
+                IconColumn::make('es_nda')
+                    ->label('NDA')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-lock-closed')
+                    ->falseIcon('heroicon-o-minus')
+                    ->trueColor('warning')
+                    ->falseColor('gray'),
                 IconColumn::make('archivo_path')
                     ->label('Doc')
                     ->icon(fn ($state) => $state ? 'heroicon-o-document-text' : null)
@@ -201,6 +209,12 @@ class PoliticaResource extends Resource
                     ->color('gray')
                     ->url(fn ($record) => route('politicas.pdf', $record))
                     ->openUrlInNewTab(),
+                Action::make('ver_firmantes')
+                    ->label('Firmantes')
+                    ->icon('heroicon-o-users')
+                    ->color('warning')
+                    ->visible(fn ($record) => $record->es_nda)
+                    ->url(fn ($record) => static::getUrl('firmantes', ['record' => $record])),
                 EditAction::make(),
             ]);
     }
@@ -218,6 +232,7 @@ class PoliticaResource extends Resource
             'index' => ListPoliticas::route('/'),
             'create' => CreatePolitica::route('/create'),
             'edit' => EditPolitica::route('/{record}/edit'),
+            'firmantes' => ViewNdaFirmantes::route('/{record}/firmantes'),
         ];
     }
 }
