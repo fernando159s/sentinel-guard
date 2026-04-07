@@ -19,6 +19,7 @@ class Registro extends Model
         'estado',
         'creado_por',
         'modificado_por',
+        'equipo_id',
     ];
 
     protected function casts(): array
@@ -41,5 +42,10 @@ class Registro extends Model
     public function modificador(): BelongsTo
     {
         return $this->belongsTo(User::class, 'modificado_por')->withoutGlobalScopes();
+    }
+
+    public function equipo(): BelongsTo
+    {
+        return $this->belongsTo(Equipo::class, 'equipo_id');
     }
 }

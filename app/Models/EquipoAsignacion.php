@@ -19,6 +19,10 @@ class EquipoAsignacion extends Model
         'condicion_devolucion',
         'notas',
         'asignado_por',
+        'empresa_tercera',
+        'ruc_tercero',
+        'contacto_tercero',
+        'motivo',
     ];
 
     protected function casts(): array
@@ -46,6 +50,6 @@ class EquipoAsignacion extends Model
 
     public function esVigente(): bool
     {
-        return $this->fecha_fin === null && in_array($this->tipo, ['asignacion', 'transferencia']);
+        return $this->fecha_fin === null && in_array($this->tipo, ['asignacion', 'transferencia', 'salida_homeoffice']);
     }
 }

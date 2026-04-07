@@ -99,6 +99,20 @@ class RegistroForm
                         ->columns(2)
                         ->collapsible()
                         ->columnSpan(['default' => 1, 'lg' => 5]),
+
+                    // Equipo vinculado (solo F13)
+                    Section::make('Equipo vinculado')
+                        ->icon('heroicon-o-computer-desktop')
+                        ->description('Vincula este registro al equipo correspondiente.')
+                        ->schema([
+                            Select::make('equipo_id')
+                                ->label('Equipo')
+                                ->relationship('equipo', 'codigo_interno')
+                                ->searchable()
+                                ->placeholder('Seleccionar equipo (opcional)'),
+                        ])
+                        ->visible(fn (Get $get): bool => $get('tipo_formato') === 'F13')
+                        ->columnSpan(['default' => 1, 'lg' => 7]),
                 ]),
             ]);
     }
@@ -107,7 +121,7 @@ class RegistroForm
     {
         $groups = [
             'Datos y acceso' => [TipoFormato::F02, TipoFormato::F04, TipoFormato::F05, TipoFormato::F03],
-            'Soportes y activos' => [TipoFormato::F07, TipoFormato::F08, TipoFormato::F12, TipoFormato::F13],
+            'Soportes y activos' => [TipoFormato::F12, TipoFormato::F13], // F07 y F08 son ahora reportes, no registros
             'Incidencias' => [TipoFormato::F09, TipoFormato::F10, TipoFormato::F11],
             'Auditoria y control' => [TipoFormato::F01, TipoFormato::F06],
         ];

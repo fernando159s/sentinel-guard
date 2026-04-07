@@ -29,12 +29,23 @@ class EquipoForm
                         Select::make('tipo')
                             ->label('Tipo de equipo')
                             ->options([
-                                'pc_escritorio' => 'PC de escritorio',
-                                'laptop' => 'Laptop',
-                                'impresora' => 'Impresora',
-                                'servidor' => 'Servidor',
-                                'usb' => 'Dispositivo USB',
-                                'otro' => 'Otro',
+                                'Tecnologicos' => [
+                                    'pc_escritorio' => 'PC de escritorio',
+                                    'laptop' => 'Laptop',
+                                    'impresora' => 'Impresora',
+                                    'servidor' => 'Servidor',
+                                    'usb' => 'Dispositivo USB',
+                                    'disco_externo' => 'Disco externo',
+                                    'telefono' => 'Telefono',
+                                    'tablet' => 'Tablet',
+                                    'dispositivo_red' => 'Dispositivo de red',
+                                ],
+                                'No tecnologicos' => [
+                                    'dvd_cd' => 'DVD / CD',
+                                    'expediente_fisico' => 'Expediente fisico',
+                                    'soporte_nube' => 'Servicio cloud',
+                                    'otro' => 'Otro',
+                                ],
                             ])
                             ->required()
                             ->live()
@@ -54,11 +65,44 @@ class EquipoForm
                             ->placeholder('ThinkPad T14, ProBook 450...'),
                     ]),
 
+                Section::make('Clasificacion de soporte')
+                    ->icon('heroicon-o-archive-box')
+                    ->description('Categoriza el activo segun el tipo de soporte de informacion.')
+                    ->columns(3)
+                    ->schema([
+                        Select::make('categoria')
+                            ->label('Categoria')
+                            ->options([
+                                'tecnologico' => 'Tecnologico',
+                                'no_tecnologico' => 'No tecnologico',
+                            ])
+                            ->default('tecnologico')
+                            ->required()
+                            ->live(),
+                        Select::make('clasificacion_soporte')
+                            ->label('Clasificacion de soporte')
+                            ->options([
+                                'hdd_interno' => 'HDD interno',
+                                'hdd_externo' => 'HDD externo',
+                                'usb' => 'USB',
+                                'servidor' => 'Servidor',
+                                'nube' => 'Nube',
+                                'dvd' => 'DVD / CD',
+                                'expediente_fisico' => 'Expediente fisico',
+                                'otro' => 'Otro',
+                            ]),
+                        Textarea::make('contenido_datos')
+                            ->label('Contenido de datos')
+                            ->placeholder('Descripcion de los datos que almacena este activo')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                    ]),
+
                 Section::make('Especificaciones tecnicas')
                     ->icon('heroicon-o-cpu-chip')
-                    ->description('Detalles del hardware. Solo aplica para PCs, laptops y servidores.')
+                    ->description('Detalles del hardware. Solo aplica para equipos tecnologicos.')
                     ->columns(2)
-                    ->visible(fn (Get $get): bool => in_array($get('tipo'), ['pc_escritorio', 'laptop', 'servidor']))
+                    ->visible(fn (Get $get): bool => $get('categoria') === 'tecnologico' && in_array($get('tipo'), ['pc_escritorio', 'laptop', 'servidor', 'tablet', 'telefono', 'dispositivo_red']))
                     ->schema([
                         TextInput::make('sistema_operativo')
                             ->label('Sistema operativo')
@@ -159,6 +203,10 @@ class EquipoForm
                                         'transferencia' => 'warning',
                                         'devolucion' => 'gray',
                                         'baja' => 'danger',
+                                        'ingreso_nuevo' => 'info',
+                                        'salida_mantenimiento' => 'warning',
+                                        'salida_homeoffice' => 'info',
+                                        'salida_terceros' => 'danger',
                                         default => 'gray',
                                     };
                                     $tipoLabel = match ($a->tipo) {
@@ -166,6 +214,10 @@ class EquipoForm
                                         'transferencia' => 'Transferencia',
                                         'devolucion' => 'Devolucion',
                                         'baja' => 'Baja',
+                                        'ingreso_nuevo' => 'Ingreso nuevo',
+                                        'salida_mantenimiento' => 'Mantenimiento',
+                                        'salida_homeoffice' => 'Home office',
+                                        'salida_terceros' => 'A terceros',
                                         default => $a->tipo,
                                     };
                                     $rows .= '<tr class="border-b border-gray-100 dark:border-gray-800">'
@@ -189,6 +241,57 @@ class EquipoForm
                                     . '</tr></thead><tbody>' . $rows . '</tbody></table>';
 
                                 return new HtmlString($currentHtml . $table);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (string $operation): bool => $operation === 'edit')
+                    ->collapsible(),
+
+                Section::make('Registros asociados')
+                    ->icon('heroicon-o-document-text')
+                    ->description('Registros de seguridad vinculados a este equipo (F12, F13, etc.).')
+                    ->schema([
+                        Placeholder::make('registros_asociados')
+                            ->label('')
+                            ->content(function ($record): HtmlString {
+                                if (! $record instanceof Equipo) {
+                                    return new HtmlString('<p class="text-sm text-gray-500">Guarda el equipo primero.</p>');
+                                }
+
+                                $registros = \App\Models\Registro::where('equipo_id', $record->id)
+                                    ->orderBy('created_at', 'desc')
+                                    ->limit(20)
+                                    ->get();
+
+                                if ($registros->isEmpty()) {
+                                    return new HtmlString('<p class="text-sm text-gray-500">Sin registros asociados.</p>');
+                                }
+
+                                $rows = '';
+                                foreach ($registros as $r) {
+                                    $tipoBadgeColor = match ($r->tipo_formato) {
+                                        'F12' => 'info',
+                                        'F13' => 'danger',
+                                        default => 'gray',
+                                    };
+                                    $estadoColor = $r->estado === 'activo' ? 'success' : 'gray';
+                                    $rows .= '<tr class="border-b border-gray-100 dark:border-gray-800">'
+                                        . '<td class="py-2 px-2 text-xs text-gray-700 dark:text-gray-300">' . e($r->numero_registro) . '</td>'
+                                        . '<td class="py-2 px-2 text-xs"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-' . $tipoBadgeColor . '-100 text-' . $tipoBadgeColor . '-700 dark:bg-' . $tipoBadgeColor . '-500/20 dark:text-' . $tipoBadgeColor . '-400">' . e($r->tipo_formato) . '</span></td>'
+                                        . '<td class="py-2 px-2 text-xs"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-' . $estadoColor . '-100 text-' . $estadoColor . '-700 dark:bg-' . $estadoColor . '-500/20 dark:text-' . $estadoColor . '-400">' . ucfirst($r->estado) . '</span></td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-500">' . $r->created_at->format('d/m/Y H:i') . '</td>'
+                                        . '</tr>';
+                                }
+
+                                return new HtmlString(
+                                    '<table class="w-full text-left">'
+                                    . '<thead><tr class="border-b border-gray-200 dark:border-gray-700">'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">N° Registro</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Formato</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Estado</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Fecha</th>'
+                                    . '</tr></thead><tbody>' . $rows . '</tbody></table>'
+                                );
                             })
                             ->columnSpanFull(),
                     ])
