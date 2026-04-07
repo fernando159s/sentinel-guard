@@ -36,6 +36,11 @@ class CapacitacionResource extends Resource
         return auth()->check();
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+    }
+
     public static function canCreate(): bool
     {
         return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;

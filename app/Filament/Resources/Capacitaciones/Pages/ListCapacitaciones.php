@@ -10,14 +10,13 @@ class ListCapacitaciones extends ListRecords
 {
     protected static string $resource = CapacitacionResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+    }
+
     protected function getHeaderActions(): array
     {
-        $actions = [];
-
-        if (auth()->user()?->hasRole(['super_admin', 'admin_empresa'])) {
-            $actions[] = CreateAction::make();
-        }
-
-        return $actions;
+        return [CreateAction::make()];
     }
 }

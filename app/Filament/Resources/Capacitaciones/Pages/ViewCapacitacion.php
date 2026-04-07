@@ -23,6 +23,11 @@ class ViewCapacitacion extends ViewRecord implements HasTable
 
     protected string $view = 'filament.resources.capacitaciones.pages.view-capacitacion';
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->check();
+    }
+
     public function getTitle(): string
     {
         return $this->record->tema;
