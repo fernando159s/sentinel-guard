@@ -13,8 +13,8 @@
                 @foreach($this->politicas as $p)
                     <button
                         wire:click="seleccionarPolitica({{ $p->id }})"
-                        style="width:100%; text-align:left; padding:12px 20px; border:none; border-bottom:1px solid rgba(128,128,128,0.08); cursor:pointer; transition:background 0.15s;"
-                        class="{{ $this->politicaSeleccionadaId === $p->id ? 'bg-primary-50 dark:bg-primary-500/10' : 'bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800' }}"
+                        style="width:100%; text-align:left; padding:12px 20px; border:none; border-bottom:1px solid rgba(128,128,128,0.08); cursor:pointer;"
+                        class="transition-colors duration-150 {{ $this->politicaSeleccionadaId === $p->id ? 'bg-primary-50 dark:bg-primary-500/10' : 'bg-transparent hover:bg-gray-100 dark:hover:bg-white/5' }}"
                     >
                         <div class="text-sm font-medium {{ $this->politicaSeleccionadaId === $p->id ? 'text-primary-700 dark:text-primary-400' : 'text-gray-900 dark:text-white' }}">
                             {{ $p->titulo }}
@@ -91,7 +91,7 @@
                                 $tenant = \Filament\Facades\Filament::getTenant();
                                 $editUrl = "/admin/{$tenant->ruc}/politicas/{$this->politicaSeleccionada->id}/edit";
                             @endphp
-                            <a href="{{ $editUrl }}" class="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition">
+                            <a href="{{ $editUrl }}" class="inline-flex items-center gap-1.5 rounded-lg bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500 transition">
                                 <x-heroicon-o-pencil style="width:14px; height:14px;" />
                                 Editar
                             </a>
