@@ -1,132 +1,146 @@
 <x-filament-panels::page>
-    {{-- Datos de la capacitacion --}}
-    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-        <div class="flex items-start justify-between">
-            <div>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ $this->record->tema }}</h2>
+    <div style="display:grid; grid-template-columns: 1fr 3fr; gap:20px; min-height:calc(100vh - 12rem);">
+
+        {{-- LEFT: Datos de la capacitacion --}}
+        <div style="display:flex; flex-direction:column; border-radius:12px; overflow:hidden;" class="bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+
+            {{-- Header --}}
+            <div style="padding:16px 20px; border-bottom:1px solid rgba(128,128,128,0.15); display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <x-heroicon-o-academic-cap style="width:20px; height:20px;" class="text-primary-600 dark:text-primary-400" />
+                    <div class="text-sm font-semibold text-gray-900 dark:text-white">Detalle</div>
+                </div>
+                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                    {{ $this->record->modalidad->value === 'presencial' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' }}">
+                    {{ $this->record->modalidad->label() }}
+                </span>
+            </div>
+
+            {{-- Body --}}
+            <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;">
+
+                {{-- Tema --}}
+                <div>
+                    <div class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" style="margin-bottom:2px;">Tema</div>
+                    <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ $this->record->tema }}</div>
+                </div>
+
                 @if($this->record->descripcion)
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $this->record->descripcion }}</p>
+                <div>
+                    <div class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" style="margin-bottom:2px;">Descripcion</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">{{ $this->record->descripcion }}</div>
+                </div>
                 @endif
-            </div>
-            <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold
-                {{ $this->record->modalidad->value === 'presencial' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' }}">
-                @if($this->record->modalidad->value === 'presencial')
-                    <x-heroicon-s-user-group class="h-3.5 w-3.5" />
-                @else
-                    <x-heroicon-s-computer-desktop class="h-3.5 w-3.5" />
-                @endif
-                {{ $this->record->modalidad->label() }}
-            </span>
-        </div>
 
-        <div class="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-500/10">
-                    <x-heroicon-o-calendar class="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                </div>
-                <div>
-                    <span class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Fecha</span>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $this->record->fecha->format('d/m/Y') }}</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-500/10">
-                    <x-heroicon-o-clock class="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                </div>
-                <div>
-                    <span class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Hora</span>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ \Illuminate\Support\Str::substr($this->record->hora_inicio, 0, 5) }} ({{ $this->record->duracion_minutos }} min)</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-500/10">
-                    <x-heroicon-o-user class="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                </div>
-                <div>
-                    <span class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Expositor</span>
-                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $this->record->expositor }}</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                @php
-                    $pct = $this->record->porcentajeAsistencia();
-                    $pctColor = $pct >= 80 ? 'success' : ($pct >= 50 ? 'warning' : 'danger');
-                @endphp
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-{{ $pctColor }}-50 dark:bg-{{ $pctColor }}-500/10">
-                    <x-heroicon-o-chart-bar class="h-4 w-4 text-{{ $pctColor }}-600 dark:text-{{ $pctColor }}-400" />
-                </div>
-                <div>
-                    <span class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Asistencia</span>
-                    <p class="text-sm font-semibold text-{{ $pctColor }}-600 dark:text-{{ $pctColor }}-400">{{ $pct }}%</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Seccion del trabajador (no admin) --}}
-    @unless($this->isAdmin)
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Mi asistencia</h3>
-
-            @php
-                $miAsistencia = $this->miAsistencia;
-                $yaTermino = $this->record->yaTermino();
-                $enVentana = $this->record->dentroVentanaConfirmacion();
-            @endphp
-
-            @if($miAsistencia && $miAsistencia->asistio)
-                <div class="flex items-center gap-2 rounded-lg bg-green-50 p-3 dark:bg-green-500/10">
-                    <x-heroicon-s-check-circle class="h-5 w-5 text-green-600 dark:text-green-400" />
-                    <span class="text-sm font-medium text-green-700 dark:text-green-400">
-                        Asistencia confirmada el {{ $miAsistencia->fecha_confirmacion->format('d/m/Y') }} a las {{ $miAsistencia->fecha_confirmacion->format('H:i') }}
-                    </span>
-                </div>
-            @elseif(!$yaTermino)
-                <div class="flex items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-                    <x-heroicon-o-clock class="h-5 w-5 text-gray-400" />
-                    <span class="text-sm text-gray-600 dark:text-gray-400">
-                        La capacitacion aun no ha terminado. Podras confirmar tu asistencia despues de que finalice.
-                    </span>
-                </div>
-            @elseif($enVentana)
-                <div class="flex items-center justify-between rounded-lg bg-yellow-50 p-3 dark:bg-yellow-500/10">
-                    <div class="flex items-center gap-2">
-                        <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                        <span class="text-sm text-yellow-700 dark:text-yellow-400">Tienes 24 horas para confirmar tu asistencia.</span>
+                <div style="border-top:1px solid rgba(128,128,128,0.1); padding-top:12px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div>
+                            <div class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" style="margin-bottom:2px;">Fecha</div>
+                            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ $this->record->fecha->format('d/m/Y') }}</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" style="margin-bottom:2px;">Hora</div>
+                            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ \Illuminate\Support\Str::substr($this->record->hora_inicio, 0, 5) }}</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" style="margin-bottom:2px;">Duracion</div>
+                            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ $this->record->duracion_minutos }} min</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" style="margin-bottom:2px;">Expositor</div>
+                            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ $this->record->expositor }}</div>
+                        </div>
                     </div>
-                    <button
-                        wire:click="confirmarAsistencia"
-                        class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 transition"
-                    >
-                        Confirmar mi asistencia
-                    </button>
                 </div>
-            @else
-                <div class="flex items-center gap-2 rounded-lg bg-red-50 p-3 dark:bg-red-500/10">
-                    <x-heroicon-s-x-circle class="h-5 w-5 text-red-600 dark:text-red-400" />
-                    <span class="text-sm text-red-700 dark:text-red-400">
-                        Periodo de confirmacion expirado (24h). Contacta a tu administrador.
-                    </span>
-                </div>
-            @endif
-        </div>
-    @endunless
 
-    {{-- Tabla de asistencia (admin) --}}
-    @if($this->isAdmin)
-        <div class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center gap-2">
-                    <x-heroicon-o-clipboard-document-list class="h-5 w-5 text-gray-400" />
-                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Control de asistencia</h3>
+                {{-- Asistencia resumen --}}
+                <div style="border-top:1px solid rgba(128,128,128,0.1); padding-top:12px;">
+                    @php
+                        $pct = $this->record->porcentajeAsistencia();
+                        $total = $this->record->asistencias()->count();
+                        $asistieron = $this->record->asistencias()->where('asistio', true)->count();
+                    @endphp
+                    <div class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" style="margin-bottom:6px;">Asistencia</div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="flex:1; height:6px; border-radius:3px; background:rgba(128,128,128,0.15); overflow:hidden;">
+                            <div style="height:100%; width:{{ $pct }}%; border-radius:3px; background:{{ $pct >= 80 ? '#10b981' : ($pct >= 50 ? '#f59e0b' : '#ef4444') }};"></div>
+                        </div>
+                        <span class="text-xs font-semibold" style="color:{{ $pct >= 80 ? '#10b981' : ($pct >= 50 ? '#f59e0b' : '#ef4444') }};">{{ $pct }}%</span>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400" style="margin-top:4px;">{{ $asistieron }}/{{ $total }} confirmados</div>
+                </div>
+
+                {{-- Mi asistencia (trabajador) --}}
+                @unless($this->isAdmin)
+                <div style="border-top:1px solid rgba(128,128,128,0.1); padding-top:12px;">
+                    <div class="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400" style="margin-bottom:6px;">Mi asistencia</div>
+
+                    @php
+                        $miAsistencia = $this->miAsistencia;
+                        $yaTermino = $this->record->yaTermino();
+                        $enVentana = $this->record->dentroVentanaConfirmacion();
+                    @endphp
+
+                    @if($miAsistencia && $miAsistencia->asistio)
+                        <div style="display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:8px;" class="bg-green-50 dark:bg-green-500/10">
+                            <x-heroicon-s-check-circle style="width:16px; height:16px;" class="text-green-600 dark:text-green-400" />
+                            <span class="text-xs font-medium text-green-700 dark:text-green-400">
+                                Confirmada el {{ $miAsistencia->fecha_confirmacion->format('d/m/Y H:i') }}
+                            </span>
+                        </div>
+                    @elseif(!$yaTermino)
+                        <div style="display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:8px;" class="bg-gray-50 dark:bg-gray-800">
+                            <x-heroicon-o-clock style="width:16px; height:16px;" class="text-gray-400" />
+                            <span class="text-xs text-gray-500 dark:text-gray-400">Aun no ha terminado</span>
+                        </div>
+                    @elseif($enVentana)
+                        <div style="display:flex; flex-direction:column; gap:8px; padding:8px 10px; border-radius:8px;" class="bg-yellow-50 dark:bg-yellow-500/10">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <x-heroicon-o-exclamation-triangle style="width:16px; height:16px;" class="text-yellow-600 dark:text-yellow-400" />
+                                <span class="text-xs text-yellow-700 dark:text-yellow-400">24h para confirmar</span>
+                            </div>
+                            <button wire:click="confirmarAsistencia" class="w-full rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition">
+                                Confirmar asistencia
+                            </button>
+                        </div>
+                    @else
+                        <div style="display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:8px;" class="bg-red-50 dark:bg-red-500/10">
+                            <x-heroicon-s-x-circle style="width:16px; height:16px;" class="text-red-600 dark:text-red-400" />
+                            <span class="text-xs text-red-700 dark:text-red-400">Periodo expirado</span>
+                        </div>
+                    @endif
+                </div>
+                @endunless
+
+            </div>
+        </div>
+
+        {{-- RIGHT: Tabla de asistencia (admin) o mensaje (trabajador) --}}
+        <div style="display:flex; flex-direction:column; border-radius:12px; overflow:hidden;" class="bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+
+            <div style="padding:16px 20px; border-bottom:1px solid rgba(128,128,128,0.15); display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <x-heroicon-o-clipboard-document-list style="width:20px; height:20px;" class="text-primary-600 dark:text-primary-400" />
+                    <div class="text-sm font-semibold text-gray-900 dark:text-white">Control de asistencia</div>
                 </div>
                 @php
                     $total = $this->record->asistencias()->count();
                     $asistieron = $this->record->asistencias()->where('asistio', true)->count();
                 @endphp
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $asistieron }}/{{ $total }} confirmados</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $asistieron }}/{{ $total }}</span>
             </div>
-            {{ $this->table }}
+
+            <div style="flex:1; overflow-y:auto;">
+                @if($this->isAdmin)
+                    {{ $this->table }}
+                @else
+                    <div style="padding:40px 20px; text-align:center;">
+                        <x-heroicon-o-lock-closed style="width:32px; height:32px; margin:0 auto 12px;" class="text-gray-300 dark:text-gray-600" />
+                        <p class="text-sm text-gray-500 dark:text-gray-400">El control detallado de asistencia es visible solo para administradores.</p>
+                    </div>
+                @endif
+            </div>
         </div>
-    @endif
+
+    </div>
 </x-filament-panels::page>
