@@ -1,4 +1,19 @@
 <x-filament-panels::page>
+    <style>
+        .wiki-content h1 { font-size:1.5em; font-weight:700; margin:0 0 .6em; }
+        .wiki-content h2 { font-size:1.25em; font-weight:600; margin:1.2em 0 .5em; }
+        .wiki-content h3 { font-size:1.1em; font-weight:600; margin:1em 0 .4em; }
+        .wiki-content p { margin:0 0 .8em; }
+        .wiki-content ul, .wiki-content ol { padding-left:1.5em; margin:0 0 .8em; }
+        .wiki-content li { margin:0 0 .3em; }
+        .wiki-content table { width:100%; border-collapse:collapse; margin:1em 0; font-size:.9em; }
+        .wiki-content th, .wiki-content td { border:1px solid rgba(128,128,128,.25); padding:6px 10px; text-align:left; }
+        .wiki-content th { font-weight:600; }
+        .wiki-content strong { font-weight:700; }
+        .wiki-content em { font-style:italic; }
+        .wiki-content blockquote { border-left:3px solid rgba(128,128,128,.3); padding-left:12px; margin:0 0 .8em; font-style:italic; }
+    </style>
+
     @if ($politicaActual)
         <div style="display:grid; grid-template-columns: 3fr 2fr; gap:20px; height:calc(100vh - 9rem);">
 
@@ -7,10 +22,24 @@
 
                 <div style="padding:16px 20px; border-bottom:1px solid rgba(128,128,128,0.15); display:flex; align-items:center; justify-content:space-between;">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <x-heroicon-o-shield-check style="width:20px; height:20px;" class="text-primary-600 dark:text-primary-400" />
+                        @if ($politicaActual->es_nda)
+                            <x-heroicon-o-lock-closed style="width:20px; height:20px;" class="text-warning-600 dark:text-warning-400" />
+                        @else
+                            <x-heroicon-o-shield-check style="width:20px; height:20px;" class="text-primary-600 dark:text-primary-400" />
+                        @endif
                         <div>
-                            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ $politicaActual->titulo }}</div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">v{{ $politicaActual->version }} · {{ $politicaActual->created_at->format('d/m/Y') }}</div>
+                            <div class="text-sm font-semibold text-gray-900 dark:text-white">
+                                {{ $politicaActual->titulo }}
+                                @if ($politicaActual->es_nda)
+                                    <span style="font-size:10px; padding:2px 6px; border-radius:4px; margin-left:6px;" class="bg-warning-100 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">NDA</span>
+                                @endif
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                v{{ $politicaActual->version }} · {{ $politicaActual->created_at->format('d/m/Y') }}
+                                @if ($politicaActual->es_nda && $politicaActual->vigencia_meses)
+                                    · Vigencia: {{ $politicaActual->vigencia_meses }} meses
+                                @endif
+                            </div>
                         </div>
                     </div>
                     <a href="{{ route('politicas.pdf', $politicaActual) }}" target="_blank" class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" style="white-space:nowrap;">
@@ -19,8 +48,8 @@
                 </div>
 
                 <div style="flex:1; overflow-y:auto; padding:24px;">
-                    <div class="prose prose-sm dark:prose-invert max-w-none">
-                        {!! $politicaActual->contenido !!}
+                    <div class="wiki-content" style="font-size:14px; line-height:1.7; color:inherit;">
+                        {!! $this->getContenidoRenderizado() !!}
                     </div>
                 </div>
             </div>

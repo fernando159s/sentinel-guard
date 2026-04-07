@@ -28,9 +28,11 @@ class EnsurePoliciesAccepted
             return $next($request);
         }
 
-        // Skip if already on acceptance page or auth routes
+        // Skip if already on acceptance/data-completion page or auth routes
         $path = $request->path();
-        if (str_contains($path, 'aceptar-politicas') || str_contains($path, 'logout')) {
+        if (str_contains($path, 'aceptar-politicas')
+            || str_contains($path, 'completar-datos-nda')
+            || str_contains($path, 'logout')) {
             return $next($request);
         }
 
@@ -39,6 +41,14 @@ class EnsurePoliciesAccepted
         if ($pendientes->isNotEmpty()) {
             $tenant = Filament::getTenant();
             $ruc = $tenant?->ruc ?? $user->empresa?->ruc ?? '';
+
+            // If there's a pending NDA and user is missing personal data, redirect to complete data first
+            $hasNdaPendiente = $pendientes->contains(fn ($p) => $p->es_nda);
+            $datosFaltantes = empty($user->dni) || empty($user->direccion) || empty($user->telefono) || empty($user->puesto);
+
+            if ($hasNdaPendiente && $datosFaltantes) {
+                return redirect("/admin/{$ruc}/completar-datos-nda");
+            }
 
             return redirect("/admin/{$ruc}/aceptar-politicas");
         }

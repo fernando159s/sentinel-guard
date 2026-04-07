@@ -30,3 +30,7 @@ Route::get('/logos/{path}', function (string $path) {
 Route::get('/politicas/{politica}/pdf', [\App\Http\Controllers\PoliticaPdfController::class, 'download'])
     ->middleware('auth')
     ->name('politicas.pdf');
+
+Route::get('/politicas/{politica}/nda/{aceptacion}/pdf', [\App\Http\Controllers\PoliticaPdfController::class, 'downloadNdaFirmante'])
+    ->middleware('auth')
+    ->name('politicas.nda-firmante-pdf');

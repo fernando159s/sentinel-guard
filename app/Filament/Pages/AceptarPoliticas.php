@@ -6,6 +6,7 @@ use App\Models\AceptacionPolitica;
 use App\Models\Politica;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Support\Str;
 use Livewire\WithFileUploads;
 
 class AceptarPoliticas extends Page
@@ -95,7 +96,7 @@ class AceptarPoliticas extends Page
             return;
         }
 
-        AceptacionPolitica::create([
+        $data = [
             'user_id' => auth()->id(),
             'politica_id' => $this->politicaActual->id,
             'version_aceptada' => $this->politicaActual->version,
@@ -105,7 +106,14 @@ class AceptarPoliticas extends Page
             'firma_imagen' => $firmaImagen,
             'firma_nombre' => $this->firmaNombre,
             'firma_cargo' => $this->firmaCargo,
-        ]);
+        ];
+
+        // Calculate expiration for NDAs with vigencia
+        if ($this->politicaActual->es_nda && $this->politicaActual->vigencia_meses) {
+            $data['fecha_expiracion'] = now()->addMonths($this->politicaActual->vigencia_meses);
+        }
+
+        AceptacionPolitica::create($data);
 
         // Save signature for reuse
         $user = auth()->user();
@@ -133,5 +141,39 @@ class AceptarPoliticas extends Page
     public function limpiarFirma(): void
     {
         $this->firmaDataUrl = '';
+    }
+
+    /**
+     * Get rendered content for the current policy.
+     * For NDAs: parse markdown and replace placeholders with user data.
+     * For regular policies: return HTML content as-is.
+     */
+    public function getContenidoRenderizado(): string
+    {
+        if (! $this->politicaActual) {
+            return '';
+        }
+
+        $contenido = $this->politicaActual->contenido;
+
+        if ($this->politicaActual->es_nda) {
+            $user = auth()->user();
+
+            $contenido = str_replace(
+                ['{nombre_completo}', '{dni}', '{direccion}', '{telefono}', '{puesto}'],
+                [
+                    e($user->name),
+                    e($user->dni ?? '___________'),
+                    e($user->direccion ?? '___________'),
+                    e($user->telefono ?? '___________'),
+                    e($user->puesto ?? '___________'),
+                ],
+                $contenido
+            );
+
+            return Str::markdown($contenido);
+        }
+
+        return $contenido;
     }
 }

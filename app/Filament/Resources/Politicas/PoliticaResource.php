@@ -5,12 +5,14 @@ namespace App\Filament\Resources\Politicas;
 use App\Filament\Resources\Politicas\Pages\CreatePolitica;
 use App\Filament\Resources\Politicas\Pages\EditPolitica;
 use App\Filament\Resources\Politicas\Pages\ListPoliticas;
+use App\Filament\Resources\Politicas\Pages\ViewNdaFirmantes;
 use App\Filament\Resources\Politicas\RelationManagers\VersionesRelationManager;
 use App\Models\Politica;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -68,11 +70,33 @@ class PoliticaResource extends Resource
                             ->label('Obligatoria')
                             ->helperText('Los usuarios no podran usar el sistema sin aceptar.')
                             ->default(true)
-                            ->inline(false),
+                            ->inline(false)
+                            ->disabled(fn (Get $get) => $get('es_nda'))
+                            ->dehydrated(true),
                         Toggle::make('activa')
                             ->label('Activa')
                             ->default(true)
                             ->inline(false),
+                        Toggle::make('es_nda')
+                            ->label('Es NDA')
+                            ->helperText('Activar para convertir en Acuerdo de Confidencialidad.')
+                            ->default(false)
+                            ->inline(false)
+                            ->live()
+                            ->afterStateUpdated(function ($state, Set $set) {
+                                if ($state) {
+                                    $set('obligatoria', true);
+                                }
+                            }),
+                        TextInput::make('vigencia_meses')
+                            ->label('Vigencia')
+                            ->numeric()
+                            ->suffix('meses')
+                            ->minValue(1)
+                            ->maxValue(120)
+                            ->visible(fn (Get $get) => $get('es_nda'))
+                            ->required(fn (Get $get) => $get('es_nda'))
+                            ->helperText('Meses de vigencia desde la firma.'),
                     ])->columns(4),
 
                 Section::make('Contenido de la politica')
@@ -81,8 +105,15 @@ class PoliticaResource extends Resource
                     ->columnSpanFull()
                     ->schema([
                         RichEditor::make('contenido')
-                            ->label('')
+                            ->label('Contenido')
                             ->required()
+                            ->visible(fn (Get $get) => ! $get('es_nda'))
+                            ->columnSpanFull(),
+                        MarkdownEditor::make('contenido')
+                            ->label('Contenido NDA (Markdown)')
+                            ->required()
+                            ->visible(fn (Get $get) => (bool) $get('es_nda'))
+                            ->helperText('Variables disponibles: {nombre_completo}, {dni}, {direccion}, {telefono}, {puesto}. Ejemplo: "Yo, {nombre_completo}, identificado con DNI {dni}..."')
                             ->columnSpanFull(),
                     ]),
 
@@ -135,6 +166,13 @@ class PoliticaResource extends Resource
                 IconColumn::make('activa')
                     ->label('Activa')
                     ->boolean(),
+                IconColumn::make('es_nda')
+                    ->label('NDA')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-lock-closed')
+                    ->falseIcon('heroicon-o-minus')
+                    ->trueColor('warning')
+                    ->falseColor('gray'),
                 IconColumn::make('archivo_path')
                     ->label('Doc')
                     ->icon(fn ($state) => $state ? 'heroicon-o-document-text' : null)
@@ -171,6 +209,12 @@ class PoliticaResource extends Resource
                     ->color('gray')
                     ->url(fn ($record) => route('politicas.pdf', $record))
                     ->openUrlInNewTab(),
+                Action::make('ver_firmantes')
+                    ->label('Firmantes')
+                    ->icon('heroicon-o-users')
+                    ->color('warning')
+                    ->visible(fn ($record) => $record->es_nda)
+                    ->url(fn ($record) => static::getUrl('firmantes', ['record' => $record])),
                 EditAction::make(),
             ]);
     }
@@ -188,6 +232,7 @@ class PoliticaResource extends Resource
             'index' => ListPoliticas::route('/'),
             'create' => CreatePolitica::route('/create'),
             'edit' => EditPolitica::route('/{record}/edit'),
+            'firmantes' => ViewNdaFirmantes::route('/{record}/firmantes'),
         ];
     }
 }
