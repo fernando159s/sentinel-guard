@@ -59,6 +59,30 @@ class UserForm
                             ->default(fn () => auth()->user()?->empresa_id),
                     ]),
 
+                Section::make('Datos personales')
+                    ->icon('heroicon-o-identification')
+                    ->columns(2)
+                    ->columnSpan(1)
+                    ->schema([
+                        TextInput::make('dni')
+                            ->label('DNI')
+                            ->maxLength(20)
+                            ->placeholder('12345678'),
+                        TextInput::make('telefono')
+                            ->label('Telefono')
+                            ->tel()
+                            ->maxLength(30)
+                            ->placeholder('+51 999 888 777'),
+                        TextInput::make('direccion')
+                            ->label('Direccion')
+                            ->maxLength(500)
+                            ->columnSpanFull(),
+                        TextInput::make('puesto')
+                            ->label('Puesto')
+                            ->maxLength(150)
+                            ->placeholder('Analista de TI'),
+                    ]),
+
                 Section::make('Rol y estado')
                     ->icon('heroicon-o-shield-check')
                     ->columns(2)
