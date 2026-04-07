@@ -18,6 +18,8 @@ class Politica extends Model
         'titulo',
         'slug',
         'contenido',
+        'archivo_path',
+        'archivo_nombre',
         'version',
         'obligatoria',
         'activa',
@@ -38,6 +40,19 @@ class Politica extends Model
                 $politica->slug = Str::slug($politica->titulo);
             }
         });
+
+        static::updating(function (Politica $politica) {
+            if ($politica->isDirty('version')) {
+                PoliticaVersion::create([
+                    'politica_id' => $politica->id,
+                    'version' => $politica->getOriginal('version'),
+                    'contenido' => $politica->getOriginal('contenido'),
+                    'archivo_path' => $politica->getOriginal('archivo_path'),
+                    'archivo_nombre' => $politica->getOriginal('archivo_nombre'),
+                    'creado_por' => auth()->id(),
+                ]);
+            }
+        });
     }
 
     public function empresa(): BelongsTo
@@ -48,6 +63,11 @@ class Politica extends Model
     public function aceptaciones(): HasMany
     {
         return $this->hasMany(AceptacionPolitica::class, 'politica_id');
+    }
+
+    public function versiones(): HasMany
+    {
+        return $this->hasMany(PoliticaVersion::class, 'politica_id')->orderByDesc('created_at');
     }
 
     /**
