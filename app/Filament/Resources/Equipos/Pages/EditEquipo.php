@@ -384,6 +384,7 @@ class EditEquipo extends EditRecord
                             ],
                             'estado' => 'activo',
                             'creado_por' => auth()->id(),
+                            'equipo_id' => $this->record->id,
                         ]);
                     });
 

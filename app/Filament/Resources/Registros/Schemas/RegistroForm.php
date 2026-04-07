@@ -99,6 +99,20 @@ class RegistroForm
                         ->columns(2)
                         ->collapsible()
                         ->columnSpan(['default' => 1, 'lg' => 5]),
+
+                    // Equipo vinculado (solo F13)
+                    Section::make('Equipo vinculado')
+                        ->icon('heroicon-o-computer-desktop')
+                        ->description('Vincula este registro al equipo correspondiente.')
+                        ->schema([
+                            Select::make('equipo_id')
+                                ->label('Equipo')
+                                ->relationship('equipo', 'codigo_interno')
+                                ->searchable()
+                                ->placeholder('Seleccionar equipo (opcional)'),
+                        ])
+                        ->visible(fn (Get $get): bool => $get('tipo_formato') === 'F13')
+                        ->columnSpan(['default' => 1, 'lg' => 7]),
                 ]),
             ]);
     }

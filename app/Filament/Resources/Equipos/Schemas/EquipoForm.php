@@ -247,6 +247,57 @@ class EquipoForm
                     ->visible(fn (string $operation): bool => $operation === 'edit')
                     ->collapsible(),
 
+                Section::make('Registros asociados')
+                    ->icon('heroicon-o-document-text')
+                    ->description('Registros de seguridad vinculados a este equipo (F12, F13, etc.).')
+                    ->schema([
+                        Placeholder::make('registros_asociados')
+                            ->label('')
+                            ->content(function ($record): HtmlString {
+                                if (! $record instanceof Equipo) {
+                                    return new HtmlString('<p class="text-sm text-gray-500">Guarda el equipo primero.</p>');
+                                }
+
+                                $registros = \App\Models\Registro::where('equipo_id', $record->id)
+                                    ->orderBy('created_at', 'desc')
+                                    ->limit(20)
+                                    ->get();
+
+                                if ($registros->isEmpty()) {
+                                    return new HtmlString('<p class="text-sm text-gray-500">Sin registros asociados.</p>');
+                                }
+
+                                $rows = '';
+                                foreach ($registros as $r) {
+                                    $tipoBadgeColor = match ($r->tipo_formato) {
+                                        'F12' => 'info',
+                                        'F13' => 'danger',
+                                        default => 'gray',
+                                    };
+                                    $estadoColor = $r->estado === 'activo' ? 'success' : 'gray';
+                                    $rows .= '<tr class="border-b border-gray-100 dark:border-gray-800">'
+                                        . '<td class="py-2 px-2 text-xs text-gray-700 dark:text-gray-300">' . e($r->numero_registro) . '</td>'
+                                        . '<td class="py-2 px-2 text-xs"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-' . $tipoBadgeColor . '-100 text-' . $tipoBadgeColor . '-700 dark:bg-' . $tipoBadgeColor . '-500/20 dark:text-' . $tipoBadgeColor . '-400">' . e($r->tipo_formato) . '</span></td>'
+                                        . '<td class="py-2 px-2 text-xs"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-' . $estadoColor . '-100 text-' . $estadoColor . '-700 dark:bg-' . $estadoColor . '-500/20 dark:text-' . $estadoColor . '-400">' . ucfirst($r->estado) . '</span></td>'
+                                        . '<td class="py-2 px-2 text-xs text-gray-500">' . $r->created_at->format('d/m/Y H:i') . '</td>'
+                                        . '</tr>';
+                                }
+
+                                return new HtmlString(
+                                    '<table class="w-full text-left">'
+                                    . '<thead><tr class="border-b border-gray-200 dark:border-gray-700">'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">N° Registro</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Formato</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Estado</th>'
+                                    . '<th class="py-2 px-2 text-xs font-medium text-gray-500">Fecha</th>'
+                                    . '</tr></thead><tbody>' . $rows . '</tbody></table>'
+                                );
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (string $operation): bool => $operation === 'edit')
+                    ->collapsible(),
+
                 Section::make('Historial de checklists')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->description('Verificaciones de cumplimiento realizadas en este equipo.')
