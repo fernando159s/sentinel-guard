@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Auth;
 
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
@@ -17,9 +18,24 @@ class EditProfile extends BaseEditProfile
             ->components([
                 Section::make('Datos personales')
                     ->icon('heroicon-o-user')
+                    ->columns(2)
                     ->schema([
                         $this->getNameFormComponent(),
                         $this->getEmailFormComponent(),
+                        TextInput::make('dni')
+                            ->label('DNI')
+                            ->maxLength(20),
+                        TextInput::make('telefono')
+                            ->label('Telefono')
+                            ->tel()
+                            ->maxLength(30),
+                        TextInput::make('direccion')
+                            ->label('Direccion')
+                            ->maxLength(500)
+                            ->columnSpanFull(),
+                        TextInput::make('puesto')
+                            ->label('Puesto en la empresa')
+                            ->maxLength(150),
                     ]),
                 Section::make('Cambiar contrasena')
                     ->icon('heroicon-o-lock-closed')

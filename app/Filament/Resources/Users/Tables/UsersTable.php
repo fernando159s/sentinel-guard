@@ -49,6 +49,13 @@ class UsersTable
                     ->limit(25)
                     ->toggleable()
                     ->visible(fn () => auth()->user()?->hasRole('super_admin')),
+                TextColumn::make('puesto')
+                    ->label('Puesto')
+                    ->limit(25)
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('dni')
+                    ->label('DNI')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime('d/m/Y')
