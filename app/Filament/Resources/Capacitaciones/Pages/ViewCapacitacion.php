@@ -26,7 +26,7 @@ class ViewCapacitacion extends ViewRecord implements HasTable
 
     protected static string $resource = CapacitacionResource::class;
 
-    protected static string $view = 'filament.resources.capacitaciones.pages.view-capacitacion';
+    protected string $view = 'filament.resources.capacitaciones.pages.view-capacitacion';
 
     protected function getHeaderActions(): array
     {

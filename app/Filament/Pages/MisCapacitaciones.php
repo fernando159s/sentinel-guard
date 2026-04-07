@@ -29,7 +29,7 @@ class MisCapacitaciones extends Page implements HasTable
 
     protected static ?int $navigationSort = 2;
 
-    protected static string $view = 'filament.pages.mis-capacitaciones';
+    protected string $view = 'filament.pages.mis-capacitaciones';
 
     public static function canAccess(): bool
     {

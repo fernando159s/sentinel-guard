@@ -27,6 +27,8 @@ class CapacitacionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Capacitaciones';
 
+    protected static ?string $slug = 'capacitaciones';
+
     protected static ?int $navigationSort = 1;
 
     public static function canAccess(): bool
