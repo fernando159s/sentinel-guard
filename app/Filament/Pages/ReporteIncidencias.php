@@ -91,13 +91,19 @@ class ReporteIncidencias extends Page implements HasForms
 
         $monthName = now()->setMonth($month)->translatedFormat('F');
 
-        $html = $this->buildReportHtml($tenant, $incidencias, $resoluciones, $monthName, $year);
-
         $mpdf = new Mpdf([
             'format' => 'A4',
             'tempDir' => storage_path('app/temp'),
         ]);
-        $mpdf->WriteHTML($html);
+
+        if ($tenant->logo_path) {
+            $logoPath = storage_path('app/' . $tenant->logo_path);
+            if (file_exists($logoPath)) {
+                $mpdf->imageVars['logo'] = file_get_contents($logoPath);
+            }
+        }
+
+        $this->buildReportPages($mpdf, $tenant, $incidencias, $resoluciones, $monthName, $year);
 
         $filename = "reporte_incidencias_{$year}_{$month}.pdf";
 
@@ -106,63 +112,262 @@ class ReporteIncidencias extends Page implements HasForms
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReportHtml($tenant, $incidencias, $resoluciones, $monthName, $year): string
+    private function buildReportPages(Mpdf $mpdf, $tenant, $incidencias, $resoluciones, $monthName, $year): void
     {
+        $logoHtml = '';
+        if ($tenant->logo_path && file_exists(storage_path('app/' . $tenant->logo_path))) {
+            $logoHtml = '<img src="var:logo" style="height:50px;margin-bottom:8px;" /><br>';
+        }
+
+        $style = "
+        <style>
+            body { font-family: Arial, sans-serif; font-size: 10px; color: #333; }
+            h1 { color: #4338ca; font-size: 16px; margin-bottom: 2px; }
+            h2 { font-size: 13px; margin-top: 20px; color: #333; }
+            h3 { font-size: 12px; margin-top: 10px; color: #555; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { border: 1px solid #ddd; padding: 5px; text-align: left; }
+            th { background: #f3f4f6; font-weight: bold; }
+            .summary { margin-top: 15px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; }
+            .ficha { border: 1px solid #ddd; border-radius: 4px; margin-top: 12px; }
+            .ficha-header { background: #f0f0ff; padding: 10px 12px; border-bottom: 1px solid #ddd; }
+            .ficha-body { padding: 12px; }
+            .field { margin-bottom: 10px; }
+            .field-label { font-size: 9px; font-weight: bold; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+            .field-value { font-size: 11px; color: #222; }
+            .field-value-long { font-size: 10px; color: #222; padding: 6px 8px; background: #fafafa; border: 1px solid #eee; border-radius: 3px; }
+            .grid-2 { display: flex; gap: 0; }
+            .grid-2 > div { width: 50%; }
+            .grid-3 { display: flex; gap: 0; }
+            .grid-3 > div { width: 33.33%; }
+            .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: bold; }
+            .badge-alta { background: #fee2e2; color: #dc2626; }
+            .badge-media { background: #fef3c7; color: #d97706; }
+            .badge-baja { background: #d1fae5; color: #059669; }
+            .footer { margin-top: 30px; font-size: 9px; color: #888; }
+        </style>";
+
+        // ═══ PAGE 1: Resumen general ═══
         $incTable = '';
         foreach ($incidencias as $i) {
             $datos = $i->datos ?? [];
-            $incTable .= "<tr>
-                <td>{$i->numero_registro}</td>
-                <td>" . ($datos['tipo_incidencia'] ?? '-') . "</td>
-                <td>" . ($datos['severidad'] ?? '-') . "</td>
-                <td>{$i->creador?->name}</td>
-                <td>{$i->created_at->format('d/m/Y')}</td>
-            </tr>";
+            $sev = $datos['severidad'] ?? '-';
+            $sevClass = match ($sev) { 'alta' => 'badge-alta', 'media' => 'badge-media', default => 'badge-baja' };
+            $incTable .= '<tr>
+                <td>' . e($i->numero_registro) . '</td>
+                <td>' . e($this->labelFor('tipo_incidencia', $datos['tipo_incidencia'] ?? '-')) . '</td>
+                <td><span class="badge ' . $sevClass . '">' . ucfirst($sev) . '</span></td>
+                <td>' . e($datos['sistema_equipo'] ?? '-') . '</td>
+                <td>' . e($i->creador?->name ?? '-') . '</td>
+                <td>' . $i->created_at->format('d/m/Y') . '</td>
+            </tr>';
         }
 
         $resTable = '';
         foreach ($resoluciones as $r) {
             $datos = $r->datos ?? [];
-            $resTable .= "<tr>
-                <td>{$r->numero_registro}</td>
-                <td>" . ($datos['incidencia_ref'] ?? '-') . "</td>
-                <td>" . ($datos['clasificacion'] ?? '-') . "</td>
-                <td>{$r->created_at->format('d/m/Y')}</td>
-            </tr>";
+            $clas = $datos['clasificacion'] ?? '-';
+            $clasClass = match ($clas) { 'alta' => 'badge-alta', 'media' => 'badge-media', default => 'badge-baja' };
+            $resTable .= '<tr>
+                <td>' . e($r->numero_registro) . '</td>
+                <td>' . e($datos['incidencia_ref'] ?? '-') . '</td>
+                <td><span class="badge ' . $clasClass . '">' . ucfirst($clas) . '</span></td>
+                <td>' . e($r->creador?->name ?? '-') . '</td>
+                <td>' . $r->created_at->format('d/m/Y') . '</td>
+            </tr>';
         }
 
-        return "
-        <style>
-            body { font-family: Arial, sans-serif; font-size: 10px; }
-            h1 { color: #4338ca; font-size: 16px; }
-            h2 { font-size: 13px; margin-top: 20px; color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-            th, td { border: 1px solid #ddd; padding: 5px; text-align: left; }
-            th { background: #f3f4f6; font-weight: bold; }
-            .summary { margin-top: 20px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; }
-        </style>
-        <h1>{$tenant->razon_social}</h1>
-        <p>Reporte Mensual de Incidencias — {$monthName} {$year}</p>
+        $tasaRes = $incidencias->count() > 0 ? round($resoluciones->count() / $incidencias->count() * 100) : 0;
 
-        <h2>Incidencias (F09) — {$incidencias->count()} registros</h2>
-        <table>
-            <tr><th>N°</th><th>Tipo</th><th>Severidad</th><th>Reportó</th><th>Fecha</th></tr>
-            {$incTable}
-        </table>
+        $mpdf->WriteHTML($style . "
+            {$logoHtml}
+            <h1>" . e($tenant->razon_social) . "</h1>
+            <p style='color:#666;'>RUC: " . e($tenant->ruc) . "</p>
+            <p><strong>Reporte Mensual de Incidencias de Seguridad — {$monthName} {$year}</strong></p>
 
-        <h2>Resoluciones (F10) — {$resoluciones->count()} registros</h2>
-        <table>
-            <tr><th>N°</th><th>Incidencia Ref</th><th>Clasificación</th><th>Fecha</th></tr>
-            {$resTable}
-        </table>
+            <div class='summary'>
+                <strong>Resumen:</strong>
+                Incidencias (F09): {$incidencias->count()} |
+                Resoluciones (F10): {$resoluciones->count()} |
+                Tasa de resolucion: {$tasaRes}%
+            </div>
 
-        <div class='summary'>
-            <strong>Resumen:</strong> {$incidencias->count()} incidencias, {$resoluciones->count()} resoluciones.
-            Tasa de resolución: " . ($incidencias->count() > 0 ? round($resoluciones->count() / $incidencias->count() * 100) : 0) . "%
-        </div>
+            <h2>Incidencias registradas (F09) — {$incidencias->count()}</h2>
+            <table>
+                <tr><th>N°</th><th>Tipo</th><th>Severidad</th><th>Sistema/Equipo</th><th>Reporto</th><th>Fecha</th></tr>
+                {$incTable}
+            </table>
 
-        <p style='margin-top:30px;font-size:9px;color:#888;'>
-            Generado: " . now()->format('d/m/Y H:i') . " | Admin: " . auth()->user()->name . "
-        </p>";
+            <h2>Resoluciones registradas (F10) — {$resoluciones->count()}</h2>
+            <table>
+                <tr><th>N°</th><th>Incidencia Ref</th><th>Clasificacion</th><th>Ejecuto</th><th>Fecha</th></tr>
+                {$resTable}
+            </table>
+
+            <p class='footer'>
+                Generado: " . now()->format('d/m/Y H:i') . ' | Admin: ' . e(auth()->user()->name) . ' | SecuriForm — PSC000001 / PSC000-25
+            </p>');
+
+        // ═══ PAGES 2+: Ficha detallada por cada incidencia (F09) ═══
+        foreach ($incidencias as $i) {
+            $mpdf->AddPage();
+            $datos = $i->datos ?? [];
+            $sev = $datos['severidad'] ?? '-';
+            $sevClass = match ($sev) { 'alta' => 'badge-alta', 'media' => 'badge-media', default => 'badge-baja' };
+
+            $mpdf->WriteHTML($style . "
+                {$logoHtml}
+                <h1>" . e($tenant->razon_social) . "</h1>
+                <p style='color:#666;'>RUC: " . e($tenant->ruc) . "</p>
+
+                <div class='ficha'>
+                    <div class='ficha-header'>
+                        <h2 style='margin:0;'>F09 — Notificacion de Incidencia</h2>
+                        <p style='margin:4px 0 0; color:#666;'>N° " . e($i->numero_registro) . " | Politica: PSC000001 / PSC000-25</p>
+                    </div>
+                    <div class='ficha-body'>
+                        <div class='grid-3'>
+                            <div class='field'>
+                                <div class='field-label'>Fecha / Hora del evento</div>
+                                <div class='field-value'>" . e($datos['fecha_evento'] ?? '-') . "</div>
+                            </div>
+                            <div class='field'>
+                                <div class='field-label'>Tipo de incidencia</div>
+                                <div class='field-value'>" . e($this->labelFor('tipo_incidencia', $datos['tipo_incidencia'] ?? '-')) . "</div>
+                            </div>
+                            <div class='field'>
+                                <div class='field-label'>Severidad</div>
+                                <div class='field-value'><span class='badge {$sevClass}'>" . ucfirst($sev) . "</span></div>
+                            </div>
+                        </div>
+                        <div class='grid-2'>
+                            <div class='field'>
+                                <div class='field-label'>Sistema / Equipo / Lugar</div>
+                                <div class='field-value'>" . e($datos['sistema_equipo'] ?? '-') . "</div>
+                            </div>
+                            <div class='field'>
+                                <div class='field-label'>Banco de datos</div>
+                                <div class='field-value'>" . e($datos['banco_datos'] ?? '-') . "</div>
+                            </div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Personas notificadas</div>
+                            <div class='field-value'>" . e(is_array($datos['personas_notificadas'] ?? null) ? implode(', ', $datos['personas_notificadas']) : ($datos['personas_notificadas'] ?? '-')) . "</div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Descripcion</div>
+                            <div class='field-value-long'>" . nl2br(e(strip_tags($datos['descripcion'] ?? '-'))) . "</div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Medidas inmediatas</div>
+                            <div class='field-value-long'>" . nl2br(e($datos['medidas_inmediatas'] ?? '-')) . "</div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Impacto potencial</div>
+                            <div class='field-value-long'>" . nl2br(e($datos['impacto_potencial'] ?? '-')) . "</div>
+                        </div>
+                        <div class='grid-2'>
+                            <div class='field'>
+                                <div class='field-label'>Comunica (nombre y cargo)</div>
+                                <div class='field-value'>" . e($datos['comunica_nombre'] ?? '-') . "</div>
+                            </div>
+                            <div class='field'>
+                                <div class='field-label'>Registrado por</div>
+                                <div class='field-value'>" . e($i->creador?->name ?? '-') . " | " . $i->created_at->format('d/m/Y H:i') . "</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class='footer'>
+                    Generado: " . now()->format('d/m/Y H:i') . ' | SecuriForm
+                </p>');
+        }
+
+        // ═══ PAGES: Ficha detallada por cada resolucion (F10) ═══
+        foreach ($resoluciones as $r) {
+            $mpdf->AddPage();
+            $datos = $r->datos ?? [];
+            $clas = $datos['clasificacion'] ?? '-';
+            $clasClass = match ($clas) { 'alta' => 'badge-alta', 'media' => 'badge-media', default => 'badge-baja' };
+
+            $mpdf->WriteHTML($style . "
+                {$logoHtml}
+                <h1>" . e($tenant->razon_social) . "</h1>
+                <p style='color:#666;'>RUC: " . e($tenant->ruc) . "</p>
+
+                <div class='ficha'>
+                    <div class='ficha-header'>
+                        <h2 style='margin:0;'>F10 — Resolucion de Incidencia</h2>
+                        <p style='margin:4px 0 0; color:#666;'>N° " . e($r->numero_registro) . " | Politica: PSC000-25</p>
+                    </div>
+                    <div class='ficha-body'>
+                        <div class='grid-3'>
+                            <div class='field'>
+                                <div class='field-label'>N° Incidencia (referencia F09)</div>
+                                <div class='field-value'>" . e($datos['incidencia_ref'] ?? '-') . "</div>
+                            </div>
+                            <div class='field'>
+                                <div class='field-label'>Fecha / Hora de cierre</div>
+                                <div class='field-value'>" . e($datos['fecha_cierre'] ?? '-') . "</div>
+                            </div>
+                            <div class='field'>
+                                <div class='field-label'>Clasificacion</div>
+                                <div class='field-value'><span class='badge {$clasClass}'>" . ucfirst($clas) . "</span></div>
+                            </div>
+                        </div>
+                        <div class='grid-2'>
+                            <div class='field'>
+                                <div class='field-label'>Ejecuto (nombre y cargo)</div>
+                                <div class='field-value'>" . e($datos['ejecuto'] ?? '-') . "</div>
+                            </div>
+                            <div class='field'>
+                                <div class='field-label'>Firma responsable de seguridad</div>
+                                <div class='field-value'>" . e($datos['firma_responsable'] ?? '-') . "</div>
+                            </div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Requirio recuperacion</div>
+                            <div class='field-value'>" . (($datos['requirio_recuperacion'] ?? false) ? 'Si' : 'No') . "</div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Medidas adoptadas</div>
+                            <div class='field-value-long'>" . nl2br(e($datos['medidas_adoptadas'] ?? '-')) . "</div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Resultado / Verificacion</div>
+                            <div class='field-value-long'>" . nl2br(e($datos['resultado_verificacion'] ?? '-')) . "</div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Acciones preventivas</div>
+                            <div class='field-value-long'>" . nl2br(e($datos['acciones_preventivas'] ?? '-')) . "</div>
+                        </div>
+                        <div class='field'>
+                            <div class='field-label'>Registrado por</div>
+                            <div class='field-value'>" . e($r->creador?->name ?? '-') . " | " . $r->created_at->format('d/m/Y H:i') . "</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class='footer'>
+                    Generado: " . now()->format('d/m/Y H:i') . ' | SecuriForm
+                </p>');
+        }
+    }
+
+    private function labelFor(string $field, string $value): string
+    {
+        $labels = [
+            'tipo_incidencia' => [
+                'acceso_no_autorizado' => 'Acceso no autorizado',
+                'perdida_datos' => 'Perdida de datos',
+                'fuga_informacion' => 'Fuga de informacion',
+                'malware' => 'Malware/Virus',
+                'fallo_sistema' => 'Fallo de sistema',
+                'otro' => 'Otro',
+            ],
+        ];
+
+        return $labels[$field][$value] ?? ucfirst(str_replace('_', ' ', $value));
     }
 }
