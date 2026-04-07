@@ -6,19 +6,14 @@ use App\Filament\Resources\Capacitaciones\CapacitacionResource;
 use App\Models\CapacitacionAsistencia;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Facades\Filament;
-use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class ViewCapacitacion extends ViewRecord implements HasTable
 {
@@ -97,7 +92,7 @@ class ViewCapacitacion extends ViewRecord implements HasTable
                     ->placeholder('—'),
             ])
             ->recordActions($isAdmin ? [
-                Tables\Actions\Action::make('toggle_asistencia')
+                Action::make('toggle_asistencia')
                     ->label(fn ($record) => $record->asistio ? 'Quitar' : 'Marcar')
                     ->icon(fn ($record) => $record->asistio ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn ($record) => $record->asistio ? 'danger' : 'success')
