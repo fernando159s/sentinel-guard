@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Capacitaciones;
 use App\Filament\Resources\Capacitaciones\Pages\CreateCapacitacion;
 use App\Filament\Resources\Capacitaciones\Pages\EditCapacitacion;
 use App\Filament\Resources\Capacitaciones\Pages\ListCapacitaciones;
+use App\Filament\Resources\Capacitaciones\Pages\ViewCapacitacion;
 use App\Filament\Resources\Capacitaciones\Schemas\CapacitacionForm;
 use App\Filament\Resources\Capacitaciones\Tables\CapacitacionesTable;
 use App\Models\Capacitacion;
@@ -53,6 +54,7 @@ class CapacitacionResource extends Resource
         return [
             'index' => ListCapacitaciones::route('/'),
             'create' => CreateCapacitacion::route('/create'),
+            'view' => ViewCapacitacion::route('/{record}'),
             'edit' => EditCapacitacion::route('/{record}/edit'),
         ];
     }
