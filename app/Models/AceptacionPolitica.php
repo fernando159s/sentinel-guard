@@ -19,12 +19,14 @@ class AceptacionPolitica extends Model
         'firma_imagen',
         'firma_nombre',
         'firma_cargo',
+        'fecha_expiracion',
     ];
 
     protected function casts(): array
     {
         return [
             'fecha_aceptacion' => 'datetime',
+            'fecha_expiracion' => 'datetime',
         ];
     }
 
@@ -36,5 +38,10 @@ class AceptacionPolitica extends Model
     public function politica(): BelongsTo
     {
         return $this->belongsTo(Politica::class, 'politica_id');
+    }
+
+    public function estaVigente(): bool
+    {
+        return $this->fecha_expiracion === null || $this->fecha_expiracion->isFuture();
     }
 }
