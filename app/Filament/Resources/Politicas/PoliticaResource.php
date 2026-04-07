@@ -5,21 +5,26 @@ namespace App\Filament\Resources\Politicas;
 use App\Filament\Resources\Politicas\Pages\CreatePolitica;
 use App\Filament\Resources\Politicas\Pages\EditPolitica;
 use App\Filament\Resources\Politicas\Pages\ListPoliticas;
+use App\Filament\Resources\Politicas\RelationManagers\VersionesRelationManager;
 use App\Models\Politica;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\Action;
-use Filament\Actions\EditAction;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 
 class PoliticaResource extends Resource
 {
@@ -80,6 +85,35 @@ class PoliticaResource extends Resource
                             ->required()
                             ->columnSpanFull(),
                     ]),
+
+                Section::make('Documento oficial')
+                    ->icon('heroicon-o-paper-clip')
+                    ->description('Sube el documento Word o PDF oficial. Al subir un nuevo archivo se incrementara la version automaticamente.')
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->schema([
+                        FileUpload::make('archivo_path')
+                            ->label('Documento (Word/PDF)')
+                            ->disk('local')
+                            ->directory('politicas/archivos')
+                            ->acceptedFileTypes([
+                                'application/pdf',
+                                'application/msword',
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            ])
+                            ->maxSize(10240)
+                            ->storeFileNamesIn('archivo_nombre')
+                            ->live()
+                            ->afterStateUpdated(function ($state, Set $set, Get $get, string $operation) {
+                                if ($state && $operation === 'edit') {
+                                    $current = $get('version');
+                                    $parts = explode('.', $current);
+                                    $major = (int) ($parts[0] ?? 1);
+                                    $set('version', ($major + 1) . '.0');
+                                }
+                            })
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
@@ -101,6 +135,11 @@ class PoliticaResource extends Resource
                 IconColumn::make('activa')
                     ->label('Activa')
                     ->boolean(),
+                IconColumn::make('archivo_path')
+                    ->label('Doc')
+                    ->icon(fn ($state) => $state ? 'heroicon-o-document-text' : null)
+                    ->color('primary')
+                    ->toggleable(),
                 TextColumn::make('aceptaciones_count')
                     ->label('Aceptaciones')
                     ->counts('aceptaciones')
@@ -117,6 +156,15 @@ class PoliticaResource extends Resource
                     ->options(['1' => 'Activas', '0' => 'Inactivas']),
             ])
             ->recordActions([
+                Action::make('descargar_archivo')
+                    ->label('Doc')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('info')
+                    ->visible(fn ($record) => filled($record->archivo_path))
+                    ->action(fn ($record) => Storage::disk('local')->download(
+                        $record->archivo_path,
+                        $record->archivo_nombre ?? 'documento'
+                    )),
                 Action::make('descargar_pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-arrow-down-tray')
@@ -125,6 +173,13 @@ class PoliticaResource extends Resource
                     ->openUrlInNewTab(),
                 EditAction::make(),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            VersionesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

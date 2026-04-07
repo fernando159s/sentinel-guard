@@ -18,8 +18,13 @@ class EnsurePoliciesAccepted
             return $next($request);
         }
 
-        // Skip for super_admin — they manage policies, not accept them
-        if ($user->hasRole('super_admin')) {
+        // Skip for admins — they manage policies, not accept them
+        if ($user->hasRole(['super_admin', 'admin_empresa'])) {
+            return $next($request);
+        }
+
+        // Skip Livewire update requests (POST to /livewire/update)
+        if ($request->is('livewire/*')) {
             return $next($request);
         }
 
