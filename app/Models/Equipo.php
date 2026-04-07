@@ -31,6 +31,9 @@ class Equipo extends Model
         'fecha_adquisicion',
         'fecha_garantia',
         'observaciones',
+        'categoria',
+        'contenido_datos',
+        'clasificacion_soporte',
     ];
 
     protected function casts(): array
@@ -84,5 +87,20 @@ class Equipo extends Model
     public function estaDisponible(): bool
     {
         return $this->estado === 'activo' && ! $this->estaAsignado();
+    }
+
+    public function registros(): HasMany
+    {
+        return $this->hasMany(Registro::class, 'equipo_id');
+    }
+
+    public function backupProgramaciones(): HasMany
+    {
+        return $this->hasMany(BackupProgramacion::class, 'equipo_id');
+    }
+
+    public function esTecnologico(): bool
+    {
+        return $this->categoria === 'tecnologico';
     }
 }
