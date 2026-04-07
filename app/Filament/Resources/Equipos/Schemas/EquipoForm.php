@@ -203,6 +203,10 @@ class EquipoForm
                                         'transferencia' => 'warning',
                                         'devolucion' => 'gray',
                                         'baja' => 'danger',
+                                        'ingreso_nuevo' => 'info',
+                                        'salida_mantenimiento' => 'warning',
+                                        'salida_homeoffice' => 'info',
+                                        'salida_terceros' => 'danger',
                                         default => 'gray',
                                     };
                                     $tipoLabel = match ($a->tipo) {
@@ -210,6 +214,10 @@ class EquipoForm
                                         'transferencia' => 'Transferencia',
                                         'devolucion' => 'Devolucion',
                                         'baja' => 'Baja',
+                                        'ingreso_nuevo' => 'Ingreso nuevo',
+                                        'salida_mantenimiento' => 'Mantenimiento',
+                                        'salida_homeoffice' => 'Home office',
+                                        'salida_terceros' => 'A terceros',
                                         default => $a->tipo,
                                     };
                                     $rows .= '<tr class="border-b border-gray-100 dark:border-gray-800">'

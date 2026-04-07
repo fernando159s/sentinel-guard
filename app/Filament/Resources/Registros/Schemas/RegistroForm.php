@@ -107,7 +107,7 @@ class RegistroForm
     {
         $groups = [
             'Datos y acceso' => [TipoFormato::F02, TipoFormato::F04, TipoFormato::F05, TipoFormato::F03],
-            'Soportes y activos' => [TipoFormato::F07, TipoFormato::F08, TipoFormato::F12, TipoFormato::F13],
+            'Soportes y activos' => [TipoFormato::F12, TipoFormato::F13], // F07 y F08 son ahora reportes, no registros
             'Incidencias' => [TipoFormato::F09, TipoFormato::F10, TipoFormato::F11],
             'Auditoria y control' => [TipoFormato::F01, TipoFormato::F06],
         ];

@@ -167,6 +167,139 @@ class EditEquipo extends EditRecord
                 })
                 ->visible(fn () => $this->record->estaAsignado()),
 
+            Action::make('salida_mantenimiento')
+                ->label('Mantenimiento')
+                ->icon('heroicon-o-wrench-screwdriver')
+                ->color('warning')
+                ->form([
+                    Textarea::make('motivo')
+                        ->label('Motivo')
+                        ->required()
+                        ->rows(2),
+                    \Filament\Forms\Components\TextInput::make('empresa_tercera')
+                        ->label('Empresa tercera (si aplica)'),
+                    \Filament\Forms\Components\TextInput::make('ruc_tercero')
+                        ->label('RUC tercera'),
+                    \Filament\Forms\Components\TextInput::make('contacto_tercero')
+                        ->label('Contacto'),
+                    Textarea::make('notas')
+                        ->label('Notas')
+                        ->rows(2),
+                ])
+                ->action(function (array $data) {
+                    DB::transaction(function () use ($data) {
+                        $vigente = $this->record->asignacionVigente;
+                        if ($vigente) {
+                            $vigente->update(['fecha_fin' => now()]);
+                        }
+
+                        EquipoAsignacion::create([
+                            'equipo_id' => $this->record->id,
+                            'user_id' => $vigente?->user_id,
+                            'tipo' => 'salida_mantenimiento',
+                            'fecha_inicio' => now(),
+                            'motivo' => $data['motivo'],
+                            'empresa_tercera' => $data['empresa_tercera'] ?? null,
+                            'ruc_tercero' => $data['ruc_tercero'] ?? null,
+                            'contacto_tercero' => $data['contacto_tercero'] ?? null,
+                            'notas' => $data['notas'] ?? null,
+                            'asignado_por' => auth()->id(),
+                        ]);
+
+                        $this->record->update(['estado' => 'mantenimiento']);
+                    });
+
+                    Notification::make()->title('Enviado a mantenimiento')->success()->send();
+                })
+                ->visible(fn () => $this->record->estado === 'activo'),
+
+            Action::make('salida_homeoffice')
+                ->label('Home Office')
+                ->icon('heroicon-o-home')
+                ->color('info')
+                ->form([
+                    Select::make('user_id')
+                        ->label('Usuario')
+                        ->options(fn () => User::where('empresa_id', Filament::getTenant()?->id)
+                            ->where('estado', 'activo')
+                            ->pluck('name', 'id'))
+                        ->searchable()
+                        ->required(),
+                    Textarea::make('motivo')
+                        ->label('Motivo')
+                        ->rows(2),
+                    Textarea::make('notas')
+                        ->label('Notas')
+                        ->rows(2),
+                ])
+                ->action(function (array $data) {
+                    DB::transaction(function () use ($data) {
+                        $vigente = $this->record->asignacionVigente;
+                        if ($vigente) {
+                            $vigente->update(['fecha_fin' => now()]);
+                        }
+
+                        EquipoAsignacion::create([
+                            'equipo_id' => $this->record->id,
+                            'user_id' => $data['user_id'],
+                            'tipo' => 'salida_homeoffice',
+                            'fecha_inicio' => now(),
+                            'motivo' => $data['motivo'] ?? null,
+                            'notas' => $data['notas'] ?? null,
+                            'asignado_por' => auth()->id(),
+                        ]);
+                    });
+
+                    Notification::make()->title('Salida home office registrada')->success()->send();
+                })
+                ->visible(fn () => $this->record->estado === 'activo'),
+
+            Action::make('salida_terceros')
+                ->label('A terceros')
+                ->icon('heroicon-o-building-office')
+                ->color('warning')
+                ->form([
+                    \Filament\Forms\Components\TextInput::make('empresa_tercera')
+                        ->label('Empresa tercera')
+                        ->required(),
+                    \Filament\Forms\Components\TextInput::make('ruc_tercero')
+                        ->label('RUC')
+                        ->required(),
+                    \Filament\Forms\Components\TextInput::make('contacto_tercero')
+                        ->label('Contacto'),
+                    Textarea::make('motivo')
+                        ->label('Motivo')
+                        ->required()
+                        ->rows(2),
+                    Textarea::make('notas')
+                        ->label('Notas')
+                        ->rows(2),
+                ])
+                ->action(function (array $data) {
+                    DB::transaction(function () use ($data) {
+                        $vigente = $this->record->asignacionVigente;
+                        if ($vigente) {
+                            $vigente->update(['fecha_fin' => now()]);
+                        }
+
+                        EquipoAsignacion::create([
+                            'equipo_id' => $this->record->id,
+                            'user_id' => $vigente?->user_id,
+                            'tipo' => 'salida_terceros',
+                            'fecha_inicio' => now(),
+                            'motivo' => $data['motivo'],
+                            'empresa_tercera' => $data['empresa_tercera'],
+                            'ruc_tercero' => $data['ruc_tercero'],
+                            'contacto_tercero' => $data['contacto_tercero'] ?? null,
+                            'notas' => $data['notas'] ?? null,
+                            'asignado_por' => auth()->id(),
+                        ]);
+                    });
+
+                    Notification::make()->title('Salida a terceros registrada')->success()->send();
+                })
+                ->visible(fn () => $this->record->estado === 'activo'),
+
             Action::make('ejecutar_checklist')
                 ->label('Checklist')
                 ->icon('heroicon-o-clipboard-document-check')
