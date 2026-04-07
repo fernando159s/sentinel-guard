@@ -84,8 +84,8 @@ class ViewCapacitacion extends ViewRecord implements HasTable
                 IconColumn::make('asistio')
                     ->label('Asistio')
                     ->boolean()
-                    ->trueIcon(Heroicon::SolidCheckCircle)
-                    ->falseIcon(Heroicon::SolidXCircle)
+                    ->trueIcon(Heroicon::CheckCircle)
+                    ->falseIcon(Heroicon::OutlinedXCircle)
                     ->trueColor('success')
                     ->falseColor('danger'),
                 TextColumn::make('confirmador.name')
