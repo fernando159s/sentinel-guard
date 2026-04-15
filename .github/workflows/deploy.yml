@@ -88,7 +88,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cat > ~/sentinel-guard/.env.production << 'ENVEOF'
-          ${{ secrets.ENV_PRODUCTION }}
+          ${{ vars.ENV_PRODUCTION }}
           ENVEOF"
 
       # ── Post-deploy commands ────────────────────────────────
