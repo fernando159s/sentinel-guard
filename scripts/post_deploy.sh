@@ -89,4 +89,21 @@ fi
 # ── Permisos ─────────────────────────────────────────────────
 chmod -R 755 storage bootstrap/cache
 
+# ── Invalidar OPcache de Apache (separado del CLI) ───────────
+echo "[POST-DEPLOY] Invalidando OPcache de Apache..."
+OPCACHE_FILE="$PROJECT_DIR/public/_opcache_reset.php"
+cat > "$OPCACHE_FILE" <<'OPCACHE_PHP'
+<?php
+if (function_exists('opcache_reset')) {
+    opcache_reset();
+    echo 'OPCACHE_CLEARED';
+} else {
+    echo 'OPCACHE_NOT_AVAILABLE';
+}
+OPCACHE_PHP
+# Llamar via HTTP para que Apache ejecute el reset en su proceso
+RESULT=$(curl -sf --max-time 10 "https://sentinel-guard.co-de.com.pe/_opcache_reset.php" 2>/dev/null || echo "CURL_FAILED")
+rm -f "$OPCACHE_FILE"
+echo "[POST-DEPLOY] OPcache Apache: $RESULT"
+
 echo "[POST-DEPLOY] Deploy completado: https://sentinel-guard.co-de.com.pe"
