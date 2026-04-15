@@ -82,6 +82,15 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }}" \
             ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/sentinel-guard/
 
+      # ── Write .env.production from secret ─────────────────────
+      - name: Write .env.production on server
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cat > ~/sentinel-guard/.env.production << 'ENVEOF'
+          ${{ secrets.ENV_PRODUCTION }}
+          ENVEOF"
+
       # ── Post-deploy commands ────────────────────────────────
       - name: Run post-deploy on server
         run: |
