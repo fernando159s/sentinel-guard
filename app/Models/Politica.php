@@ -25,6 +25,11 @@ class Politica extends Model
         'activa',
         'es_nda',
         'vigencia_meses',
+        'firma_admin_imagen',
+        'firma_admin_nombre',
+        'firma_admin_cargo',
+        'firmado_por',
+        'fecha_firma_admin',
     ];
 
     protected function casts(): array
@@ -34,6 +39,7 @@ class Politica extends Model
             'activa' => 'boolean',
             'es_nda' => 'boolean',
             'vigencia_meses' => 'integer',
+            'fecha_firma_admin' => 'datetime',
         ];
     }
 
@@ -62,6 +68,16 @@ class Politica extends Model
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+
+    public function firmadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'firmado_por')->withoutGlobalScopes();
+    }
+
+    public function estaFirmadaPorAdmin(): bool
+    {
+        return $this->firma_admin_imagen !== null && $this->firmado_por !== null;
     }
 
     public function aceptaciones(): HasMany

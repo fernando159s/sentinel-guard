@@ -9,3 +9,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('backups:check-alarms')->dailyAt('08:00');
+
+Schedule::command('queue:work --stop-when-empty --max-time=55')
+    ->everyMinute()
+    ->withoutOverlapping();

@@ -41,6 +41,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'notif_tickets',
         'notif_incidencias',
         'ultimo_acceso',
+        'firma_guardada',
     ];
 
     /**

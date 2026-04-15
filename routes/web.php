@@ -34,3 +34,7 @@ Route::get('/politicas/{politica}/pdf', [\App\Http\Controllers\PoliticaPdfContro
 Route::get('/politicas/{politica}/nda/{aceptacion}/pdf', [\App\Http\Controllers\PoliticaPdfController::class, 'downloadNdaFirmante'])
     ->middleware('auth')
     ->name('politicas.nda-firmante-pdf');
+
+Route::get('/politicas/{politica}/firmantes/pdf', [\App\Http\Controllers\PoliticaPdfController::class, 'downloadResumenFirmantes'])
+    ->middleware('auth')
+    ->name('politicas.resumen-firmantes-pdf');

@@ -6,7 +6,8 @@
 .PHONY: help init up down restart build shell db-shell redis-shell \
         migrate migrate-fresh seed tinker logs logs-app logs-queue \
         queue queue-restart queue-failed queue-retry queue-flush \
-        test filament-user npm-dev npm-build clean cache-clear
+        test filament-user npm-dev npm-build clean cache-clear \
+        release diagrams
 
 # Colores
 YELLOW=\033[1;33m
@@ -163,3 +164,18 @@ clean: ## Borrar volumenes (BD, vendor, node_modules) y empezar de cero
 
 cache-clear: ## Limpiar todos los caches de Laravel
 	docker compose exec app php artisan optimize:clear
+
+# ── RELEASE ──────────────────────────────────────────────────
+
+release: ## Crear tag de release (uso: make release V=0.2.0)
+	@if [ -z "$(V)" ]; then echo "$(YELLOW)Uso: make release V=x.y.z$(NC)"; exit 1; fi
+	@echo "$(YELLOW)>> Creando tag v$(V)...$(NC)"
+	git tag -a v$(V) -m "Release v$(V)"
+	git push origin v$(V)
+	@echo "$(GREEN)Tag v$(V) creado y pusheado.$(NC)"
+
+# ── DOCUMENTACION ────────────────────────────────────────────
+
+diagrams: ## Renderizar diagramas PlantUML a PNG
+	docker run --rm -v "$(PWD)/docs/diagrams:/data" plantuml/plantuml /data/**/*.puml
+	@echo "$(GREEN)Diagramas renderizados en docs/diagrams/$(NC)"

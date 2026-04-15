@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Force HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Proxy all requests to Laravel public/
+    RewriteCond %{REQUEST_URI} !^/sentinel-guard/public/
+    RewriteRule ^(.*)$ /sentinel-guard/public/$1 [L]
+</IfModule>

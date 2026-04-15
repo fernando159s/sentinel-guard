@@ -136,6 +136,15 @@ class AdminPanelProvider extends PanelProvider
                     . '</div>'
                 );
             })
+            ->renderHook(\Filament\View\PanelsRenderHook::SIDEBAR_FOOTER, function () {
+                $version = config('version.full', '0.0.0');
+
+                return new \Illuminate\Support\HtmlString(
+                    '<div style="padding:8px 16px;text-align:center;">'
+                    . '<p style="font-size:10px;margin:0;opacity:0.5;" class="text-gray-500 dark:text-gray-500">SecuriForm v' . e($version) . '</p>'
+                    . '</div>'
+                );
+            })
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

@@ -213,7 +213,6 @@ class PoliticaResource extends Resource
                     ->label('Firmantes')
                     ->icon('heroicon-o-users')
                     ->color('warning')
-                    ->visible(fn ($record) => $record->es_nda)
                     ->url(fn ($record) => static::getUrl('firmantes', ['record' => $record])),
                 EditAction::make(),
             ]);

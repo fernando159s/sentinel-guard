@@ -4,7 +4,7 @@ namespace App\Filament\Resources\Capacitaciones\Pages;
 
 use App\Filament\Resources\Capacitaciones\CapacitacionResource;
 use App\Models\CapacitacionAsistencia;
-use Filament\Actions\Action;
+use Filament\Actions\Action as PageAction;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -12,6 +12,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 
@@ -45,7 +46,7 @@ class ViewCapacitacion extends ViewRecord implements HasTable
         if (auth()->user()?->hasRole(['super_admin', 'admin_empresa'])) {
             $actions[] = EditAction::make();
 
-            $actions[] = Action::make('marcar_asistencia_masiva')
+            $actions[] = PageAction::make('marcar_asistencia_masiva')
                 ->label('Marcar asistencia masiva')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
@@ -84,7 +85,14 @@ class ViewCapacitacion extends ViewRecord implements HasTable
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Nombre')
-                    ->searchable(),
+                    ->searchable(query: function ($query, string $search): void {
+                        $query->whereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+                    })
+                    ->sortable(query: function ($query, string $direction): void {
+                        $query->join('users', 'capacitacion_asistencias.user_id', '=', 'users.id')
+                            ->orderBy('users.name', $direction)
+                            ->select('capacitacion_asistencias.*');
+                    }),
                 TextColumn::make('user.email')
                     ->label('Email')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -107,7 +115,7 @@ class ViewCapacitacion extends ViewRecord implements HasTable
                     ->placeholder('—'),
             ])
             ->recordActions($isAdmin ? [
-                Action::make('toggle_asistencia')
+                TableAction::make('toggle_asistencia')
                     ->label(fn ($record) => $record->asistio ? 'Quitar' : 'Marcar')
                     ->icon(fn ($record) => $record->asistio ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
                     ->color(fn ($record) => $record->asistio ? 'danger' : 'success')
