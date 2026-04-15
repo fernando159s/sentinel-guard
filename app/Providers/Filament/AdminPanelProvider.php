@@ -117,6 +117,14 @@ class AdminPanelProvider extends PanelProvider
                     return '';
                 }
 
+                $switchBtn = '';
+                if ($user->hasRole('super_admin')) {
+                    $switchBtn = '<a href="/select-empresa" title="Cambiar empresa" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;text-decoration:none;transition:background .15s;margin-right:4px;" class="bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10">'
+                        . '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:15px;height:15px;" class="text-gray-500 dark:text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>'
+                        . '<span style="font-size:11px;font-weight:500;" class="text-gray-600 dark:text-gray-400">Empresas</span>'
+                        . '</a>';
+                }
+
                 $nombre = e($user->name);
                 $rol = e($user->roles->first()?->name ?? 'usuario');
                 $rolLabel = match ($rol) {
@@ -129,6 +137,7 @@ class AdminPanelProvider extends PanelProvider
 
                 return new \Illuminate\Support\HtmlString(
                     '<div style="display:flex;align-items:center;gap:8px;padding:0 8px;">'
+                    . $switchBtn
                     . '<div style="text-align:right;">'
                     . '<p style="font-size:12px;font-weight:600;line-height:1.2;margin:0;" class="text-gray-900 dark:text-white">' . $nombre . '</p>'
                     . '<p style="font-size:10px;margin:0;font-weight:500;" class="text-primary-600 dark:text-primary-400">' . $rolLabel . '</p>'

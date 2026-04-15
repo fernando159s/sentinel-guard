@@ -8,6 +8,14 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/select-empresa', function () {
+    if (! auth()->check()) {
+        return redirect('/admin/login');
+    }
+
+    return view('filament.pages.auth.select-empresa-standalone');
+})->middleware(['web'])->name('filament.admin.select-empresa');
+
 Route::get('/tickets/adjuntos/{adjunto}', function (TicketAdjunto $adjunto) {
     $disk = Storage::disk('tickets');
 
