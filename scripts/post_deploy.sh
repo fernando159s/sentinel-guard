@@ -27,6 +27,11 @@ cd "$PROJECT_DIR"
 echo "[POST-DEPLOY] PHP: $($PHP_BIN -r 'echo PHP_VERSION;')"
 echo "[POST-DEPLOY] Commit: $(git log --oneline -1 2>/dev/null || echo 'n/a')"
 
+# ── Directorios de storage ───────────────────────────────────
+mkdir -p storage/framework/{sessions,views,cache}
+mkdir -p storage/logs
+mkdir -p bootstrap/cache
+
 # ── .env ─────────────────────────────────────────────────────
 if [ ! -f .env ]; then
     if [ -f .env.production ]; then
@@ -38,29 +43,24 @@ if [ ! -f .env ]; then
     fi
 fi
 
-# Generar APP_KEY si está vacía
-if grep -q "^APP_KEY=$" .env 2>/dev/null; then
-    $PHP_BIN artisan key:generate --force
-    echo "[POST-DEPLOY] APP_KEY generada"
-fi
-
-# ── Directorios de storage ───────────────────────────────────
-mkdir -p storage/framework/{sessions,views,cache}
-mkdir -p storage/logs
-mkdir -p bootstrap/cache
-
-# ── Migraciones ──────────────────────────────────────────────
-echo "[POST-DEPLOY] Ejecutando migraciones..."
-$PHP_BIN artisan migrate --force
-
-# ── Limpiar cache antes de re-cachear ────────────────────────
+# ── Limpiar TODO el cache (antes de cualquier artisan) ───────
 echo "[POST-DEPLOY] Limpiando cache..."
 $PHP_BIN artisan config:clear
 $PHP_BIN artisan route:clear
 $PHP_BIN artisan view:clear
 $PHP_BIN artisan event:clear
 
-# ── Optimización ─────────────────────────────────────────────
+# ── APP_KEY ──────────────────────────────────────────────────
+if grep -q "^APP_KEY=$" .env 2>/dev/null; then
+    $PHP_BIN artisan key:generate --force
+    echo "[POST-DEPLOY] APP_KEY generada"
+fi
+
+# ── Migraciones ──────────────────────────────────────────────
+echo "[POST-DEPLOY] Ejecutando migraciones..."
+$PHP_BIN artisan migrate --force
+
+# ── Optimización (re-cachear con config limpio) ──────────────
 echo "[POST-DEPLOY] Optimizando..."
 $PHP_BIN artisan config:cache
 $PHP_BIN artisan route:cache
