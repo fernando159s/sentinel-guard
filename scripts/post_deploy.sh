@@ -45,6 +45,10 @@ fi
 
 # ── Limpiar TODO el cache (antes de cualquier artisan) ───────
 echo "[POST-DEPLOY] Limpiando cache..."
+$PHP_BIN -r "if(function_exists('opcache_reset')) { opcache_reset(); echo 'OPcache limpiado'; } else { echo 'OPcache no disponible (CLI)'; }" || true
+rm -f bootstrap/cache/config.php
+rm -f bootstrap/cache/routes-v7.php
+rm -f bootstrap/cache/events.php
 $PHP_BIN artisan config:clear
 $PHP_BIN artisan route:clear
 $PHP_BIN artisan view:clear
