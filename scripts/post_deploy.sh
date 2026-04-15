@@ -31,12 +31,17 @@ echo "[POST-DEPLOY] Commit: $(git log --oneline -1 2>/dev/null || echo 'n/a')"
 if [ ! -f .env ]; then
     if [ -f .env.production ]; then
         cp .env.production .env
-        $PHP_BIN artisan key:generate --force
-        echo "[POST-DEPLOY] .env creado y APP_KEY generada"
+        echo "[POST-DEPLOY] .env creado desde .env.production"
     else
         echo "[POST-DEPLOY] ERROR: No existe .env ni .env.production"
         exit 1
     fi
+fi
+
+# Generar APP_KEY si está vacía
+if grep -q "^APP_KEY=$" .env 2>/dev/null; then
+    $PHP_BIN artisan key:generate --force
+    echo "[POST-DEPLOY] APP_KEY generada"
 fi
 
 # ── Directorios de storage ───────────────────────────────────
