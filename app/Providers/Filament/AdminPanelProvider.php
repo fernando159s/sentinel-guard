@@ -37,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(null)
             ->profile(\App\Filament\Pages\Auth\EditProfile::class)
             ->tenant(Empresa::class, slugAttribute: 'ruc')
-            ->tenantRegistration(false)
+            ->tenantRegistration(\App\Filament\Pages\Auth\RegisterEmpresa::class)
             ->colors([
                 'primary' => ShadcnColor::Violet,
                 'danger' => ShadcnColor::Red,
