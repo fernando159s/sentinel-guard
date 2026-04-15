@@ -9,13 +9,18 @@ PROJECT_DIR="$HOME/sentinel-guard"
 PUBLIC_HTML="$HOME/domains/co-de.com.pe/public_html/sentinel-guard"
 
 # Detectar PHP 8.2-8.4
+PHP_BIN=""
 for v in 8.4 8.3 8.2; do
-    if [ -x "/usr/bin/php${v}" ]; then
-        PHP_BIN="/usr/bin/php${v}"
-        break
-    fi
+    for path in "/usr/bin/php${v}" "/opt/alt/php${v//.}/usr/bin/php" "/usr/local/bin/php${v}"; do
+        if [ -x "$path" ]; then
+            PHP_BIN="$path"
+            break 2
+        fi
+    done
 done
-PHP_BIN="${PHP_BIN:-php}"
+if [ -z "$PHP_BIN" ]; then
+    PHP_BIN="php"
+fi
 
 cd "$PROJECT_DIR"
 
