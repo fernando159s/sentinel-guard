@@ -299,7 +299,9 @@ class ViewTicket extends ViewRecord
                         ->success()
                         ->send();
                 })
-                ->visible(fn () => $this->record->puedeReabrirse() && auth()->user()->can('editar_tickets')),
+                ->visible(fn () => $this->record->puedeReabrirse() && (
+                    auth()->user()->can('editar_tickets') || auth()->id() === $this->record->creado_por
+                )),
         ];
     }
 }
