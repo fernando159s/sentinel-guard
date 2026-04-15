@@ -15,11 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            RolePermissionSeeder::class,
-            EmpresaSeeder::class,
-            UserSeeder::class,
-            EmailTemplateSeeder::class,
-        ]);
+        if (app()->environment('production')) {
+            $this->call(ProductionSeeder::class);
+        } else {
+            $this->call([
+                RolePermissionSeeder::class,
+                EmpresaSeeder::class,
+                UserSeeder::class,
+                EmailTemplateSeeder::class,
+            ]);
+        }
     }
 }

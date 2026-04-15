@@ -37,7 +37,7 @@ class PoliticaSeeder extends Seeder
         $this->command->info('PoliticaSeeder completado: ' . count($politicas) . ' politicas por empresa.');
     }
 
-    private function getPoliticas(): array
+    public function getPoliticas(): array
     {
         return [
             // ──────────────────────────────────────────────────────────
