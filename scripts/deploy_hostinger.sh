@@ -14,7 +14,7 @@ set -e
 
 # ── Configuración ────────────────────────────────────────────
 PROJECT_DIR="$HOME/sentinel-guard"
-PUBLIC_HTML="$HOME/domains/sentinel-guard.co-de.com.pe/public_html"
+PUBLIC_HTML="$HOME/domains/co-de.com.pe/public_html/sentinel-guard"
 REPO_URL="https://github.com/fernando159s/sentinel-guard.git"
 BRANCH="develop"
 
@@ -29,9 +29,7 @@ warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 # ── Detectar PHP 8.2-8.4 automáticamente ─────────────────────
-# PHP 8.5 no es compatible con openspout (requerido por Filament)
 detect_php() {
-    # Prioridad: 8.4 > 8.3 > 8.2  (excluye 8.5+)
     for v in 8.4 8.3 8.2; do
         for path in "/usr/bin/php${v}" "/opt/alt/php${v//.}/usr/bin/php" "/usr/local/bin/php${v}"; do
             if [ -x "$path" ]; then
@@ -40,11 +38,9 @@ detect_php() {
             fi
         done
     done
-    # Fallback: php del sistema si es 8.2, 8.3 o 8.4
-    local sys_minor
-    sys_minor=$(php -r "echo PHP_MINOR_VERSION;" 2>/dev/null)
-    local sys_major
+    local sys_minor sys_major
     sys_major=$(php -r "echo PHP_MAJOR_VERSION;" 2>/dev/null)
+    sys_minor=$(php -r "echo PHP_MINOR_VERSION;" 2>/dev/null)
     if [ "$sys_major" = "8" ] && [ "$sys_minor" -ge 2 ] && [ "$sys_minor" -le 4 ]; then
         echo "php"
         return 0
@@ -52,9 +48,9 @@ detect_php() {
     return 1
 }
 
-PHP_BIN=$(detect_php) || error "No se encontró PHP 8.2, 8.3 o 8.4.
+PHP_BIN=$(detect_php) || error "No se encontró PHP 8.2-8.4.
   PHP 8.5 NO es compatible (openspout/filament aún no lo soportan).
-  Solución: hPanel → Avanzado → Configuración de PHP → PHP 8.4 (recomendado).
+  Solución: hPanel → Avanzado → Configuración PHP → PHP 8.4.
   Binarios disponibles: $(ls /usr/bin/php* 2>/dev/null | tr '\n' ' ')"
 
 info "Verificando PHP..."
@@ -64,7 +60,7 @@ $PHP_BIN -r "
     \$major = PHP_MAJOR_VERSION;
     \$minor = PHP_MINOR_VERSION;
     if (\$major != 8 || \$minor < 2 || \$minor > 4) {
-        echo \"ERROR: PHP {\$major}.{\$minor} no es compatible. Se requiere 8.2, 8.3 o 8.4.\n\";
+        echo \"ERROR: PHP {\$major}.{\$minor} no compatible. Se requiere 8.2-8.4.\n\";
         exit(1);
     }
 " || error "Versión de PHP incompatible."
@@ -109,6 +105,11 @@ else
     info "APP_KEY ya existe, saltando..."
 fi
 
+# ── Crear directorios necesarios ─────────────────────────────
+mkdir -p storage/framework/{sessions,views,cache}
+mkdir -p storage/logs
+mkdir -p bootstrap/cache
+
 # ── Crear symlink de storage ─────────────────────────────────
 info "Creando symlink de storage..."
 $PHP_BIN artisan storage:link --force 2>/dev/null || true
@@ -131,22 +132,19 @@ $PHP_BIN artisan event:cache
 $PHP_BIN artisan icons:cache
 $PHP_BIN artisan filament:cache-components
 
-# ── Crear symlink en public_html ─────────────────────────────
+# ── Configurar public_html (symlink a public/) ──────────────
 info "Configurando public_html..."
 
-# Limpiar public_html (excepto .well-known para SSL)
-if [ -d "$PUBLIC_HTML" ]; then
-    find "$PUBLIC_HTML" -mindepth 1 -not -name '.well-known' -not -path '*/.well-known/*' -delete 2>/dev/null || true
+# Eliminar carpeta/symlink anterior si existe
+if [ -L "$PUBLIC_HTML" ]; then
+    rm "$PUBLIC_HTML"
+elif [ -d "$PUBLIC_HTML" ]; then
+    rm -rf "$PUBLIC_HTML"
 fi
 
-# Copiar .htaccess de redirección a public_html
-cp "$PROJECT_DIR/public_html.htaccess" "$PUBLIC_HTML/.htaccess"
-
-# Crear symlink del proyecto en el directorio del dominio
-DOMAIN_DIR="$(dirname "$PUBLIC_HTML")"
-ln -sfn "$PROJECT_DIR" "$DOMAIN_DIR/sentinel-guard"
-
-info "Symlink creado: $DOMAIN_DIR/sentinel-guard -> $PROJECT_DIR"
+# Crear symlink: public_html/sentinel-guard -> ~/sentinel-guard/public
+ln -sfn "$PROJECT_DIR/public" "$PUBLIC_HTML"
+info "Symlink: $PUBLIC_HTML -> $PROJECT_DIR/public"
 
 # ── Permisos ─────────────────────────────────────────────────
 info "Configurando permisos..."
@@ -159,12 +157,11 @@ echo -e "${GREEN}=========================================${NC}"
 echo -e "${GREEN}  Deploy completado exitosamente!${NC}"
 echo -e "${GREEN}=========================================${NC}"
 echo ""
-echo -e "  URL: ${YELLOW}https://sentinel-guard.co-de.com.pe${NC}"
+echo -e "  URL:   ${YELLOW}https://sentinel-guard.co-de.com.pe${NC}"
 echo -e "  Admin: ${YELLOW}https://sentinel-guard.co-de.com.pe/admin${NC}"
 echo ""
 echo -e "  Proyecto: $PROJECT_DIR"
-echo -e "  Public:   $PUBLIC_HTML"
+echo -e "  Symlink:  $PUBLIC_HTML -> $PROJECT_DIR/public"
 echo ""
 
-# Verificar que la app responde
 $PHP_BIN artisan about 2>/dev/null | head -20 || true
