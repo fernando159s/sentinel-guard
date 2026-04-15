@@ -43,16 +43,15 @@ if [ ! -f .env ]; then
     fi
 fi
 
-# ── Limpiar TODO el cache (antes de cualquier artisan) ───────
+# ── Limpiar TODO el cache ────────────────────────────────────
 echo "[POST-DEPLOY] Limpiando cache..."
-$PHP_BIN -r "if(function_exists('opcache_reset')) { opcache_reset(); echo 'OPcache limpiado'; } else { echo 'OPcache no disponible (CLI)'; }" || true
 rm -f bootstrap/cache/config.php
 rm -f bootstrap/cache/routes-v7.php
 rm -f bootstrap/cache/events.php
-$PHP_BIN artisan config:clear
-$PHP_BIN artisan route:clear
-$PHP_BIN artisan view:clear
-$PHP_BIN artisan event:clear
+$PHP_BIN artisan config:clear 2>/dev/null || true
+$PHP_BIN artisan route:clear 2>/dev/null || true
+$PHP_BIN artisan view:clear 2>/dev/null || true
+$PHP_BIN artisan event:clear 2>/dev/null || true
 
 # ── APP_KEY ──────────────────────────────────────────────────
 if grep -q "^APP_KEY=$" .env 2>/dev/null; then
@@ -64,12 +63,9 @@ fi
 echo "[POST-DEPLOY] Ejecutando migraciones..."
 $PHP_BIN artisan migrate --force
 
-# ── Optimización (re-cachear con config limpio) ──────────────
+# ── Optimización (SIN config:cache — incompatible con OPcache de hosting compartido) ──
 echo "[POST-DEPLOY] Optimizando..."
-$PHP_BIN artisan config:cache
-$PHP_BIN artisan route:cache
 $PHP_BIN artisan view:cache
-$PHP_BIN artisan event:cache
 $PHP_BIN artisan icons:cache
 $PHP_BIN artisan filament:cache-components
 $PHP_BIN artisan storage:link --force 2>/dev/null || true
@@ -88,22 +84,5 @@ fi
 
 # ── Permisos ─────────────────────────────────────────────────
 chmod -R 755 storage bootstrap/cache
-
-# ── Invalidar OPcache de Apache (separado del CLI) ───────────
-echo "[POST-DEPLOY] Invalidando OPcache de Apache..."
-OPCACHE_FILE="$PROJECT_DIR/public/_opcache_reset.php"
-cat > "$OPCACHE_FILE" <<'OPCACHE_PHP'
-<?php
-if (function_exists('opcache_reset')) {
-    opcache_reset();
-    echo 'OPCACHE_CLEARED';
-} else {
-    echo 'OPCACHE_NOT_AVAILABLE';
-}
-OPCACHE_PHP
-# Llamar via HTTP para que Apache ejecute el reset en su proceso
-RESULT=$(curl -sf --max-time 10 "https://sentinel-guard.co-de.com.pe/_opcache_reset.php" 2>/dev/null || echo "CURL_FAILED")
-rm -f "$OPCACHE_FILE"
-echo "[POST-DEPLOY] OPcache Apache: $RESULT"
 
 echo "[POST-DEPLOY] Deploy completado: https://sentinel-guard.co-de.com.pe"
