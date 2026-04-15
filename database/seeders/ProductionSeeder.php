@@ -27,8 +27,10 @@ class ProductionSeeder extends Seeder
 
     private function createSuperAdmin(): void
     {
-        $email = env('ADMIN_EMAIL', 'admin@securiform.local');
-        $password = env('ADMIN_PASSWORD');
+        // Leer directo del .env (env() no funciona con config cacheado)
+        $envValues = $this->parseEnvFile();
+        $email = $envValues['ADMIN_EMAIL'] ?? 'admin@securiform.local';
+        $password = $envValues['ADMIN_PASSWORD'] ?? null;
 
         if (! $password) {
             $this->command->error('Debe definir ADMIN_PASSWORD en .env para crear el super admin.');
@@ -51,5 +53,29 @@ class ProductionSeeder extends Seeder
         $user->syncRoles('super_admin');
 
         $this->command->info("Super admin creado: {$email}");
+    }
+
+    private function parseEnvFile(): array
+    {
+        $envPath = base_path('.env');
+
+        if (! file_exists($envPath)) {
+            return [];
+        }
+
+        $values = [];
+
+        foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            if (str_starts_with(trim($line), '#')) {
+                continue;
+            }
+
+            if (str_contains($line, '=')) {
+                [$key, $value] = explode('=', $line, 2);
+                $values[trim($key)] = trim($value, " \t\n\r\0\x0B\"'");
+            }
+        }
+
+        return $values;
     }
 }

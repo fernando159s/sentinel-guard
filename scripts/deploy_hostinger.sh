@@ -123,6 +123,13 @@ else
     $PHP_BIN artisan migrate --force
 fi
 
+# ── Limpiar cache antes de re-cachear ────────────────────────
+info "Limpiando cache anterior..."
+$PHP_BIN artisan config:clear
+$PHP_BIN artisan route:clear
+$PHP_BIN artisan view:clear
+$PHP_BIN artisan event:clear
+
 # ── Optimizar para producción ────────────────────────────────
 info "Optimizando para producción..."
 $PHP_BIN artisan config:cache

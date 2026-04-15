@@ -43,6 +43,13 @@ mkdir -p bootstrap/cache
 echo "[POST-DEPLOY] Ejecutando migraciones..."
 $PHP_BIN artisan migrate --force
 
+# ── Limpiar cache antes de re-cachear ────────────────────────
+echo "[POST-DEPLOY] Limpiando cache..."
+$PHP_BIN artisan config:clear
+$PHP_BIN artisan route:clear
+$PHP_BIN artisan view:clear
+$PHP_BIN artisan event:clear
+
 # ── Optimización ─────────────────────────────────────────────
 echo "[POST-DEPLOY] Optimizando..."
 $PHP_BIN artisan config:cache
