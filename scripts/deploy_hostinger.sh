@@ -17,7 +17,6 @@ PROJECT_DIR="$HOME/sentinel-guard"
 PUBLIC_HTML="$HOME/domains/sentinel-guard.co-de.com.pe/public_html"
 REPO_URL="https://github.com/fernando159s/sentinel-guard.git"
 BRANCH="develop"
-PHP_BIN="php"  # Hostinger usa php 8.2+ por defecto
 
 # ── Colores ──────────────────────────────────────────────────
 GREEN='\033[0;32m'
@@ -29,11 +28,47 @@ info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
-# ── Verificar PHP ────────────────────────────────────────────
+# ── Detectar PHP 8.2-8.4 automáticamente ─────────────────────
+# PHP 8.5 no es compatible con openspout (requerido por Filament)
+detect_php() {
+    # Prioridad: 8.4 > 8.3 > 8.2  (excluye 8.5+)
+    for v in 8.4 8.3 8.2; do
+        for path in "/usr/bin/php${v}" "/opt/alt/php${v//.}/usr/bin/php" "/usr/local/bin/php${v}"; do
+            if [ -x "$path" ]; then
+                echo "$path"
+                return 0
+            fi
+        done
+    done
+    # Fallback: php del sistema si es 8.2, 8.3 o 8.4
+    local sys_minor
+    sys_minor=$(php -r "echo PHP_MINOR_VERSION;" 2>/dev/null)
+    local sys_major
+    sys_major=$(php -r "echo PHP_MAJOR_VERSION;" 2>/dev/null)
+    if [ "$sys_major" = "8" ] && [ "$sys_minor" -ge 2 ] && [ "$sys_minor" -le 4 ]; then
+        echo "php"
+        return 0
+    fi
+    return 1
+}
+
+PHP_BIN=$(detect_php) || error "No se encontró PHP 8.2, 8.3 o 8.4.
+  PHP 8.5 NO es compatible (openspout/filament aún no lo soportan).
+  Solución: hPanel → Avanzado → Configuración de PHP → PHP 8.4 (recomendado).
+  Binarios disponibles: $(ls /usr/bin/php* 2>/dev/null | tr '\n' ' ')"
+
 info "Verificando PHP..."
 $PHP_BIN -v | head -1
 PHP_VERSION=$($PHP_BIN -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;")
-info "PHP version: $PHP_VERSION"
+$PHP_BIN -r "
+    \$major = PHP_MAJOR_VERSION;
+    \$minor = PHP_MINOR_VERSION;
+    if (\$major != 8 || \$minor < 2 || \$minor > 4) {
+        echo \"ERROR: PHP {\$major}.{\$minor} no es compatible. Se requiere 8.2, 8.3 o 8.4.\n\";
+        exit(1);
+    }
+" || error "Versión de PHP incompatible."
+info "PHP version: $PHP_VERSION (binario: $PHP_BIN)"
 
 # ── Clonar o actualizar repo ─────────────────────────────────
 if [ ! -d "$PROJECT_DIR" ]; then
