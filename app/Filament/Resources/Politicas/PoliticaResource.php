@@ -24,9 +24,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Storage;
 
 class PoliticaResource extends Resource
 {
@@ -163,21 +161,6 @@ class PoliticaResource extends Resource
                 IconColumn::make('obligatoria')
                     ->label('Obligatoria')
                     ->boolean(),
-                IconColumn::make('activa')
-                    ->label('Activa')
-                    ->boolean(),
-                IconColumn::make('es_nda')
-                    ->label('NDA')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-lock-closed')
-                    ->falseIcon('heroicon-o-minus')
-                    ->trueColor('warning')
-                    ->falseColor('gray'),
-                IconColumn::make('archivo_path')
-                    ->label('Doc')
-                    ->icon(fn ($state) => $state ? 'heroicon-o-document-text' : null)
-                    ->color('primary')
-                    ->toggleable(),
                 TextColumn::make('aceptaciones_count')
                     ->label('Aceptaciones')
                     ->counts('aceptaciones')
@@ -189,20 +172,8 @@ class PoliticaResource extends Resource
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
-            ->filters([
-                SelectFilter::make('activa')
-                    ->options(['1' => 'Activas', '0' => 'Inactivas']),
-            ])
+            ->filters([])
             ->recordActions([
-                Action::make('descargar_archivo')
-                    ->label('Doc')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->color('info')
-                    ->visible(fn ($record) => filled($record->archivo_path))
-                    ->action(fn ($record) => Storage::disk('local')->download(
-                        $record->archivo_path,
-                        $record->archivo_nombre ?? 'documento'
-                    )),
                 Action::make('descargar_pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-arrow-down-tray')

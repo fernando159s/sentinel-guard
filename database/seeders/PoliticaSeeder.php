@@ -113,7 +113,7 @@ class PoliticaSeeder extends Seeder
                     . '<h3>5. Sanciones</h3>'
                     . '<p>El incumplimiento de esta politica sera sancionado de acuerdo con el reglamento interno de trabajo y la legislacion vigente.</p>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -140,7 +140,7 @@ class PoliticaSeeder extends Seeder
                     . '<h3>5. Comunicacion Externa</h3>'
                     . '<ul><li>Correo electronico: Cada cliente posee el correo del personal asignado. Existe correo generico (info@estudiopalacios.com.pe).</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -169,7 +169,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>El servidor debe estar en un area restringida con llave.</li>'
                     . '<li>Se debe mantener un registro de acceso a la sala de servidores.</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -192,7 +192,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>Se mantendra un registro de los sitios web visitados para auditorias de seguridad.</li>'
                     . '<li>El uso de VPN personales o herramientas para evadir los filtros esta estrictamente prohibido.</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -218,7 +218,7 @@ class PoliticaSeeder extends Seeder
                     . '<h3>4. Cambios de Emergencia</h3>'
                     . '<p>En situaciones de emergencia, el cambio puede implementarse con aprobacion verbal del Gerente General, pero debe documentarse formalmente dentro de las 24 horas siguientes.</p>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -247,7 +247,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>Se debe mantener un registro de envios de datos sensibles.</li>'
                     . '<li>Solo el personal autorizado puede enviar datos sensibles fuera del estudio.</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -272,7 +272,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>El acceso remoto (VPN) requiere autenticacion de dos factores.</li>'
                     . '<li>Se realizaran escaneos periodicos de la red para detectar dispositivos no autorizados.</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -311,7 +311,7 @@ class PoliticaSeeder extends Seeder
                     . '<h3>5. Tratamiento del Riesgo</h3>'
                     . '<p>Se debe actuar sobre riesgos con severidad Extremo o Alto mediante: evitar riesgos, asumir riesgos para perseguir oportunidades, eliminar la fuente, cambiar probabilidad o consecuencias, compartir el riesgo, o mantener el riesgo mediante decisiones informadas.</p>',
                 'version' => '2.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -338,7 +338,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>Vulnerabilidades medias: 30 dias.</li>'
                     . '<li>Vulnerabilidades bajas: proximo ciclo de mantenimiento.</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -365,7 +365,7 @@ class PoliticaSeeder extends Seeder
                     . '<h4>Etapa 4: Seguimiento del Plan de Accion</h4>'
                     . '<p>Seguimiento mediante graficos diarios y verificacion en el area de trabajo. Incluye: orden de la accion, accion de seguimiento realizada y fecha.</p>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -393,7 +393,7 @@ class PoliticaSeeder extends Seeder
                     . '<h4>5.5 Orientacion y Adiestramiento</h4>'
                     . '<p>Previo al inicio de labores, el Supervisor brinda induccion y adiestramiento segun el formato Orientacion inicial de personal.</p>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -426,7 +426,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>Copias de seguridad periodicas.</li>'
                     . '<li>Destruccion segura de datos cuando ya no sean necesarios.</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -453,7 +453,7 @@ class PoliticaSeeder extends Seeder
                     . '<h3>5. Documentacion</h3>'
                     . '<p>Cada prueba debe documentarse con: fecha, participantes, escenario probado, resultados, lecciones aprendidas y acciones correctivas identificadas.</p>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -529,7 +529,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>Se debe revisar el Historial de seguridad de Norton periodicamente como evidencia de auditoria.</li>'
                     . '<li>Esta prohibido instalar software antivirus adicional o alternativo sin autorizacion.</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -558,7 +558,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>Desactivar el MFA anterior y configurar el nuevo dispositivo.</li>'
                     . '<li>Registrar el cambio en el log de seguridad.</li></ul>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -592,7 +592,7 @@ class PoliticaSeeder extends Seeder
                     . '<h3>9. Cumplimiento</h3>'
                     . '<p>El SGSI cumple con la legislacion vigente, incluyendo la Ley de Proteccion de Datos Personales (Ley 29733) y los requisitos contractuales de los clientes.</p>',
                 'version' => '2.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
@@ -651,7 +651,7 @@ class PoliticaSeeder extends Seeder
                     . '<h3>4. Nota General</h3>'
                     . '<p>Todo el personal: Esta prohibido obtener copias de cualquier expediente asignado al estudio y prohibido sacar documentos fuera de las instalaciones, salvo para presentacion al juzgado respectivo.</p>',
                 'version' => '1.0',
-                'obligatoria' => true,
+                'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
