@@ -109,6 +109,7 @@
     /* === ANIMATIONS === */
     .module{animation:fadeUp .5s ease both}
     @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
   </style>
 </head>
 <body>
