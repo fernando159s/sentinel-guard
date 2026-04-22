@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinel Guard — Solo Lectura</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --role-color: #334155;
+      --role-accent: #64748B;
+      --role-light: #F1F5F9;
+      --slate: #64748B; --border: #E2E8F0; --text: #0F172A; --surface: #F8FAFC; --sidebar-w: 240px;
+    }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+    body { background: var(--surface); color: var(--text); }
+    .sg-layout { display: flex; height: 100vh; }
+    .sg-sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--role-color); display: flex; flex-direction: column; overflow: hidden; }
+    .sg-sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .sg-sidebar-name { font-size: 14px; font-weight: 800; color: #fff; }
+    .sg-sidebar-sub { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .sg-role-badge { margin: 14px 16px; background: rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 14px; }
+    .sg-role-label { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+    .sg-role-name { font-size: 13px; font-weight: 700; color: #fff; margin-top: 4px; }
+    .sg-role-level { display: inline-block; background: rgba(255,255,255,0.2); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-top: 6px; }
+    .sg-slide-nav { flex: 1; overflow-y: auto; padding: 8px; }
+    .sg-slide-nav::-webkit-scrollbar { width: 4px; }
+    .sg-slide-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+    .sg-nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; margin-bottom: 2px; }
+    .sg-nav-item:hover { background: rgba(255,255,255,0.08); }
+    .sg-nav-item.active { background: rgba(255,255,255,0.15); }
+    .sg-nav-num { width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.6); }
+    .sg-nav-item.active .sg-nav-num { background: rgba(255,255,255,0.35); color: #fff; }
+    .sg-nav-title { font-size: 12px; color: rgba(255,255,255,0.65); line-height: 1.3; }
+    .sg-nav-item.active .sg-nav-title { color: #fff; font-weight: 600; }
+    .sg-back-link { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; text-decoration: none; color: rgba(255,255,255,0.5); font-size: 12px; transition: color 0.15s; }
+    .sg-back-link:hover { color: #fff; }
+    .sg-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .sg-topbar { padding: 14px 32px; border-bottom: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .sg-topbar-breadcrumb { font-size: 12px; color: var(--slate); }
+    .sg-topbar-breadcrumb span { color: var(--role-color); font-weight: 600; }
+    .sg-progress-wrap { display: flex; align-items: center; gap: 12px; }
+    .sg-progress-track { width: 160px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .sg-progress-fill { height: 100%; background: var(--role-accent); border-radius: 2px; transition: width 0.4s ease; }
+    .sg-progress-text { font-size: 12px; color: var(--slate); white-space: nowrap; }
+    .sg-swiper { flex: 1; overflow: hidden; } .swiper-wrapper { position: relative; } .swiper-slide { position: absolute !important; top: 0; left: 0; width: 100% !important; height: 100% !important; opacity: 0; transition: opacity 0.38s ease; pointer-events: none; } .swiper-slide-active { opacity: 1 !important; pointer-events: auto; position: relative !important; z-index: 2; }
+    .swiper-slide { height: 100%; overflow-y: auto; }
+    .sg-slide-inner { min-height: 100%; padding: 40px 48px; display: flex; flex-direction: column; justify-content: center; }
+    .sg-bottom { padding: 14px 32px; border-top: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .sg-btn { display: flex; align-items: center; gap: 8px; padding: 9px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+    .sg-btn-ghost { background: var(--surface); color: var(--slate); border: 1px solid var(--border); }
+    .sg-btn-ghost:hover { background: var(--border); }
+    .sg-btn-primary { background: var(--role-color); color: #fff; }
+    .sg-btn-primary:hover { opacity: 0.85; }
+    .sg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .sg-btn svg { width: 16px; height: 16px; }
+    .sg-dots { display: flex; gap: 6px; }
+    .sg-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all 0.2s; cursor: pointer; }
+    .sg-dot.active { width: 20px; border-radius: 3px; background: var(--role-accent); }
+
+    .sg-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px 0; }
+    .sg-hero-icon-wrap { width: 100px; height: 100px; border-radius: 28px; background: var(--role-light); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .sg-hero-icon-wrap svg { width: 52px; height: 52px; }
+    .sg-eyebrow { display: inline-flex; align-items: center; gap: 6px; background: var(--role-light); color: var(--role-accent); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 5px 14px; border-radius: 999px; margin-bottom: 16px; }
+    .sg-title { font-size: clamp(24px, 3.5vw, 40px); font-weight: 800; color: var(--role-color); letter-spacing: -1px; line-height: 1.1; margin-bottom: 12px; }
+    .sg-subtitle { font-size: 16px; color: var(--slate); line-height: 1.6; max-width: 600px; margin-bottom: 32px; }
+    .sg-stat-row { display: flex; gap: 32px; justify-content: center; }
+    .sg-stat { text-align: center; }
+    .sg-stat-n { font-size: 32px; font-weight: 800; color: var(--role-color); line-height: 1; }
+    .sg-stat-l { font-size: 11px; color: var(--slate); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sg-section-title { font-size: 26px; font-weight: 800; color: var(--role-color); letter-spacing: -0.5px; margin-bottom: 6px; }
+    .sg-section-sub { font-size: 14px; color: var(--slate); margin-bottom: 28px; line-height: 1.5; }
+    .sg-grid { display: grid; gap: 14px; }
+    .sg-grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .sg-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .sg-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .sg-card-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--role-light); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .sg-card-icon svg { width: 18px; height: 18px; }
+    .sg-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .sg-card-desc { font-size: 12px; color: var(--slate); line-height: 1.5; }
+    .sg-card-path { display: inline-block; margin-top: 10px; font-size: 10px; font-weight: 600; color: var(--role-accent); background: var(--role-light); padding: 3px 8px; border-radius: 4px; font-family: 'Courier New', monospace; }
+    .sg-tip { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; margin-top: 20px; }
+    .sg-tip-icon { font-size: 18px; flex-shrink: 0; }
+    .sg-tip-text { font-size: 12px; color: #78350F; line-height: 1.5; }
+    .sg-tip-text strong { font-weight: 700; }
+    .sg-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+
+    /* Access table */
+    .sg-access-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .sg-access-table th { background: var(--role-color); color: #fff; font-size: 11px; font-weight: 600; padding: 10px 14px; text-align: left; letter-spacing: 0.3px; }
+    .sg-access-table th:first-child { border-radius: 8px 0 0 0; }
+    .sg-access-table th:last-child { border-radius: 0 8px 0 0; }
+    .sg-access-table td { padding: 10px 14px; font-size: 12px; border-bottom: 1px solid var(--border); background: #fff; }
+    .sg-access-table tr:last-child td { border-bottom: none; }
+    .sg-access-table tr:last-child td:first-child { border-radius: 0 0 0 8px; }
+    .sg-access-table tr:last-child td:last-child { border-radius: 0 0 8px 0; }
+    .sg-yes { color: #059669; font-weight: 700; font-size: 14px; }
+    .sg-no { color: #DC2626; font-weight: 700; font-size: 14px; }
+
+    /* Read-only badge */
+    .sg-readonly-badge { display: inline-flex; align-items: center; gap: 6px; background: #F1F5F9; border: 1px solid #CBD5E1; color: #475569; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px; letter-spacing: 0.3px; }
+    .sg-readonly-eye { font-size: 12px; }
+
+    /* Scope indicator */
+    .sg-scope-banner { background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .sg-scope-icon { font-size: 24px; }
+    .sg-scope-text { font-size: 13px; color: #334155; font-weight: 500; line-height: 1.4; }
+    .sg-scope-text strong { font-weight: 700; }
+
+    /* Format type pills */
+    .sg-format-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .sg-format-pill { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; }
+    .sg-format-code { font-size: 10px; font-weight: 700; color: var(--role-accent); background: var(--role-light); padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', monospace; white-space: nowrap; }
+    .sg-format-name { font-size: 11px; color: var(--slate); line-height: 1.3; }
+
+    /* What you can see vs can't do big cards */
+    .sg-big-can { border-radius: 14px; padding: 24px; }
+    .sg-big-can.yes { background: #F0FDF4; border: 1.5px solid #86EFAC; }
+    .sg-big-can.no { background: #FFF1F2; border: 1.5px solid #FECDD3; }
+    .sg-big-can-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .sg-big-can-title.yes { color: #15803D; }
+    .sg-big-can-title.no { color: #BE123C; }
+    .sg-big-can-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; margin-bottom: 10px; line-height: 1.4; color: var(--text); }
+    .sg-big-can-item:last-child { margin-bottom: 0; }
+
+    @media (max-width: 900px) { .sg-sidebar { display: none; } .sg-slide-inner { padding: 24px 20px; } .sg-two-col { grid-template-columns: 1fr; } .sg-format-grid { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+<div class="sg-layout">
+  <aside class="sg-sidebar">
+    <a class="sg-sidebar-logo" href="/docs">
+      <svg width="28" height="33" viewBox="0 0 48 56" fill="none"><defs><linearGradient id="gs" x1="4" y1="2" x2="44" y2="54" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#3B82F6"/><stop offset="100%" stop-color="#1E3A5F"/></linearGradient></defs><path d="M24 2L44 10V28C44 40.4 35.2 51.6 24 54C12.8 51.6 4 40.4 4 28V10L24 2Z" fill="url(#gs)"/><text x="24" y="37" text-anchor="middle" font-family="Inter" font-size="20" font-weight="800" fill="white">S</text></svg>
+      <div><div class="sg-sidebar-name">Sentinel Guard</div><div class="sg-sidebar-sub">Documentación</div></div>
+    </a>
+    <div class="sg-role-badge">
+      <div class="sg-role-label">Rol activo</div>
+      <div class="sg-role-name">Solo Lectura</div>
+      <span class="sg-role-level">Nivel 1 — Auditoría</span>
+    </div>
+    <nav class="sg-slide-nav" id="slideNav"></nav>
+    <a class="sg-back-link" href="/docs">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Volver al inicio
+    </a>
+  </aside>
+
+  <main class="sg-main">
+    <div class="sg-topbar">
+      <div class="sg-topbar-breadcrumb">Sentinel Guard → <span id="currentSlideName">Bienvenida</span></div>
+      <div class="sg-progress-wrap">
+        <div class="sg-progress-track"><div class="sg-progress-fill" id="progressFill" style="width:25%"></div></div>
+        <div class="sg-progress-text" id="progressText">1 / 4</div>
+      </div>
+    </div>
+
+    <div class="swiper sg-swiper">
+      <div class="swiper-wrapper">
+
+        <!-- Slide 1: Hero -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-hero">
+              <div class="sg-anim sg-eyebrow">Solo Lectura</div>
+              <div class="sg-anim sg-hero-icon-wrap">
+                <svg fill="none" viewBox="0 0 24 24" stroke="#334155" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </div>
+              <h1 class="sg-anim sg-title">Acceso de<br>auditoría y consulta</h1>
+              <p class="sg-anim sg-subtitle">Con el rol Solo Lectura puedes consultar registros, tickets y políticas de tu empresa sin poder crear ni modificar nada. Es el rol ideal para auditores, directivos y revisores externos.</p>
+              <div class="sg-anim" style="margin-top:8px;">
+                <span class="sg-readonly-badge"><span class="sg-readonly-eye">👁</span> Modo solo visualización activo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 2: Registros -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-anim sg-eyebrow">Módulo 1</div>
+            <h2 class="sg-anim sg-section-title">Ver Registros de Seguridad</h2>
+            <p class="sg-anim sg-section-sub">Puedes consultar todos los registros F01–F13 de tu empresa. Solo tienes acceso de visualización: no puedes crear, editar ni eliminar.</p>
+            <div class="sg-anim sg-scope-banner">
+              <span class="sg-scope-icon">🏢</span>
+              <div class="sg-scope-text"><strong>Solo tu empresa:</strong> Verás únicamente los registros de la organización a la que perteneces. Los datos de otras empresas son completamente inaccesibles.</div>
+            </div>
+            <div class="sg-anim sg-format-grid">
+              <div class="sg-format-pill"><span class="sg-format-code">F01 AUD</span><span class="sg-format-name">Auditorías</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F02 BD</span><span class="sg-format-name">Banco de datos</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F03 PRES</span><span class="sg-format-name">Prestadores</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F04 DS</span><span class="sg-format-name">Datos sensibles</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F05 PA</span><span class="sg-format-name">Personal autorizado</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F06 AS</span><span class="sg-format-name">Acceso soporte</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F07 INV</span><span class="sg-format-name">Inventario soportes</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F08 IS</span><span class="sg-format-name">Movimiento soportes</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F09 INC</span><span class="sg-format-name">Notif. incidencias</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F10 RES</span><span class="sg-format-name">Resolución incid.</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F11 REC</span><span class="sg-format-name">Recuperación datos</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F12 BAK</span><span class="sg-format-name">Copias seguridad</span></div>
+              <div class="sg-format-pill"><span class="sg-format-code">F13 DEST</span><span class="sg-format-name">Destrucción activos</span></div>
+            </div>
+            <div class="sg-anim sg-tip">
+              <span class="sg-tip-icon">🔍</span>
+              <div class="sg-tip-text"><strong>Cómo acceder:</strong> Seguridad → Registros. Puedes filtrar por tipo de formato, fecha y usar la búsqueda. Los botones de crear y editar <strong>no aparecen</strong> en tu vista.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3: Tickets y Políticas -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-anim sg-eyebrow">Módulo 2</div>
+            <h2 class="sg-anim sg-section-title">Tickets y Políticas</h2>
+            <p class="sg-anim sg-section-sub">Consulta el historial de tickets de tu empresa y revisa las políticas de seguridad activas. Acceso de solo lectura en ambos módulos.</p>
+            <div class="sg-anim sg-grid sg-grid-2" style="margin-bottom:20px;">
+              <div class="sg-card">
+                <div class="sg-card-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="#334155" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z"/></svg>
+                </div>
+                <div class="sg-card-title">Ver tickets de tu empresa</div>
+                <div class="sg-card-desc">Accede al listado de tickets: estado, prioridad, fecha y empresa solicitante. No puedes crear tickets ni responder en los existentes.</div>
+                <span class="sg-card-path">Soporte → Tickets</span>
+              </div>
+              <div class="sg-card">
+                <div class="sg-card-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="#334155" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
+                </div>
+                <div class="sg-card-title">Wiki de Políticas</div>
+                <div class="sg-card-desc">Consulta todas las políticas de seguridad activas de tu empresa: PSC000001, PSC000002, NDAs y demás documentos publicados.</div>
+                <span class="sg-card-path">Seguridad → Wiki de Políticas</span>
+              </div>
+              <div class="sg-card">
+                <div class="sg-card-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="#334155" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342"/></svg>
+                </div>
+                <div class="sg-card-title">Mis Capacitaciones</div>
+                <div class="sg-card-desc">Consulta las sesiones de formación en las que apareces inscrito. Solo puedes ver el historial, no confirmar asistencia.</div>
+                <span class="sg-card-path">Capacitaciones → Mis Capacitaciones</span>
+              </div>
+              <div class="sg-card">
+                <div class="sg-card-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="#334155" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                </div>
+                <div class="sg-card-title">Mi Perfil</div>
+                <div class="sg-card-desc">Actualiza tu nombre, contraseña y datos personales. Es la única sección donde puedes realizar cambios en el sistema.</div>
+                <span class="sg-card-path">Admin → Mi Perfil</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 4: Límites y resumen -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-anim sg-eyebrow">Resumen del Rol</div>
+            <h2 class="sg-anim sg-section-title">Lo que puedes y lo que no</h2>
+            <p class="sg-anim sg-section-sub">Una visión clara de las capacidades de tu rol. Si necesitas permisos adicionales, contacta al administrador de tu empresa.</p>
+            <div class="sg-anim sg-two-col">
+              <div class="sg-big-can yes">
+                <div class="sg-big-can-title yes">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  Puedes hacer
+                </div>
+                <div class="sg-big-can-item">👁 Ver registros F01–F13 de tu empresa</div>
+                <div class="sg-big-can-item">🎫 Ver tickets de soporte (sin responder)</div>
+                <div class="sg-big-can-item">📖 Consultar Wiki de Políticas</div>
+                <div class="sg-big-can-item">📚 Ver Mis Capacitaciones</div>
+                <div class="sg-big-can-item">👤 Editar tu propio perfil</div>
+                <div class="sg-big-can-item">🔍 Usar filtros y búsqueda en todas las listas</div>
+              </div>
+              <div class="sg-big-can no">
+                <div class="sg-big-can-title no">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  No puedes hacer
+                </div>
+                <div class="sg-big-can-item">❌ Crear o editar registros</div>
+                <div class="sg-big-can-item">❌ Abrir o responder tickets</div>
+                <div class="sg-big-can-item">❌ Gestionar usuarios</div>
+                <div class="sg-big-can-item">❌ Acceder a reportes</div>
+                <div class="sg-big-can-item">❌ Ver datos de otras empresas</div>
+                <div class="sg-big-can-item">❌ Configurar políticas o checklists</div>
+              </div>
+            </div>
+            <div class="sg-anim sg-tip">
+              <span class="sg-tip-icon">📬</span>
+              <div class="sg-tip-text"><strong>¿Necesitas más acceso?</strong> Contacta al <strong>Admin de tu empresa</strong> para que cambie tu rol a <em>Usuario</em> o te otorgue permisos adicionales según tu función.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="sg-bottom">
+      <button class="sg-btn sg-btn-ghost" id="btnPrev" onclick="prevSlide()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Anterior
+      </button>
+      <div class="sg-dots" id="dots"></div>
+      <button class="sg-btn sg-btn-primary" id="btnNext" onclick="nextSlide()">
+        Siguiente
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </main>
+</div>
+<script>
+  const SLIDES = ['Bienvenida','Registros de Seguridad','Tickets y Políticas','Resumen del Rol'];
+  const swiper = new Swiper('.sg-swiper', { effect:'fade', fadeEffect:{crossFade:true}, speed:380, allowTouchMove:false, keyboard:{enabled:true}, on:{ afterInit(){ syncUI(0); animateSlide(0); }, slideChangeTransitionEnd(){ animateSlide(this.activeIndex); } } });
+  function prevSlide(){ swiper.slidePrev(); }
+  function nextSlide(){ swiper.slideNext(); }
+  swiper.on('slideChange', function(){ syncUI(this.activeIndex); });
+  function syncUI(idx){
+    document.getElementById('currentSlideName').textContent = SLIDES[idx];
+    document.getElementById('progressFill').style.width = ((idx+1)/SLIDES.length*100)+'%';
+    document.getElementById('progressText').textContent = (idx+1)+' / '+SLIDES.length;
+    document.getElementById('btnPrev').disabled = idx===0;
+    document.getElementById('btnNext').disabled = idx===SLIDES.length-1;
+    document.querySelectorAll('.sg-nav-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+    document.querySelectorAll('.sg-dot').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  }
+  function animateSlide(idx){
+    const slide = document.querySelectorAll('.swiper-slide')[idx];
+    if(!slide) return;
+    const elems = slide.querySelectorAll('.sg-anim');
+    anime.set(elems, {opacity:0, translateY:18});
+    anime({ targets:elems, opacity:[0,1], translateY:[18,0], delay:anime.stagger(55,{start:80}), duration:420, easing:'easeOutCubic' });
+  }
+  const nav = document.getElementById('slideNav');
+  SLIDES.forEach((title,i)=>{ const item=document.createElement('div'); item.className='sg-nav-item'+(i===0?' active':''); item.innerHTML=`<div class="sg-nav-num">${String(i+1).padStart(2,'0')}</div><div class="sg-nav-title">${title}</div>`; item.onclick=()=>swiper.slideTo(i); nav.appendChild(item); });
+  const dotsEl = document.getElementById('dots');
+  SLIDES.forEach((_,i)=>{ const d=document.createElement('div'); d.className='sg-dot'+(i===0?' active':''); d.onclick=()=>swiper.slideTo(i); dotsEl.appendChild(d); });
+</script>
+</body>
+</html>

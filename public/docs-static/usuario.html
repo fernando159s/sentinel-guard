@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinel Guard — Usuario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --role-color: #047857;
+      --role-accent: #10B981;
+      --role-light: #ECFDF5;
+      --slate: #64748B; --border: #E2E8F0; --text: #0F172A; --surface: #F8FAFC; --sidebar-w: 240px;
+    }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+    body { background: var(--surface); color: var(--text); }
+    .sg-layout { display: flex; height: 100vh; }
+    .sg-sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--role-color); display: flex; flex-direction: column; overflow: hidden; }
+    .sg-sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .sg-sidebar-name { font-size: 14px; font-weight: 800; color: #fff; }
+    .sg-sidebar-sub { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .sg-role-badge { margin: 14px 16px; background: rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 14px; }
+    .sg-role-label { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+    .sg-role-name { font-size: 13px; font-weight: 700; color: #fff; margin-top: 4px; }
+    .sg-role-level { display: inline-block; background: var(--role-accent); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-top: 6px; }
+    .sg-slide-nav { flex: 1; overflow-y: auto; padding: 8px; }
+    .sg-slide-nav::-webkit-scrollbar { width: 4px; }
+    .sg-slide-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+    .sg-nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; margin-bottom: 2px; }
+    .sg-nav-item:hover { background: rgba(255,255,255,0.08); }
+    .sg-nav-item.active { background: rgba(255,255,255,0.15); }
+    .sg-nav-num { width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.6); }
+    .sg-nav-item.active .sg-nav-num { background: var(--role-accent); color: #fff; }
+    .sg-nav-title { font-size: 12px; color: rgba(255,255,255,0.65); line-height: 1.3; }
+    .sg-nav-item.active .sg-nav-title { color: #fff; font-weight: 600; }
+    .sg-back-link { padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; text-decoration: none; color: rgba(255,255,255,0.5); font-size: 12px; transition: color 0.15s; }
+    .sg-back-link:hover { color: #fff; }
+    .sg-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .sg-topbar { padding: 14px 32px; border-bottom: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .sg-topbar-breadcrumb { font-size: 12px; color: var(--slate); }
+    .sg-topbar-breadcrumb span { color: var(--role-color); font-weight: 600; }
+    .sg-progress-wrap { display: flex; align-items: center; gap: 12px; }
+    .sg-progress-track { width: 160px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .sg-progress-fill { height: 100%; background: var(--role-accent); border-radius: 2px; transition: width 0.4s ease; }
+    .sg-progress-text { font-size: 12px; color: var(--slate); white-space: nowrap; }
+    .sg-swiper { flex: 1; overflow: hidden; } .swiper-wrapper { position: relative; } .swiper-slide { position: absolute !important; top: 0; left: 0; width: 100% !important; height: 100% !important; opacity: 0; transition: opacity 0.38s ease; pointer-events: none; } .swiper-slide-active { opacity: 1 !important; pointer-events: auto; position: relative !important; z-index: 2; }
+    .swiper-slide { height: 100%; overflow-y: auto; }
+    .sg-slide-inner { min-height: 100%; padding: 40px 48px; display: flex; flex-direction: column; justify-content: center; }
+    .sg-bottom { padding: 14px 32px; border-top: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .sg-btn { display: flex; align-items: center; gap: 8px; padding: 9px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+    .sg-btn-ghost { background: var(--surface); color: var(--slate); border: 1px solid var(--border); }
+    .sg-btn-ghost:hover { background: var(--border); }
+    .sg-btn-primary { background: var(--role-color); color: #fff; }
+    .sg-btn-primary:hover { opacity: 0.9; }
+    .sg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .sg-btn svg { width: 16px; height: 16px; }
+    .sg-dots { display: flex; gap: 6px; }
+    .sg-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: all 0.2s; cursor: pointer; }
+    .sg-dot.active { width: 20px; border-radius: 3px; background: var(--role-accent); }
+
+    .sg-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px 0; }
+    .sg-hero-icon-wrap { width: 100px; height: 100px; border-radius: 28px; background: var(--role-light); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .sg-hero-icon-wrap svg { width: 52px; height: 52px; }
+    .sg-eyebrow { display: inline-flex; align-items: center; gap: 6px; background: var(--role-light); color: var(--role-accent); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 5px 14px; border-radius: 999px; margin-bottom: 16px; }
+    .sg-title { font-size: clamp(24px, 3.5vw, 40px); font-weight: 800; color: var(--role-color); letter-spacing: -1px; line-height: 1.1; margin-bottom: 12px; }
+    .sg-subtitle { font-size: 16px; color: var(--slate); line-height: 1.6; max-width: 600px; margin-bottom: 32px; }
+    .sg-stat-row { display: flex; gap: 32px; justify-content: center; }
+    .sg-stat { text-align: center; }
+    .sg-stat-n { font-size: 32px; font-weight: 800; color: var(--role-color); line-height: 1; }
+    .sg-stat-l { font-size: 11px; color: var(--slate); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sg-section-title { font-size: 26px; font-weight: 800; color: var(--role-color); letter-spacing: -0.5px; margin-bottom: 6px; }
+    .sg-section-sub { font-size: 14px; color: var(--slate); margin-bottom: 28px; line-height: 1.5; }
+    .sg-grid { display: grid; gap: 14px; }
+    .sg-grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .sg-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .sg-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .sg-card-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--role-light); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .sg-card-icon svg { width: 18px; height: 18px; }
+    .sg-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .sg-card-desc { font-size: 12px; color: var(--slate); line-height: 1.5; }
+    .sg-card-path { display: inline-block; margin-top: 10px; font-size: 10px; font-weight: 600; color: var(--role-accent); background: var(--role-light); padding: 3px 8px; border-radius: 4px; font-family: 'Courier New', monospace; }
+    .sg-steps { display: flex; flex-direction: column; gap: 0; }
+    .sg-step { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .sg-step:last-child { border-bottom: none; }
+    .sg-step-num { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; background: var(--role-color); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+    .sg-step-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .sg-step-desc { font-size: 12px; color: var(--slate); line-height: 1.5; }
+    .sg-tip { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; margin-top: 20px; }
+    .sg-tip-icon { font-size: 18px; flex-shrink: 0; }
+    .sg-tip-text { font-size: 12px; color: #78350F; line-height: 1.5; }
+    .sg-tip-text strong { font-weight: 700; }
+    .sg-can-do { background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 20px; }
+    .sg-cant-do { background: #FFF1F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 20px; }
+    .sg-can-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+    .sg-can-title.yes { color: #047857; }
+    .sg-can-title.no { color: #BE123C; }
+    .sg-can-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.4; color: var(--text); margin-bottom: 8px; }
+    .sg-can-item:last-child { margin-bottom: 0; }
+    .sg-can-icon { font-size: 14px; flex-shrink: 0; }
+    .sg-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    .sg-ticket-flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .sg-ticket-state { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--text); }
+    .sg-ticket-arrow { color: var(--slate); font-size: 16px; }
+    .sg-ticket-state.active-state { background: var(--role-light); border-color: var(--role-accent); color: var(--role-color); }
+    @media (max-width: 900px) { .sg-sidebar { display: none; } .sg-slide-inner { padding: 24px 20px; } .sg-grid-3 { grid-template-columns: 1fr 1fr; } .sg-two-col { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="sg-layout">
+  <aside class="sg-sidebar">
+    <a class="sg-sidebar-logo" href="/docs">
+      <svg width="28" height="33" viewBox="0 0 48 56" fill="none"><defs><linearGradient id="gs" x1="4" y1="2" x2="44" y2="54" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#3B82F6"/><stop offset="100%" stop-color="#1E3A5F"/></linearGradient></defs><path d="M24 2L44 10V28C44 40.4 35.2 51.6 24 54C12.8 51.6 4 40.4 4 28V10L24 2Z" fill="url(#gs)"/><text x="24" y="37" text-anchor="middle" font-family="Inter" font-size="20" font-weight="800" fill="white">S</text></svg>
+      <div><div class="sg-sidebar-name">Sentinel Guard</div><div class="sg-sidebar-sub">Documentación</div></div>
+    </a>
+    <div class="sg-role-badge">
+      <div class="sg-role-label">Rol activo</div>
+      <div class="sg-role-name">Usuario</div>
+      <span class="sg-role-level">Nivel 3 — Colaborador</span>
+    </div>
+    <nav class="sg-slide-nav" id="slideNav"></nav>
+    <a class="sg-back-link" href="/docs">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Volver al inicio
+    </a>
+  </aside>
+
+  <main class="sg-main">
+    <div class="sg-topbar">
+      <div class="sg-topbar-breadcrumb">Sentinel Guard → <span id="currentSlideName">Bienvenida</span></div>
+      <div class="sg-progress-wrap">
+        <div class="sg-progress-track"><div class="sg-progress-fill" id="progressFill" style="width:20%"></div></div>
+        <div class="sg-progress-text" id="progressText">1 / 5</div>
+      </div>
+    </div>
+
+    <div class="swiper sg-swiper">
+      <div class="swiper-wrapper">
+
+        <!-- Slide 1: Hero -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-hero">
+              <div class="sg-anim sg-eyebrow">Usuario</div>
+              <div class="sg-anim sg-hero-icon-wrap">
+                <svg fill="none" viewBox="0 0 24 24" stroke="#047857" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+              </div>
+              <h1 class="sg-anim sg-title">Tu espacio en<br>Sentinel Guard</h1>
+              <p class="sg-anim sg-subtitle">Como Usuario puedes documentar incidencias y formatos de seguridad, abrir tickets de soporte y consultar la información de tu empresa. Simple y directo.</p>
+              <div class="sg-anim sg-stat-row">
+                <div class="sg-stat"><div class="sg-stat-n">13</div><div class="sg-stat-l">Formatos disponibles</div></div>
+                <div class="sg-stat"><div class="sg-stat-n">✓</div><div class="sg-stat-l">Crear tickets</div></div>
+                <div class="sg-stat"><div class="sg-stat-n">📖</div><div class="sg-stat-l">Ver políticas activas</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 2: Registros -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-anim sg-eyebrow">Módulo 1</div>
+            <h2 class="sg-anim sg-section-title">Registros de Seguridad</h2>
+            <p class="sg-anim sg-section-sub">Documenta situaciones de seguridad de la información usando los formatos establecidos por las políticas PSC de tu empresa.</p>
+            <div class="sg-anim sg-steps">
+              <div class="sg-step">
+                <div class="sg-step-num">1</div>
+                <div>
+                  <div class="sg-step-title">Ve a Seguridad → Registros</div>
+                  <div class="sg-step-desc">Verás la lista de todos los registros de tu empresa. Usa los filtros para buscar por tipo de formato o fecha.</div>
+                </div>
+              </div>
+              <div class="sg-step">
+                <div class="sg-step-num">2</div>
+                <div>
+                  <div class="sg-step-title">Haz clic en "Nuevo registro"</div>
+                  <div class="sg-step-desc">Selecciona el tipo de formato que necesitas (ej. F09 para notificar una incidencia). El formulario cambia según el formato elegido.</div>
+                </div>
+              </div>
+              <div class="sg-step">
+                <div class="sg-step-num">3</div>
+                <div>
+                  <div class="sg-step-title">Completa el formulario</div>
+                  <div class="sg-step-desc">Cada formato tiene campos específicos según la política PSC correspondiente. Completa todos los campos requeridos con la mayor precisión posible.</div>
+                </div>
+              </div>
+              <div class="sg-step">
+                <div class="sg-step-num">4</div>
+                <div>
+                  <div class="sg-step-title">Guarda — el número se asigna automáticamente</div>
+                  <div class="sg-step-desc">El sistema genera el código del registro (ej. INC-2026-007) y queda guardado en el historial de tu empresa.</div>
+                </div>
+              </div>
+            </div>
+            <div class="sg-anim sg-tip">
+              <span class="sg-tip-icon">📝</span>
+              <div class="sg-tip-text"><strong>Importante:</strong> Puedes editar un registro después de crearlo, pero NO puedes eliminarlo. Si necesitas borrar uno, contacta a tu admin de empresa.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3: Tickets -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-anim sg-eyebrow">Módulo 2</div>
+            <h2 class="sg-anim sg-section-title">Tickets de Soporte</h2>
+            <p class="sg-anim sg-section-sub">Cuando tengas un problema técnico, una consulta o necesites reportar algo al equipo de soporte central, crea un ticket.</p>
+            <div class="sg-anim sg-two-col">
+              <div>
+                <div class="sg-card" style="margin-bottom:12px;">
+                  <div class="sg-card-title">📤 Cómo crear un ticket</div>
+                  <div class="sg-card-desc">Soporte → Tickets → Nuevo ticket. Describe el problema con claridad, agrega adjuntos si ayudan, y elige la prioridad.</div>
+                  <span class="sg-card-path">Soporte → Tickets → Nuevo</span>
+                </div>
+                <div class="sg-card">
+                  <div class="sg-card-title">💬 Seguimiento</div>
+                  <div class="sg-card-desc">Haz clic en tu ticket para ver las respuestas del agente y agregar mensajes adicionales si necesitas aportar más información.</div>
+                </div>
+              </div>
+              <div>
+                <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;">
+                  <div style="font-size:13px;font-weight:700;margin-bottom:14px;">Ciclo de vida del ticket</div>
+                  <div class="sg-ticket-flow">
+                    <div class="sg-ticket-state active-state">Nuevo</div>
+                    <div class="sg-ticket-arrow">→</div>
+                    <div class="sg-ticket-state">En revisión</div>
+                    <div class="sg-ticket-arrow">→</div>
+                    <div class="sg-ticket-state">Esperando info</div>
+                    <div class="sg-ticket-arrow">→</div>
+                    <div class="sg-ticket-state">Resuelto</div>
+                    <div class="sg-ticket-arrow">→</div>
+                    <div class="sg-ticket-state">Cerrado</div>
+                  </div>
+                  <div style="font-size:11px;color:var(--slate);margin-top:14px;line-height:1.5;">Si el agente necesita más información, el ticket pasa a <strong>Esperando usuario</strong>. Responde rápido para no demorar la resolución.</div>
+                </div>
+              </div>
+            </div>
+            <div class="sg-anim sg-tip">
+              <span class="sg-tip-icon">🔄</span>
+              <div class="sg-tip-text"><strong>¿Ticket resuelto pero sigue el problema?</strong> Puedes reabrir un ticket resuelto dentro de los 7 días siguientes a su resolución desde el botón "Reabrir" en el detalle del ticket.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 4: Capacitaciones y Políticas -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-anim sg-eyebrow">Módulo 3</div>
+            <h2 class="sg-anim sg-section-title">Capacitaciones y Políticas</h2>
+            <p class="sg-anim sg-section-sub">Consulta las sesiones de formación programadas para ti y accede a las políticas de seguridad de tu empresa.</p>
+            <div class="sg-anim sg-grid sg-grid-2">
+              <div class="sg-card">
+                <div class="sg-card-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="#047857" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342"/></svg>
+                </div>
+                <div class="sg-card-title">Mis Capacitaciones</div>
+                <div class="sg-card-desc">Ve todas las sesiones de formación en las que estás inscrito. Consulta fecha, modalidad (presencial/virtual) e instructor.</div>
+                <span class="sg-card-path">Capacitaciones → Mis Capacitaciones</span>
+              </div>
+              <div class="sg-card">
+                <div class="sg-card-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="#047857" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"/></svg>
+                </div>
+                <div class="sg-card-title">Confirmar asistencia</div>
+                <div class="sg-card-desc">Si asististe a una sesión, confírmalo desde la vista de la capacitación. Esto queda registrado en el historial de tu empresa.</div>
+                <span class="sg-card-path">Mis Capacitaciones → Confirmar</span>
+              </div>
+              <div class="sg-card">
+                <div class="sg-card-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="#047857" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
+                </div>
+                <div class="sg-card-title">Wiki de Políticas</div>
+                <div class="sg-card-desc">Consulta las políticas de seguridad activas de tu empresa en cualquier momento. Son documentos de referencia, no puedes editarlos.</div>
+                <span class="sg-card-path">Seguridad → Wiki de Políticas</span>
+              </div>
+              <div class="sg-card">
+                <div class="sg-card-icon">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="#047857" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+                </div>
+                <div class="sg-card-title">Aceptar políticas</div>
+                <div class="sg-card-desc">Cuando tu admin publique nuevas políticas, recibirás una notificación. Debes aceptarlas para mantener tu acceso completo al sistema.</div>
+                <span class="sg-card-path">Notificación → Aceptar Política</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 5: Qué puedes y no puedes hacer -->
+        <div class="swiper-slide">
+          <div class="sg-slide-inner">
+            <div class="sg-anim sg-eyebrow">Módulo 4</div>
+            <h2 class="sg-anim sg-section-title">Mi Perfil y Límites de Acceso</h2>
+            <p class="sg-anim sg-section-sub">Personaliza tu cuenta y entiende qué acciones están disponibles para tu rol.</p>
+            <div class="sg-anim sg-card" style="margin-bottom:20px;">
+              <div class="sg-card-title">👤 Mi Perfil</div>
+              <div class="sg-card-desc">Puedes actualizar tu nombre, contraseña y foto de perfil en cualquier momento. Los cambios son inmediatos.</div>
+              <span class="sg-card-path">Admin → Mi Perfil</span>
+            </div>
+            <div class="sg-anim sg-two-col">
+              <div class="sg-can-do">
+                <div class="sg-can-title yes">✅ Lo que puedes hacer</div>
+                <div class="sg-can-item"><span class="sg-can-icon">✅</span>Crear registros de seguridad (F01–F13)</div>
+                <div class="sg-can-item"><span class="sg-can-icon">✅</span>Ver todos los registros de tu empresa</div>
+                <div class="sg-can-item"><span class="sg-can-icon">✅</span>Crear y seguir tickets de soporte</div>
+                <div class="sg-can-item"><span class="sg-can-icon">✅</span>Consultar la Wiki de Políticas</div>
+                <div class="sg-can-item"><span class="sg-can-icon">✅</span>Ver y confirmar tus capacitaciones</div>
+                <div class="sg-can-item"><span class="sg-can-icon">✅</span>Editar tu perfil y contraseña</div>
+              </div>
+              <div class="sg-cant-do">
+                <div class="sg-can-title no">❌ Fuera de tu alcance</div>
+                <div class="sg-can-item"><span class="sg-can-icon">❌</span>Eliminar registros</div>
+                <div class="sg-can-item"><span class="sg-can-icon">❌</span>Gestionar usuarios</div>
+                <div class="sg-can-item"><span class="sg-can-icon">❌</span>Ver datos de otras empresas</div>
+                <div class="sg-can-item"><span class="sg-can-icon">❌</span>Crear o editar políticas</div>
+                <div class="sg-can-item"><span class="sg-can-icon">❌</span>Gestionar equipos o checklists</div>
+                <div class="sg-can-item"><span class="sg-can-icon">❌</span>Acceder al Panel de Agente</div>
+              </div>
+            </div>
+            <div class="sg-anim sg-tip">
+              <span class="sg-tip-icon">💬</span>
+              <div class="sg-tip-text">Si necesitas permisos adicionales o realizar una acción que no está disponible, <strong>abre un ticket</strong> explicando lo que necesitas. El equipo de soporte te ayudará.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="sg-bottom">
+      <button class="sg-btn sg-btn-ghost" id="btnPrev" onclick="prevSlide()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Anterior
+      </button>
+      <div class="sg-dots" id="dots"></div>
+      <button class="sg-btn sg-btn-primary" id="btnNext" onclick="nextSlide()">
+        Siguiente
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </main>
+</div>
+<script>
+  const SLIDES = ['Bienvenida','Registros de Seguridad','Tickets de Soporte','Capacitaciones y Políticas','Mi Perfil y Límites'];
+  const swiper = new Swiper('.sg-swiper', { effect:'fade', fadeEffect:{crossFade:true}, speed:380, allowTouchMove:false, keyboard:{enabled:true}, on:{ afterInit(){ syncUI(0); animateSlide(0); }, slideChangeTransitionEnd(){ animateSlide(this.activeIndex); } } });
+  function prevSlide(){ swiper.slidePrev(); }
+  function nextSlide(){ swiper.slideNext(); }
+  swiper.on('slideChange', function(){ syncUI(this.activeIndex); });
+  function syncUI(idx){
+    document.getElementById('currentSlideName').textContent = SLIDES[idx];
+    document.getElementById('progressFill').style.width = ((idx+1)/SLIDES.length*100)+'%';
+    document.getElementById('progressText').textContent = (idx+1)+' / '+SLIDES.length;
+    document.getElementById('btnPrev').disabled = idx===0;
+    document.getElementById('btnNext').disabled = idx===SLIDES.length-1;
+    document.querySelectorAll('.sg-nav-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+    document.querySelectorAll('.sg-dot').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  }
+  function animateSlide(idx){
+    const slide = document.querySelectorAll('.swiper-slide')[idx];
+    if(!slide) return;
+    const elems = slide.querySelectorAll('.sg-anim');
+    anime.set(elems, {opacity:0, translateY:18});
+    anime({ targets:elems, opacity:[0,1], translateY:[18,0], delay:anime.stagger(55,{start:80}), duration:420, easing:'easeOutCubic' });
+  }
+  const nav = document.getElementById('slideNav');
+  SLIDES.forEach((title,i)=>{ const item=document.createElement('div'); item.className='sg-nav-item'+(i===0?' active':''); item.innerHTML=`<div class="sg-nav-num">${String(i+1).padStart(2,'0')}</div><div class="sg-nav-title">${title}</div>`; item.onclick=()=>swiper.slideTo(i); nav.appendChild(item); });
+  const dotsEl = document.getElementById('dots');
+  SLIDES.forEach((_,i)=>{ const d=document.createElement('div'); d.className='sg-dot'+(i===0?' active':''); d.onclick=()=>swiper.slideTo(i); dotsEl.appendChild(d); });
+</script>
+</body>
+</html>

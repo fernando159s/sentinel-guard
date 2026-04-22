@@ -24,7 +24,7 @@ class PanelCumplimiento extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected static string $view = 'filament.pages.panel-cumplimiento';
+    protected string $view = 'filament.pages.panel-cumplimiento';
 
     public ?int $selectedPoliticaId = null;
 

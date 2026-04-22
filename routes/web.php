@@ -5,7 +5,18 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
+});
+
+Route::get('/docs', function () {
+    return view('docs.index');
+});
+
+Route::get('/docs/{role}', function (string $role) {
+    $allowed = ['super-admin', 'admin-empresa', 'usuario', 'agente-helpdesk', 'solo-lectura'];
+    abort_unless(in_array($role, $allowed), 404);
+
+    return view("docs.roles.{$role}");
 });
 
 Route::get('/select-empresa', function () {
