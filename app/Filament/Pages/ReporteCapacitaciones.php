@@ -27,6 +27,8 @@ class ReporteCapacitaciones extends Page implements HasForms
 
     protected static string|\UnitEnum|null $navigationGroup = 'Reportes';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationLabel = 'Reporte Capacitaciones';
 
     protected static ?string $title = 'Reporte de Capacitaciones';

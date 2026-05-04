@@ -28,6 +28,8 @@ class ReporteDestruccionActivos extends Page implements HasForms
 
     protected static string|\UnitEnum|null $navigationGroup = 'Reportes';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationLabel = 'Destruccion Activos (F13)';
 
     protected static ?string $title = 'Formato 13 — Destruccion de Activos';
