@@ -11,8 +11,8 @@ use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\Action as TableAction;
 use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 
