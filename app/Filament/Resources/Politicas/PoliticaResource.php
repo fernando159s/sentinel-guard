@@ -12,7 +12,6 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -104,16 +103,10 @@ class PoliticaResource extends Resource
                     ->schema([
                         RichEditor::make('contenido')
                             ->label('Contenido')
-                            ->required(fn (Get $get) => ! $get('es_nda'))
-                            ->visible(fn (Get $get) => ! $get('es_nda'))
-                            ->dehydrated(fn (Get $get) => ! $get('es_nda'))
-                            ->columnSpanFull(),
-                        MarkdownEditor::make('contenido')
-                            ->label('Contenido NDA (Markdown)')
-                            ->required(fn (Get $get) => (bool) $get('es_nda'))
-                            ->visible(fn (Get $get) => (bool) $get('es_nda'))
-                            ->dehydrated(fn (Get $get) => (bool) $get('es_nda'))
-                            ->helperText('Variables disponibles: {nombre_completo}, {dni}, {direccion}, {telefono}, {puesto}. Ejemplo: "Yo, {nombre_completo}, identificado con DNI {dni}..."')
+                            ->required()
+                            ->helperText(fn (Get $get) => $get('es_nda')
+                                ? 'Variables disponibles: {nombre_completo}, {dni}, {direccion}, {telefono}, {puesto}. Ejemplo: "Yo, {nombre_completo}, identificado con DNI {dni}..."'
+                                : null)
                             ->columnSpanFull(),
                     ]),
 

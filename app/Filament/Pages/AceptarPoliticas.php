@@ -6,7 +6,6 @@ use App\Models\AceptacionPolitica;
 use App\Models\Politica;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Illuminate\Support\Str;
 use Livewire\WithFileUploads;
 
 class AceptarPoliticas extends Page
@@ -170,8 +169,6 @@ class AceptarPoliticas extends Page
                 ],
                 $contenido
             );
-
-            return Str::markdown($contenido);
         }
 
         return $contenido;

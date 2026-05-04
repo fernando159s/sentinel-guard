@@ -156,18 +156,22 @@
                         d: false,
                         ps: [],
                         cp: [],
+                        fs: false,
                         init() {
                             this.c = this.$refs.canvas;
                             this.x = this.c.getContext('2d');
+                            this.applyStyle();
+                        },
+                        applyStyle() {
                             this.x.strokeStyle = '#111';
-                            this.x.lineWidth = 2.5;
+                            this.x.lineWidth = this.fs ? 4 : 2.5;
                             this.x.lineCap = 'round';
                             this.x.lineJoin = 'round';
                         },
                         getPos(e) {
                             const r = this.c.getBoundingClientRect();
-                            const clientX = e.clientX || e.touches?.[0]?.clientX;
-                            const clientY = e.clientY || e.touches?.[0]?.clientY;
+                            const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+                            const clientY = e.clientY ?? e.touches?.[0]?.clientY;
                             return {
                                 x: (clientX - r.left) * (this.c.width / r.width),
                                 y: (clientY - r.top) * (this.c.height / r.height)
@@ -199,21 +203,69 @@
                             this.ps = [];
                             this.x.clearRect(0, 0, this.c.width, this.c.height);
                             $wire.set('firmaDataUrl', '');
+                        },
+                        redraw() {
+                            this.x.clearRect(0, 0, this.c.width, this.c.height);
+                            this.applyStyle();
+                            for (const path of this.ps) {
+                                if (!path.length) continue;
+                                this.x.beginPath();
+                                this.x.moveTo(path[0].x, path[0].y);
+                                for (let i = 1; i < path.length; i++) {
+                                    this.x.lineTo(path[i].x, path[i].y);
+                                }
+                                this.x.stroke();
+                            }
+                        },
+                        toggleFs() {
+                            const oldW = this.c.width, oldH = this.c.height;
+                            this.fs = !this.fs;
+                            if (this.fs) {
+                                document.body.style.overflow = 'hidden';
+                            } else {
+                                document.body.style.overflow = '';
+                            }
+                            this.$nextTick(() => {
+                                const rect = this.c.getBoundingClientRect();
+                                const newW = Math.max(1, Math.round(rect.width));
+                                const newH = Math.max(1, Math.round(rect.height));
+                                const sx = newW / oldW, sy = newH / oldH;
+                                this.ps = this.ps.map(p => p.map(pt => ({ x: pt.x * sx, y: pt.y * sy })));
+                                this.c.width = newW;
+                                this.c.height = newH;
+                                this.redraw();
+                                if (this.ps.length) $wire.set('firmaDataUrl', this.c.toDataURL('image/png'));
+                            });
                         }
-                    }" @firma-cleared.window="clear()">
-                        <div style="border:2px dashed; border-radius:10px; overflow:hidden; position:relative;" class="border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800">
-                            <canvas x-ref="canvas" width="500" height="160"
-                                    style="width:100%; cursor:crosshair; touch-action:none; display:block;"
-                                    @mousedown="start($event)" @mousemove="move($event)" @mouseup="end()" @mouseleave="end()"
-                                    @touchstart="start($event)" @touchmove="move($event)" @touchend="end()">
-                            </canvas>
-                            <div style="position:absolute; bottom:8px; left:12px; pointer-events:none;" class="text-xs text-gray-300 dark:text-gray-600">
-                                Dibuja aqui tu firma
+                    }" @firma-cleared.window="clear()" @keydown.escape.window="if (fs) toggleFs()">
+                        <div :style="fs ? 'position:fixed; inset:0; z-index:9999; padding:20px; display:flex; flex-direction:column; gap:12px; background:rgba(17,24,39,0.96); backdrop-filter: blur(4px);' : ''">
+                            <template x-if="fs">
+                                <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
+                                    <span style="font-size:14px; font-weight:600;">Firma a pantalla completa</span>
+                                    <button @click="toggleFs()" type="button" style="padding:6px 12px; border-radius:8px; background:rgba(255,255,255,0.1); color:#fff; font-size:12px; font-weight:600; cursor:pointer;">
+                                        Cerrar
+                                    </button>
+                                </div>
+                            </template>
+                            <div :style="fs ? 'flex:1; min-height:0;' : ''" style="border:2px dashed; border-radius:10px; overflow:hidden; position:relative;" class="border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800">
+                                <canvas x-ref="canvas" width="500" height="160"
+                                        :style="fs ? 'width:100%; height:100%; cursor:crosshair; touch-action:none; display:block;' : 'width:100%; cursor:crosshair; touch-action:none; display:block;'"
+                                        @mousedown="start($event)" @mousemove="move($event)" @mouseup="end()" @mouseleave="end()"
+                                        @touchstart="start($event)" @touchmove="move($event)" @touchend="end()">
+                                </canvas>
+                                <div x-show="!ps.length && !d" style="position:absolute; bottom:8px; left:12px; pointer-events:none;" class="text-xs text-gray-300 dark:text-gray-600">
+                                    Dibuja aqui tu firma
+                                </div>
                             </div>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin-top:6px;">
-                            <span class="text-xs text-gray-400">Usa el mouse o el dedo en pantalla tactil</span>
-                            <button @click="clear()" type="button" class="text-xs text-danger-600 dark:text-danger-400 hover:underline">Limpiar canvas</button>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;" :style="fs ? 'color:#fff;' : ''">
+                                <span class="text-xs" :class="fs ? '' : 'text-gray-400'">Usa el mouse o el dedo en pantalla tactil</span>
+                                <div style="display:flex; gap:12px; align-items:center;">
+                                    <button @click="toggleFs()" type="button" class="text-xs hover:underline" :class="fs ? 'text-white' : 'text-primary-600 dark:text-primary-400'">
+                                        <span x-text="fs ? 'Reducir' : 'Ampliar a pantalla completa'"></span>
+                                    </button>
+                                    <button @click="clear()" type="button" class="text-xs text-danger-600 dark:text-danger-400 hover:underline">Limpiar canvas</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 @else

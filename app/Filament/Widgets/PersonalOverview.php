@@ -45,15 +45,24 @@ class PersonalOverview extends Widget
                 ->with('equipo')
                 ->first();
 
-            $politicasPendientes = Politica::pendientesPara($user->id, $empresaId)->count();
-            $politicasOk = $politicasPendientes === 0 && $politicasTotal > 0;
+            $rol = $user->roles->first()?->name ?? 'usuario';
+            $esFirmante = ! in_array($rol, ['super_admin', 'admin_empresa', 'agente_helpdesk'], true);
+
+            if ($esFirmante) {
+                $politicasPendientes = Politica::pendientesPara($user->id, $empresaId)->count();
+                $politicasOk = $politicasPendientes === 0 && $politicasTotal > 0;
+                $ndaLabel = $politicasOk ? 'OK' : "{$politicasPendientes} pend.";
+                $ndaState = $politicasOk ? 'ok' : 'pendiente';
+            } else {
+                $ndaLabel = 'N/A';
+                $ndaState = 'na';
+            }
 
             $ticketsAbiertos = \App\Models\Ticket::where('empresa_id', $empresaId)
                 ->where('creado_por', $user->id)
                 ->whereNotIn('estado', ['cerrado', 'resuelto'])
                 ->count();
 
-            $rol = $user->roles->first()?->name ?? 'usuario';
             $rolLabel = match ($rol) {
                 'super_admin' => 'Super Admin',
                 'admin_empresa' => 'Admin',
@@ -66,8 +75,8 @@ class PersonalOverview extends Widget
                 'nombre' => $user->name,
                 'rol' => $rolLabel,
                 'equipo' => $equipo ? $equipo->equipo?->codigo_interno : null,
-                'nda' => $politicasOk,
-                'nda_label' => $politicasOk ? 'OK' : "{$politicasPendientes} pend.",
+                'nda_state' => $ndaState,
+                'nda_label' => $ndaLabel,
                 'tickets' => $ticketsAbiertos,
             ];
         })->toArray();

@@ -83,13 +83,39 @@
                             <button wire:click="$set('metodoFirma', 'subir')" style="flex:1; padding:6px; border-radius:8px; font-size:11px; font-weight:600; text-align:center; border:1px solid;" class="{{ $metodoFirma === 'subir' ? 'border-primary-500 bg-primary-50 text-primary-700 dark:border-primary-400 dark:bg-primary-500/10 dark:text-primary-400' : 'border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400' }}">Subir imagen</button>
                         </div>
                         @if ($metodoFirma === 'dibujar')
-                            <div x-data="{c:null,x:null,d:false,ps:[],cp:[],init(){this.c=this.$refs.p;this.x=this.c.getContext('2d');this.x.strokeStyle='#111';this.x.lineWidth=2.5;this.x.lineCap='round';this.x.lineJoin='round';const s=@js($firmaDataUrl);if(s){const i=new Image();i.onload=()=>this.x.drawImage(i,0,0);i.src=s;}},g(e){const r=this.c.getBoundingClientRect();return{x:((e.clientX||e.touches?.[0]?.clientX)-r.left)*(this.c.width/r.width),y:((e.clientY||e.touches?.[0]?.clientY)-r.top)*(this.c.height/r.height)};},s(e){this.d=true;this.cp=[];const p=this.g(e);this.cp.push(p);this.x.beginPath();this.x.moveTo(p.x,p.y);},m(e){if(!this.d)return;e.preventDefault();const p=this.g(e);this.cp.push(p);this.x.lineTo(p.x,p.y);this.x.stroke();},u(){if(!this.d)return;this.d=false;if(this.cp.length>1)this.ps.push([...this.cp]);$wire.set('firmaDataUrl',this.c.toDataURL('image/png'));},cl(){this.ps=[];this.x.clearRect(0,0,this.c.width,this.c.height);}}" @firma-cleared.window="cl()">
-                                <div style="border:1px solid; border-radius:8px; overflow:hidden;" class="border-gray-300 bg-white dark:border-gray-600">
-                                    <canvas x-ref="p" width="400" height="100" style="width:100%; cursor:crosshair; touch-action:none;" @mousedown="s($event)" @mousemove="m($event)" @mouseup="u()" @mouseleave="u()" @touchstart="s($event)" @touchmove="m($event)" @touchend="u()"></canvas>
-                                </div>
-                                <div style="display:flex; justify-content:space-between; margin-top:4px;">
-                                    <span style="font-size:10px;" class="text-gray-400">Mouse o dedo</span>
-                                    <button @click="cl()" type="button" style="font-size:10px;" class="text-danger-600 dark:text-danger-400 hover:underline">Limpiar</button>
+                            <div x-data="{
+                                c:null,x:null,d:false,ps:[],cp:[],fs:false,
+                                init(){this.c=this.$refs.p;this.x=this.c.getContext('2d');this.applyStyle();const s=@js($firmaDataUrl);if(s){const i=new Image();i.onload=()=>this.x.drawImage(i,0,0);i.src=s;}},
+                                applyStyle(){this.x.strokeStyle='#111';this.x.lineWidth=this.fs?4:2.5;this.x.lineCap='round';this.x.lineJoin='round';},
+                                g(e){const r=this.c.getBoundingClientRect();const cx=e.clientX??e.touches?.[0]?.clientX;const cy=e.clientY??e.touches?.[0]?.clientY;return{x:(cx-r.left)*(this.c.width/r.width),y:(cy-r.top)*(this.c.height/r.height)};},
+                                s(e){this.d=true;this.cp=[];const p=this.g(e);this.cp.push(p);this.x.beginPath();this.x.moveTo(p.x,p.y);},
+                                m(e){if(!this.d)return;e.preventDefault();const p=this.g(e);this.cp.push(p);this.x.lineTo(p.x,p.y);this.x.stroke();},
+                                u(){if(!this.d)return;this.d=false;if(this.cp.length>1)this.ps.push([...this.cp]);$wire.set('firmaDataUrl',this.c.toDataURL('image/png'));},
+                                cl(){this.ps=[];this.x.clearRect(0,0,this.c.width,this.c.height);$wire.set('firmaDataUrl','');},
+                                redraw(){this.x.clearRect(0,0,this.c.width,this.c.height);this.applyStyle();for(const path of this.ps){if(!path.length)continue;this.x.beginPath();this.x.moveTo(path[0].x,path[0].y);for(let i=1;i<path.length;i++)this.x.lineTo(path[i].x,path[i].y);this.x.stroke();}},
+                                toggleFs(){const oldW=this.c.width,oldH=this.c.height;this.fs=!this.fs;document.body.style.overflow=this.fs?'hidden':'';this.$nextTick(()=>{const r=this.c.getBoundingClientRect();const nW=Math.max(1,Math.round(r.width));const nH=Math.max(1,Math.round(r.height));const sx=nW/oldW,sy=nH/oldH;this.ps=this.ps.map(p=>p.map(pt=>({x:pt.x*sx,y:pt.y*sy})));this.c.width=nW;this.c.height=nH;this.redraw();if(this.ps.length)$wire.set('firmaDataUrl',this.c.toDataURL('image/png'));});}
+                            }" @firma-cleared.window="cl()" @keydown.escape.window="if (fs) toggleFs()">
+                                <div :style="fs ? 'position:fixed; inset:0; z-index:9999; padding:20px; display:flex; flex-direction:column; gap:12px; background:rgba(17,24,39,0.96); backdrop-filter: blur(4px);' : ''">
+                                    <template x-if="fs">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
+                                            <span style="font-size:14px; font-weight:600;">Firma a pantalla completa</span>
+                                            <button @click="toggleFs()" type="button" style="padding:6px 12px; border-radius:8px; background:rgba(255,255,255,0.1); color:#fff; font-size:12px; font-weight:600; cursor:pointer;">Cerrar</button>
+                                        </div>
+                                    </template>
+                                    <div :style="fs ? 'flex:1; min-height:0;' : ''" style="border:1px solid; border-radius:8px; overflow:hidden;" class="border-gray-300 bg-white dark:border-gray-600">
+                                        <canvas x-ref="p" width="400" height="100"
+                                                :style="fs ? 'width:100%; height:100%; cursor:crosshair; touch-action:none; display:block;' : 'width:100%; cursor:crosshair; touch-action:none; display:block;'"
+                                                @mousedown="s($event)" @mousemove="m($event)" @mouseup="u()" @mouseleave="u()" @touchstart="s($event)" @touchmove="m($event)" @touchend="u()"></canvas>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                                        <span style="font-size:10px;" :class="fs ? 'text-white/70' : 'text-gray-400'">Mouse o dedo</span>
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <button @click="toggleFs()" type="button" style="font-size:10px;" class="hover:underline" :class="fs ? 'text-white' : 'text-primary-600 dark:text-primary-400'">
+                                                <span x-text="fs ? 'Reducir' : 'Pantalla completa'"></span>
+                                            </button>
+                                            <button @click="cl()" type="button" style="font-size:10px;" class="text-danger-600 dark:text-danger-400 hover:underline">Limpiar</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         @else

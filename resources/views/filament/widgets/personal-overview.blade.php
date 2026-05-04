@@ -20,14 +20,16 @@
                             <td class="py-1.5"><span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">{{ $p['rol'] }}</span></td>
                             <td class="py-1.5 text-xs {{ $p['equipo'] ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400' }}">{{ $p['equipo'] ?? '—' }}</td>
                             <td class="py-1.5">
-                                @if ($p['nda'])
+                                @if ($p['nda_state'] === 'ok')
                                     <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-success-600 dark:text-success-400">
                                         <x-heroicon-s-check-circle class="h-3 w-3" /> OK
                                     </span>
-                                @else
+                                @elseif ($p['nda_state'] === 'pendiente')
                                     <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-danger-600 dark:text-danger-400">
                                         <x-heroicon-s-x-circle class="h-3 w-3" /> {{ $p['nda_label'] }}
                                     </span>
+                                @else
+                                    <span class="text-[10px] font-medium text-gray-400">{{ $p['nda_label'] }}</span>
                                 @endif
                             </td>
                             <td class="py-1.5 text-right">

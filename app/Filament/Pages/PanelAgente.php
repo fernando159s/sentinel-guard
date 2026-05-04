@@ -409,18 +409,18 @@ class PanelAgente extends Page implements HasForms
 
         $empresaId = $ticket->empresa_id;
 
-        // Prevent duplicate: only one registro per ticket (any format)
+        // Prevent duplicate: only one registro per ticket *per tipo_formato*.
+        // Allow multiple distinct formats on the same ticket (e.g. F09 incidencia + F10 resolucion).
         $existente = Registro::withoutGlobalScopes()
             ->where('empresa_id', $empresaId)
+            ->where('tipo_formato', $tipo->value)
             ->whereJsonContains('datos->ticket_referencia', $ticket->numero_ticket)
             ->first();
 
         if ($existente) {
-            $tipoExistente = TipoFormato::tryFrom($existente->tipo_formato);
-
             Notification::make()
-                ->title('Este ticket ya tiene un registro')
-                ->body("Ya existe el registro {$existente->numero_registro} ({$tipoExistente?->label()}) vinculado al ticket {$ticket->numero_ticket}")
+                ->title("Este ticket ya tiene un registro {$tipo->value}")
+                ->body("Ya existe el registro {$existente->numero_registro} ({$tipo->label()}) vinculado al ticket {$ticket->numero_ticket}. Para crear otro formato distinto, selecciona otro tipo.")
                 ->warning()
                 ->send();
 

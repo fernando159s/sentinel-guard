@@ -373,8 +373,6 @@ class PoliticaPdfController extends Controller
                 ],
                 $contenido
             );
-
-            return Str::markdown($contenido);
         }
 
         return $contenido;
