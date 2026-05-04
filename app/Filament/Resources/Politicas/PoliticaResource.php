@@ -104,13 +104,15 @@ class PoliticaResource extends Resource
                     ->schema([
                         RichEditor::make('contenido')
                             ->label('Contenido')
-                            ->required()
+                            ->required(fn (Get $get) => ! $get('es_nda'))
                             ->visible(fn (Get $get) => ! $get('es_nda'))
+                            ->dehydrated(fn (Get $get) => ! $get('es_nda'))
                             ->columnSpanFull(),
                         MarkdownEditor::make('contenido')
                             ->label('Contenido NDA (Markdown)')
-                            ->required()
+                            ->required(fn (Get $get) => (bool) $get('es_nda'))
                             ->visible(fn (Get $get) => (bool) $get('es_nda'))
+                            ->dehydrated(fn (Get $get) => (bool) $get('es_nda'))
                             ->helperText('Variables disponibles: {nombre_completo}, {dni}, {direccion}, {telefono}, {puesto}. Ejemplo: "Yo, {nombre_completo}, identificado con DNI {dni}..."')
                             ->columnSpanFull(),
                     ]),
@@ -163,7 +165,7 @@ class PoliticaResource extends Resource
                     ->boolean(),
                 TextColumn::make('aceptaciones_count')
                     ->label('Aceptaciones')
-                    ->counts('aceptaciones')
+                    ->counts(['aceptaciones' => fn ($q) => $q->whereHas('user', fn ($u) => $u->firmantes())])
                     ->badge()
                     ->color('success'),
                 TextColumn::make('created_at')

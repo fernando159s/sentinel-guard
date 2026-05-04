@@ -55,6 +55,7 @@ class PanelCumplimiento extends Page
         }
 
         $usuarios = User::withoutGlobalScopes()
+            ->firmantes()
             ->where('empresa_id', $empresaId)
             ->where('estado', 'activo')
             ->get();
@@ -100,6 +101,7 @@ class PanelCumplimiento extends Page
             ->get();
 
         $totalUsuarios = User::withoutGlobalScopes()
+            ->firmantes()
             ->where('empresa_id', $empresaId)
             ->where('estado', 'activo')
             ->count();
@@ -141,6 +143,7 @@ class PanelCumplimiento extends Page
         }
 
         $usuarios = User::withoutGlobalScopes()
+            ->firmantes()
             ->where('empresa_id', $empresaId)
             ->where('estado', 'activo')
             ->orderBy('name')

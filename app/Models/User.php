@@ -108,6 +108,17 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->hasMany(AceptacionPolitica::class, 'user_id');
     }
 
+    /**
+     * Scope to users who are required to sign policies/NDAs.
+     * Excludes admin/staff roles — admins sign documents as issuers, not as acceptors.
+     */
+    public function scopeFirmantes($query)
+    {
+        return $query->whereDoesntHave('roles', function ($q) {
+            $q->whereIn('name', ['super_admin', 'admin_empresa', 'agente_helpdesk']);
+        });
+    }
+
     public function tienePoliticasPendientes(): bool
     {
         if (! $this->empresa_id) {

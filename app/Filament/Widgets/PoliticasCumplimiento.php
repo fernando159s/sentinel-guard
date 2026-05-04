@@ -29,13 +29,17 @@ class PoliticasCumplimiento extends Widget
             return ['politicas' => [], 'totalUsuarios' => 0];
         }
 
-        $totalUsuarios = User::where('empresa_id', $empresaId)->where('estado', 'activo')->count();
+        $totalUsuarios = User::firmantes()
+            ->where('empresa_id', $empresaId)
+            ->where('estado', 'activo')
+            ->count();
 
         $politicas = Politica::where('empresa_id', $empresaId)
             ->where('activa', true)
             ->where('obligatoria', true)
             ->withCount(['aceptaciones as aceptaciones_vigentes_count' => function ($q) {
-                $q->whereColumn('aceptaciones_politica.version_aceptada', 'politicas.version');
+                $q->whereColumn('aceptaciones_politica.version_aceptada', 'politicas.version')
+                    ->whereHas('user', fn ($u) => $u->firmantes());
             }])
             ->get()
             ->map(fn ($p) => [

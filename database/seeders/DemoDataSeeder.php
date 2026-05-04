@@ -366,7 +366,10 @@ class DemoDataSeeder extends Seeder
             ],
         ];
 
-        $usuarios = User::where('empresa_id', $this->empresaId)->where('estado', 'activo')->get();
+        $usuarios = User::firmantes()
+            ->where('empresa_id', $this->empresaId)
+            ->where('estado', 'activo')
+            ->get();
 
         foreach ($politicas as $data) {
             $politica = Politica::firstOrCreate(

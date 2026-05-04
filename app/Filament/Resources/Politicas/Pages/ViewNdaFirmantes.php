@@ -46,6 +46,7 @@ class ViewNdaFirmantes extends Page implements HasTable
             ->query(
                 AceptacionPolitica::query()
                     ->where('politica_id', $this->record->id)
+                    ->whereHas('user', fn ($q) => $q->firmantes())
                     ->with('user')
             )
             ->columns([
