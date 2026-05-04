@@ -5,14 +5,15 @@ namespace App\Filament\Pages;
 use App\Models\Equipo;
 use App\Models\Registro;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Mpdf\Mpdf;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteDestruccionActivos extends Page implements HasForms
 {
@@ -40,25 +41,17 @@ class ReporteDestruccionActivos extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'fecha_desde' => now()->startOfYear()->format('Y-m-d'),
-            'fecha_hasta' => now()->format('Y-m-d'),
             'metodo' => '',
             'motivo' => '',
         ]);
     }
 
-    public function form(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
+    public function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                DatePicker::make('fecha_desde')
-                    ->label('Desde')
-                    ->required(),
-                DatePicker::make('fecha_hasta')
-                    ->label('Hasta')
-                    ->required(),
                 Select::make('metodo')
-                    ->label('Metodo de destruccion')
+                    ->label('Metodo de destruccion (opcional)')
                     ->options([
                         '' => 'Todos',
                         'borrado_seguro' => 'Borrado seguro',
@@ -69,7 +62,7 @@ class ReporteDestruccionActivos extends Page implements HasForms
                         'proveedor_certificado' => 'Proveedor certificado',
                     ]),
                 Select::make('motivo')
-                    ->label('Motivo de baja')
+                    ->label('Motivo de baja (opcional)')
                     ->options([
                         '' => 'Todos',
                         'obsoleto' => 'Obsoleto',
@@ -82,17 +75,13 @@ class ReporteDestruccionActivos extends Page implements HasForms
             ->statePath('data');
     }
 
-    public function generateReport(): \Symfony\Component\HttpFoundation\StreamedResponse|null
+    public function generateReport(): ?StreamedResponse
     {
         $tenant = Filament::getTenant();
-        $fechaDesde = $this->data['fecha_desde'];
-        $fechaHasta = $this->data['fecha_hasta'];
 
         $query = Registro::withoutGlobalScopes()
             ->where('empresa_id', $tenant->id)
             ->where('tipo_formato', 'F13')
-            ->whereDate('created_at', '>=', $fechaDesde)
-            ->whereDate('created_at', '<=', $fechaHasta)
             ->with(['creador', 'equipo']);
 
         if (! empty($this->data['metodo'])) {
@@ -135,25 +124,25 @@ class ReporteDestruccionActivos extends Page implements HasForms
         ]);
 
         if ($tenant->logo_path) {
-            $logoPath = storage_path('app/' . $tenant->logo_path);
+            $logoPath = storage_path('app/'.$tenant->logo_path);
             if (file_exists($logoPath)) {
                 $mpdf->imageVars['logo'] = file_get_contents($logoPath);
             }
         }
 
-        $this->buildReport($mpdf, $tenant, $registros, $equipos, $fechaDesde, $fechaHasta);
+        $this->buildReport($mpdf, $tenant, $registros, $equipos);
 
-        $filename = 'destruccion_activos_F13_' . now()->format('Ymd') . '.pdf';
+        $filename = 'destruccion_activos_F13_'.now()->format('Ymd').'.pdf';
 
         return response()->streamDownload(function () use ($mpdf) {
             echo $mpdf->Output('', 'S');
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReport(Mpdf $mpdf, $tenant, $registros, $equipos, $fechaDesde, $fechaHasta): void
+    private function buildReport(Mpdf $mpdf, $tenant, $registros, $equipos): void
     {
         $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/' . $tenant->logo_path))) {
+        if ($tenant->logo_path && file_exists(storage_path('app/'.$tenant->logo_path))) {
             $logoHtml = '<img src="var:logo" style="height:36px;margin-bottom:4px;" /><br>';
         }
 
@@ -193,9 +182,6 @@ class ReporteDestruccionActivos extends Page implements HasForms
             .equipo-box strong { color: #0369a1; }
             .footer { margin-top: 10px; font-size: 7px; color: #888; }
         </style>';
-
-        $desde = date('d/m/Y', strtotime($fechaDesde));
-        $hasta = date('d/m/Y', strtotime($fechaHasta));
 
         // ═══ Statistics ═══
         $total = $registros->count();
@@ -242,19 +228,19 @@ class ReporteDestruccionActivos extends Page implements HasForms
         $metodoRows = '';
         foreach ($porMetodo as $metodo => $count) {
             $pct = round($count / $total * 100);
-            $metodoRows .= '<tr><td>' . e($this->metodoLabel($metodo)) . '</td><td style="text-align:center;">' . $count . '</td><td style="text-align:center;">' . $pct . '%</td></tr>';
+            $metodoRows .= '<tr><td>'.e($this->metodoLabel($metodo)).'</td><td style="text-align:center;">'.$count.'</td><td style="text-align:center;">'.$pct.'%</td></tr>';
         }
 
         $mesRows = '';
         foreach ($porMes as $mes => $count) {
-            $mesLabel = date('M Y', strtotime($mes . '-01'));
-            $mesRows .= '<tr><td>' . $mesLabel . '</td><td style="text-align:center;">' . $count . '</td></tr>';
+            $mesLabel = date('M Y', strtotime($mes.'-01'));
+            $mesRows .= '<tr><td>'.$mesLabel.'</td><td style="text-align:center;">'.$count.'</td></tr>';
         }
 
         $motivoRows = '';
         foreach ($motivos as $motivo => $count) {
             if ($count > 0) {
-                $motivoRows .= '<tr><td>' . e($this->motivoLabel($motivo)) . '</td><td style="text-align:center;">' . $count . '</td></tr>';
+                $motivoRows .= '<tr><td>'.e($this->motivoLabel($motivo)).'</td><td style="text-align:center;">'.$count.'</td></tr>';
             }
         }
 
@@ -269,51 +255,51 @@ class ReporteDestruccionActivos extends Page implements HasForms
             $equipoInfo = '-';
             if ($eq) {
                 $equipoInfo = e(trim("{$eq->tipo} {$eq->marca} {$eq->modelo}"))
-                    . '<br><span style="font-size:7px;color:#666;">'
-                    . e($eq->codigo_interno ?? '') . ' | S/N: ' . e($eq->numero_serie ?? '-')
-                    . '</span>';
+                    .'<br><span style="font-size:7px;color:#666;">'
+                    .e($eq->codigo_interno ?? '').' | S/N: '.e($eq->numero_serie ?? '-')
+                    .'</span>';
             }
 
             $rows .= '<tr>'
-                . '<td>' . e($r->numero_registro) . '</td>'
-                . '<td>' . e($datos['fecha_destruccion'] ?? '-') . '</td>'
-                . '<td>' . $metodoBadge . '</td>'
-                . '<td style="max-width:150px;">' . $equipoInfo . '</td>'
-                . '<td style="max-width:120px;">' . e(mb_substr($datos['descripcion_activo'] ?? '-', 0, 80)) . '</td>'
-                . '<td>' . e($datos['responsable'] ?? '-') . '</td>'
-                . '<td>' . e($datos['autoriza'] ?? '-') . '</td>'
-                . '<td>' . e($r->creador?->name ?? '-') . '</td>'
-                . '<td>' . $r->created_at->format('d/m/Y') . '</td>'
-                . '</tr>';
+                .'<td>'.e($r->numero_registro).'</td>'
+                .'<td>'.e($datos['fecha_destruccion'] ?? '-').'</td>'
+                .'<td>'.$metodoBadge.'</td>'
+                .'<td style="max-width:150px;">'.$equipoInfo.'</td>'
+                .'<td style="max-width:120px;">'.e(mb_substr($datos['descripcion_activo'] ?? '-', 0, 80)).'</td>'
+                .'<td>'.e($datos['responsable'] ?? '-').'</td>'
+                .'<td>'.e($datos['autoriza'] ?? '-').'</td>'
+                .'<td>'.e($r->creador?->name ?? '-').'</td>'
+                .'<td>'.$r->created_at->format('d/m/Y').'</td>'
+                .'</tr>';
         }
 
-        $mpdf->WriteHTML($style . '
-            ' . $logoHtml . '
-            <h1>' . e($tenant->razon_social) . ' <span style="font-size:9px;color:#666;font-weight:normal;">RUC: ' . e($tenant->ruc) . '</span></h1>
+        $mpdf->WriteHTML($style.'
+            '.$logoHtml.'
+            <h1>'.e($tenant->razon_social).' <span style="font-size:9px;color:#666;font-weight:normal;">RUC: '.e($tenant->ruc).'</span></h1>
             <h2>Formato 13 — Registro de Destruccion de Activos</h2>
-            <p style="color:#666;font-size:8px;margin:0;">Politica: PSC000003 / PSC000004 | Periodo: ' . $desde . ' - ' . $hasta . ' | Generado: ' . now()->format('d/m/Y H:i') . '</p>
+            <p style="color:#666;font-size:8px;margin:0;">Reporte completo | Politica: PSC000003 / PSC000004 | Generado: '.now()->format('d/m/Y H:i').'</p>
 
             <div class="stat-grid">
                 <table>
                     <tr>
                         <td style="border:1px solid #e5e7eb;background:#f9fafb;">
-                            <div class="stat-number">' . $total . '</div>
+                            <div class="stat-number">'.$total.'</div>
                             <div class="stat-label">Total destrucciones</div>
                         </td>
                         <td style="border:1px solid #e5e7eb;background:#f9fafb;">
-                            <div class="stat-number">' . $conEquipo . '</div>
+                            <div class="stat-number">'.$conEquipo.'</div>
                             <div class="stat-label">Con equipo vinculado</div>
                         </td>
                         <td style="border:1px solid #e5e7eb;background:#f9fafb;">
-                            <div class="stat-number">' . $tecCount . '</div>
+                            <div class="stat-number">'.$tecCount.'</div>
                             <div class="stat-label">Activos tecnologicos</div>
                         </td>
                         <td style="border:1px solid #e5e7eb;background:#f9fafb;">
-                            <div class="stat-number">' . $noTecCount . '</div>
+                            <div class="stat-number">'.$noTecCount.'</div>
                             <div class="stat-label">Activos no tecnologicos</div>
                         </td>
                         <td style="border:1px solid #e5e7eb;background:#f9fafb;">
-                            <div class="stat-number">' . $sinEquipo . '</div>
+                            <div class="stat-number">'.$sinEquipo.'</div>
                             <div class="stat-label">Sin equipo vinculado</div>
                         </td>
                     </tr>
@@ -325,26 +311,26 @@ class ReporteDestruccionActivos extends Page implements HasForms
                     <h3>Por metodo de destruccion</h3>
                     <table>
                         <tr><th>Metodo</th><th style="text-align:center;">Cantidad</th><th style="text-align:center;">%</th></tr>
-                        ' . $metodoRows . '
+                        '.$metodoRows.'
                     </table>
                 </div>
                 <div style="width:30%;padding-left:10px;">
                     <h3>Por motivo de baja</h3>
                     <table>
                         <tr><th>Motivo</th><th style="text-align:center;">Cant.</th></tr>
-                        ' . $motivoRows . '
+                        '.$motivoRows.'
                     </table>
                 </div>
                 <div style="width:30%;padding-left:10px;">
                     <h3>Tendencia mensual</h3>
                     <table>
                         <tr><th>Mes</th><th style="text-align:center;">Cant.</th></tr>
-                        ' . $mesRows . '
+                        '.$mesRows.'
                     </table>
                 </div>
             </div>
 
-            <h2>Detalle de registros F13 — ' . $total . ' resultados</h2>
+            <h2>Detalle de registros F13 — '.$total.' resultados</h2>
             <table>
                 <thead>
                     <tr>
@@ -359,11 +345,11 @@ class ReporteDestruccionActivos extends Page implements HasForms
                         <th>Fecha reg.</th>
                     </tr>
                 </thead>
-                <tbody>' . $rows . '</tbody>
+                <tbody>'.$rows.'</tbody>
             </table>
 
             <p class="footer">
-                Generado por: ' . e(auth()->user()->name) . ' | SecuriForm — PSC000003 / PSC000004
+                Generado por: '.e(auth()->user()->name).' | SecuriForm — PSC000003 / PSC000004
             </p>');
 
         // ═══ PAGE 2+: Individual detail cards per F13 registro ═══
@@ -382,131 +368,131 @@ class ReporteDestruccionActivos extends Page implements HasForms
 
                 $equipoSection = '
                 <div class="equipo-box">
-                    <strong>Equipo vinculado: ' . e($eq->codigo_interno) . '</strong><br>
+                    <strong>Equipo vinculado: '.e($eq->codigo_interno).'</strong><br>
                     <div class="grid-3" style="margin-top:6px;">
                         <div class="field">
                             <div class="field-label">Tipo</div>
-                            <div class="field-value">' . e($this->tipoLabel($eq->tipo)) . '</div>
+                            <div class="field-value">'.e($this->tipoLabel($eq->tipo)).'</div>
                         </div>
                         <div class="field">
                             <div class="field-label">Marca / Modelo</div>
-                            <div class="field-value">' . e(trim("{$eq->marca} {$eq->modelo}") ?: '-') . '</div>
+                            <div class="field-value">'.e(trim("{$eq->marca} {$eq->modelo}") ?: '-').'</div>
                         </div>
                         <div class="field">
                             <div class="field-label">N° Serie</div>
-                            <div class="field-value">' . e($eq->numero_serie ?? '-') . '</div>
+                            <div class="field-value">'.e($eq->numero_serie ?? '-').'</div>
                         </div>
                     </div>
                     <div class="grid-3" style="margin-top:4px;">
                         <div class="field">
                             <div class="field-label">Categoria</div>
-                            <div class="field-value">' . ($eq->categoria === 'tecnologico' ? '<span class="badge badge-info">Tecnologico</span>' : '<span class="badge badge-warning">No tecnologico</span>') . '</div>
+                            <div class="field-value">'.($eq->categoria === 'tecnologico' ? '<span class="badge badge-info">Tecnologico</span>' : '<span class="badge badge-warning">No tecnologico</span>').'</div>
                         </div>
                         <div class="field">
                             <div class="field-label">Clasif. soporte</div>
-                            <div class="field-value">' . e($this->clasificacionLabel($eq->clasificacion_soporte)) . '</div>
+                            <div class="field-value">'.e($this->clasificacionLabel($eq->clasificacion_soporte)).'</div>
                         </div>
                         <div class="field">
                             <div class="field-label">Sensibilidad</div>
-                            <div class="field-value">' . e(ucfirst($eq->nivel_sensibilidad ?? '-')) . '</div>
+                            <div class="field-value">'.e(ucfirst($eq->nivel_sensibilidad ?? '-')).'</div>
                         </div>
                     </div>
                     <div class="grid-3" style="margin-top:4px;">
                         <div class="field">
                             <div class="field-label">Ubicacion</div>
-                            <div class="field-value">' . e($eq->ubicacion ?? '-') . '</div>
+                            <div class="field-value">'.e($eq->ubicacion ?? '-').'</div>
                         </div>
                         <div class="field">
                             <div class="field-label">Fecha adquisicion</div>
-                            <div class="field-value">' . ($eq->fecha_adquisicion?->format('d/m/Y') ?? '-') . '</div>
+                            <div class="field-value">'.($eq->fecha_adquisicion?->format('d/m/Y') ?? '-').'</div>
                         </div>
                         <div class="field">
                             <div class="field-label">Estado actual</div>
-                            <div class="field-value"><span class="badge badge-danger">' . e(ucfirst(str_replace('_', ' ', $eq->estado))) . '</span></div>
+                            <div class="field-value"><span class="badge badge-danger">'.e(ucfirst(str_replace('_', ' ', $eq->estado))).'</span></div>
                         </div>
                     </div>'
-                    . ($eq->contenido_datos ? '
+                    .($eq->contenido_datos ? '
                     <div class="field" style="margin-top:4px;">
                         <div class="field-label">Contenido / Datos almacenados</div>
-                        <div class="field-value-long">' . e($eq->contenido_datos) . '</div>
+                        <div class="field-value-long">'.e($eq->contenido_datos).'</div>
                     </div>' : '')
-                    . ($asignacionVigente ? '
+                    .($asignacionVigente ? '
                     <div class="grid-2" style="margin-top:4px;">
                         <div class="field">
                             <div class="field-label">Fecha de baja</div>
-                            <div class="field-value">' . ($asignacionVigente->fecha_inicio?->format('d/m/Y H:i') ?? '-') . '</div>
+                            <div class="field-value">'.($asignacionVigente->fecha_inicio?->format('d/m/Y H:i') ?? '-').'</div>
                         </div>
                         <div class="field">
                             <div class="field-label">Notas de baja</div>
-                            <div class="field-value">' . e($asignacionVigente->notas ?? '-') . '</div>
+                            <div class="field-value">'.e($asignacionVigente->notas ?? '-').'</div>
                         </div>
                     </div>' : '')
-                    . '
+                    .'
                 </div>';
             }
 
-            $mpdf->WriteHTML($style . '
-                ' . $logoHtml . '
-                <h1>' . e($tenant->razon_social) . '</h1>
-                <p style="color:#666;">RUC: ' . e($tenant->ruc) . '</p>
+            $mpdf->WriteHTML($style.'
+                '.$logoHtml.'
+                <h1>'.e($tenant->razon_social).'</h1>
+                <p style="color:#666;">RUC: '.e($tenant->ruc).'</p>
 
                 <div class="ficha">
                     <div class="ficha-header">
                         <h2 style="margin:0;">F13 — Destruccion de Activo</h2>
-                        <p style="margin:4px 0 0; color:#666;">N° ' . e($r->numero_registro) . ' | Politica: PSC000003 / PSC000004</p>
+                        <p style="margin:4px 0 0; color:#666;">N° '.e($r->numero_registro).' | Politica: PSC000003 / PSC000004</p>
                     </div>
                     <div class="ficha-body">
                         <div class="grid-3">
                             <div class="field">
                                 <div class="field-label">Fecha de destruccion</div>
-                                <div class="field-value">' . e($datos['fecha_destruccion'] ?? '-') . '</div>
+                                <div class="field-value">'.e($datos['fecha_destruccion'] ?? '-').'</div>
                             </div>
                             <div class="field">
                                 <div class="field-label">Metodo de destruccion</div>
-                                <div class="field-value">' . $metodoBadge . '</div>
+                                <div class="field-value">'.$metodoBadge.'</div>
                             </div>
                             <div class="field">
                                 <div class="field-label">Proxima revision</div>
-                                <div class="field-value">' . e($datos['proxima_revision'] ?? 'No programada') . '</div>
+                                <div class="field-value">'.e($datos['proxima_revision'] ?? 'No programada').'</div>
                             </div>
                         </div>
                         <div class="grid-2">
                             <div class="field">
                                 <div class="field-label">Responsable de la destruccion</div>
-                                <div class="field-value">' . e($datos['responsable'] ?? '-') . '</div>
+                                <div class="field-value">'.e($datos['responsable'] ?? '-').'</div>
                             </div>
                             <div class="field">
                                 <div class="field-label">Autorizado por</div>
-                                <div class="field-value">' . e($datos['autoriza'] ?? '-') . '</div>
+                                <div class="field-value">'.e($datos['autoriza'] ?? '-').'</div>
                             </div>
                         </div>
                         <div class="field">
                             <div class="field-label">Descripcion del activo destruido</div>
-                            <div class="field-value-long">' . nl2br(e($datos['descripcion_activo'] ?? '-')) . '</div>
+                            <div class="field-value-long">'.nl2br(e($datos['descripcion_activo'] ?? '-')).'</div>
                         </div>
-                        ' . (! empty($datos['observaciones']) ? '
+                        '.(! empty($datos['observaciones']) ? '
                         <div class="field">
                             <div class="field-label">Observaciones / Motivo de baja</div>
-                            <div class="field-value-long">' . nl2br(e($datos['observaciones'])) . '</div>
-                        </div>' : '') . '
+                            <div class="field-value-long">'.nl2br(e($datos['observaciones'])).'</div>
+                        </div>' : '').'
 
-                        ' . $equipoSection . '
+                        '.$equipoSection.'
 
                         <div class="grid-2" style="margin-top:10px;">
                             <div class="field">
                                 <div class="field-label">Registrado por</div>
-                                <div class="field-value">' . e($r->creador?->name ?? '-') . '</div>
+                                <div class="field-value">'.e($r->creador?->name ?? '-').'</div>
                             </div>
                             <div class="field">
                                 <div class="field-label">Fecha de registro</div>
-                                <div class="field-value">' . $r->created_at->format('d/m/Y H:i') . '</div>
+                                <div class="field-value">'.$r->created_at->format('d/m/Y H:i').'</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <p class="footer">
-                    Generado: ' . now()->format('d/m/Y H:i') . ' | SecuriForm — PSC000003 / PSC000004
+                    Generado: '.now()->format('d/m/Y H:i').' | SecuriForm — PSC000003 / PSC000004
                 </p>');
         }
     }
@@ -545,7 +531,7 @@ class ReporteDestruccionActivos extends Page implements HasForms
             default => 'badge-warning',
         };
 
-        return '<span class="badge ' . $class . '">' . e($this->metodoLabel($metodo)) . '</span>';
+        return '<span class="badge '.$class.'">'.e($this->metodoLabel($metodo)).'</span>';
     }
 
     private function motivoLabel(string $motivo): string

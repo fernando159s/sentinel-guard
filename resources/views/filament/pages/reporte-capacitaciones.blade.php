@@ -1,15 +1,12 @@
 <x-filament-panels::page>
     <x-filament::section>
         <form wire:submit="generateReport">
-            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end;">
-                {{ $this->form }}
-
-                <div style="padding-bottom: 2px;">
-                    <x-filament::button type="submit" icon="heroicon-o-document-arrow-down" size="lg">
-                        Generar PDF
-                    </x-filament::button>
-                </div>
-            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400" style="margin-bottom: 16px;">
+                Genera un PDF con todas las capacitaciones y la asistencia de los usuarios.
+            </p>
+            <x-filament::button type="submit" icon="heroicon-o-document-arrow-down" size="lg">
+                Generar PDF
+            </x-filament::button>
         </form>
     </x-filament::section>
 
@@ -19,7 +16,7 @@
                 Reporte de Capacitaciones de Ciberseguridad
             </div>
             <p style="font-size: 14px; color: #d1d5db; margin: 0;">
-                Genera un PDF con todas las capacitaciones realizadas en el mes seleccionado, incluyendo metricas de asistencia y cumplimiento por usuario. Formato formal para presentar ante entes auditores (PSC000001).
+                Genera un PDF con todas las capacitaciones realizadas, incluyendo metricas de asistencia y cumplimiento por usuario. Formato formal para presentar ante entes auditores (PSC000001).
             </p>
         </div>
     </x-filament::section>

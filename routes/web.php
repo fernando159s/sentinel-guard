@@ -57,3 +57,7 @@ Route::get('/politicas/{politica}/nda/{aceptacion}/pdf', [\App\Http\Controllers\
 Route::get('/politicas/{politica}/firmantes/pdf', [\App\Http\Controllers\PoliticaPdfController::class, 'downloadResumenFirmantes'])
     ->middleware('auth')
     ->name('politicas.resumen-firmantes-pdf');
+
+Route::get('/politicas/{politica}/firmados/zip', [\App\Http\Controllers\PoliticaPdfController::class, 'downloadAllFirmadosZip'])
+    ->middleware('auth')
+    ->name('politicas.firmados-zip');

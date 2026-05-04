@@ -9,8 +9,10 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Mpdf\Mpdf;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteMovimientosSoportes extends Page implements HasForms
 {
@@ -36,36 +38,16 @@ class ReporteMovimientosSoportes extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'mes' => (string) now()->month,
-            'anio' => (string) now()->year,
             'tipo_movimiento' => '',
         ]);
     }
 
-    public function form(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
+    public function form(Schema $form): Schema
     {
-        $months = [];
-        for ($m = 1; $m <= 12; $m++) {
-            $months[(string) $m] = now()->setMonth($m)->translatedFormat('F');
-        }
-
-        $years = [];
-        for ($y = now()->year; $y >= now()->year - 3; $y--) {
-            $years[(string) $y] = (string) $y;
-        }
-
         return $form
             ->schema([
-                Select::make('mes')
-                    ->label('Mes')
-                    ->options($months)
-                    ->required(),
-                Select::make('anio')
-                    ->label('Año')
-                    ->options($years)
-                    ->required(),
                 Select::make('tipo_movimiento')
-                    ->label('Tipo movimiento')
+                    ->label('Tipo movimiento (opcional)')
                     ->options([
                         '' => 'Todos',
                         'ingreso_nuevo' => 'Ingreso nuevo',
@@ -81,16 +63,12 @@ class ReporteMovimientosSoportes extends Page implements HasForms
             ->statePath('data');
     }
 
-    public function generateReport(): \Symfony\Component\HttpFoundation\StreamedResponse|null
+    public function generateReport(): ?StreamedResponse
     {
         $tenant = Filament::getTenant();
-        $month = (int) $this->data['mes'];
-        $year = (int) $this->data['anio'];
 
         $query = EquipoAsignacion::query()
             ->whereHas('equipo', fn ($q) => $q->withoutGlobalScopes()->where('empresa_id', $tenant->id))
-            ->whereMonth('fecha_inicio', $month)
-            ->whereYear('fecha_inicio', $year)
             ->with(['equipo', 'user', 'asignador']);
 
         if (! empty($this->data['tipo_movimiento'])) {
@@ -102,14 +80,12 @@ class ReporteMovimientosSoportes extends Page implements HasForms
         if ($movimientos->isEmpty()) {
             Notification::make()
                 ->title('Sin resultados')
-                ->body('No se encontraron movimientos en el periodo seleccionado.')
+                ->body('No se encontraron movimientos.')
                 ->warning()
                 ->send();
 
             return null;
         }
-
-        $monthName = now()->setMonth($month)->translatedFormat('F');
 
         $mpdf = new Mpdf([
             'format' => 'A4-L',
@@ -117,25 +93,25 @@ class ReporteMovimientosSoportes extends Page implements HasForms
         ]);
 
         if ($tenant->logo_path) {
-            $logoPath = storage_path('app/' . $tenant->logo_path);
+            $logoPath = storage_path('app/'.$tenant->logo_path);
             if (file_exists($logoPath)) {
                 $mpdf->imageVars['logo'] = file_get_contents($logoPath);
             }
         }
 
-        $this->buildReport($mpdf, $tenant, $movimientos, $monthName, $year);
+        $this->buildReport($mpdf, $tenant, $movimientos);
 
-        $filename = "movimientos_soportes_F08_{$year}_{$month}.pdf";
+        $filename = 'movimientos_soportes_F08_'.now()->format('Ymd').'.pdf';
 
         return response()->streamDownload(function () use ($mpdf) {
             echo $mpdf->Output('', 'S');
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReport(Mpdf $mpdf, $tenant, $movimientos, $monthName, $year): void
+    private function buildReport(Mpdf $mpdf, $tenant, $movimientos): void
     {
         $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/' . $tenant->logo_path))) {
+        if ($tenant->logo_path && file_exists(storage_path('app/'.$tenant->logo_path))) {
             $logoHtml = '<img src="var:logo" style="height:50px;margin-bottom:8px;" /><br>';
         }
 
@@ -156,33 +132,33 @@ class ReporteMovimientosSoportes extends Page implements HasForms
         $rows = '';
         foreach ($movimientos as $m) {
             $rows .= '<tr>'
-                . '<td>' . $m->fecha_inicio->format('d/m/Y H:i') . '</td>'
-                . '<td>' . e($m->equipo?->codigo_interno ?? '-') . '</td>'
-                . '<td>' . e($this->tipoEquipoLabel($m->equipo?->tipo ?? '')) . '</td>'
-                . '<td>' . e($m->equipo?->numero_serie ?? '-') . '</td>'
-                . '<td>' . e($this->tipoMovimientoLabel($m->tipo)) . '</td>'
-                . '<td>' . e($m->user?->name ?? '-') . '</td>'
-                . '<td>' . e($m->empresa_tercera ?? '-') . '</td>'
-                . '<td style="max-width:100px;">' . e(mb_substr($m->motivo ?? '-', 0, 60)) . '</td>'
-                . '<td>' . e($m->condicion_entrega ?? '-') . '</td>'
-                . '<td>' . e($m->asignador?->name ?? '-') . '</td>'
-                . '</tr>';
+                .'<td>'.$m->fecha_inicio->format('d/m/Y H:i').'</td>'
+                .'<td>'.e($m->equipo?->codigo_interno ?? '-').'</td>'
+                .'<td>'.e($this->tipoEquipoLabel($m->equipo?->tipo ?? '')).'</td>'
+                .'<td>'.e($m->equipo?->numero_serie ?? '-').'</td>'
+                .'<td>'.e($this->tipoMovimientoLabel($m->tipo)).'</td>'
+                .'<td>'.e($m->user?->name ?? '-').'</td>'
+                .'<td>'.e($m->empresa_tercera ?? '-').'</td>'
+                .'<td style="max-width:100px;">'.e(mb_substr($m->motivo ?? '-', 0, 60)).'</td>'
+                .'<td>'.e($m->condicion_entrega ?? '-').'</td>'
+                .'<td>'.e($m->asignador?->name ?? '-').'</td>'
+                .'</tr>';
         }
 
         $summaryParts = [];
         foreach ($tipoCount as $tipo => $count) {
-            $summaryParts[] = $this->tipoMovimientoLabel($tipo) . ': ' . $count;
+            $summaryParts[] = $this->tipoMovimientoLabel($tipo).': '.$count;
         }
 
-        $mpdf->WriteHTML($style . '
-            ' . $logoHtml . '
-            <h1>' . e($tenant->razon_social) . '</h1>
-            <p style="color:#666;">RUC: ' . e($tenant->ruc) . '</p>
+        $mpdf->WriteHTML($style.'
+            '.$logoHtml.'
+            <h1>'.e($tenant->razon_social).'</h1>
+            <p style="color:#666;">RUC: '.e($tenant->ruc).'</p>
             <h2>Formato 8 — Ingreso y Salida de Soportes</h2>
-            <p style="color:#666;">Periodo: ' . $monthName . ' ' . $year . ' | Politica: PSC000003</p>
+            <p style="color:#666;">Reporte completo | Politica: PSC000003</p>
 
             <div class="summary">
-                <strong>Resumen:</strong> Total: ' . $movimientos->count() . ' movimientos | ' . implode(' | ', $summaryParts) . '
+                <strong>Resumen:</strong> Total: '.$movimientos->count().' movimientos | '.implode(' | ', $summaryParts).'
             </div>
 
             <table>
@@ -200,11 +176,11 @@ class ReporteMovimientosSoportes extends Page implements HasForms
                         <th>Realizado por</th>
                     </tr>
                 </thead>
-                <tbody>' . $rows . '</tbody>
+                <tbody>'.$rows.'</tbody>
             </table>
 
             <p class="footer">
-                Generado: ' . now()->format('d/m/Y H:i') . ' | ' . e(auth()->user()->name) . ' | SecuriForm — PSC000003
+                Generado: '.now()->format('d/m/Y H:i').' | '.e(auth()->user()->name).' | SecuriForm — PSC000003
             </p>');
     }
 
