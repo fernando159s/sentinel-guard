@@ -179,6 +179,16 @@ class ReporteCapacitaciones extends Page implements HasForms
                 $confirmador = $a->confirmador?->name ?? '—';
                 $fechaConf = $a->fecha_confirmacion?->format('d/m/Y H:i') ?? '—';
 
+                $firmaCell = '<span style="color:#9ca3af;">—</span>';
+                if ($a->asistio) {
+                    $firma = $a->user?->firma_guardada;
+                    if ($firma && str_starts_with($firma, 'data:image')) {
+                        $firmaCell = '<img src="'.$firma.'" style="max-height:38px;max-width:120px;" />';
+                    } else {
+                        $firmaCell = '<span style="color:#dc2626;font-size:9px;">Sin firma</span>';
+                    }
+                }
+
                 $asistenciaRows .= '<tr>
                     <td>'.e($a->user?->name ?? '—').'</td>
                     <td>'.e($a->user?->dni ?? '—').'</td>
@@ -186,6 +196,7 @@ class ReporteCapacitaciones extends Page implements HasForms
                     <td style="color:'.$estadoColor.'; font-weight:bold;">'.$estado.'</td>
                     <td>'.e($confirmador).'</td>
                     <td>'.$fechaConf.'</td>
+                    <td style="text-align:center;">'.$firmaCell.'</td>
                 </tr>';
             }
 
@@ -212,7 +223,7 @@ class ReporteCapacitaciones extends Page implements HasForms
 
                 <h3>Lista de asistencia</h3>
                 <table>
-                    <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Asistio</th><th>Confirmado por</th><th>Fecha confirmacion</th></tr>
+                    <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Asistio</th><th>Confirmado por</th><th>Fecha confirmacion</th><th style="width:130px;">Firma</th></tr>
                     {$asistenciaRows}
                 </table>
 
