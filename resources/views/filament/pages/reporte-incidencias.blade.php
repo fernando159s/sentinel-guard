@@ -1,15 +1,12 @@
 <x-filament-panels::page>
     <x-filament::section>
         <form wire:submit="generateReport">
-            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end;">
-                {{ $this->form }}
-
-                <div style="padding-bottom: 2px;">
-                    <x-filament::button type="submit" icon="heroicon-o-document-arrow-down" size="lg">
-                        Generar PDF
-                    </x-filament::button>
-                </div>
-            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400" style="margin-bottom: 16px;">
+                Genera un PDF con todas las incidencias y resoluciones registradas en la empresa.
+            </p>
+            <x-filament::button type="submit" icon="heroicon-o-document-arrow-down" size="lg">
+                Generar PDF
+            </x-filament::button>
         </form>
     </x-filament::section>
 
@@ -20,7 +17,7 @@
                     F09 — Incidencias
                 </div>
                 <p style="font-size: 14px; color: #d1d5db; margin: 0;">
-                    Reporte de notificaciones de incidencias de seguridad registradas en el mes seleccionado, según política PSC000001 / PSC000-25.
+                    Reporte completo de notificaciones de incidencias de seguridad registradas, según política PSC000001 / PSC000-25.
                 </p>
             </div>
             <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px;">
@@ -28,7 +25,7 @@
                     F10 — Resoluciones
                 </div>
                 <p style="font-size: 14px; color: #d1d5db; margin: 0;">
-                    Reporte de resoluciones de incidencias registradas en el mes seleccionado, según política PSC000-25.
+                    Reporte completo de resoluciones de incidencias registradas, según política PSC000-25.
                 </p>
             </div>
         </div>

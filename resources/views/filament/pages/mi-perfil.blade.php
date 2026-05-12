@@ -253,9 +253,6 @@
                                         @mousedown="start($event)" @mousemove="move($event)" @mouseup="end()" @mouseleave="end()"
                                         @touchstart="start($event)" @touchmove="move($event)" @touchend="end()">
                                 </canvas>
-                                <div x-show="!ps.length && !d" style="position:absolute; bottom:8px; left:12px; pointer-events:none;" class="text-xs text-gray-300 dark:text-gray-600">
-                                    Dibuja aqui tu firma
-                                </div>
                             </div>
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;" :style="fs ? 'color:#fff;' : ''">
                                 <span class="text-xs" :class="fs ? '' : 'text-gray-400'">Usa el mouse o el dedo en pantalla tactil</span>

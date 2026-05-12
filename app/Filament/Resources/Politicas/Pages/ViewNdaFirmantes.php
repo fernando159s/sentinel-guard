@@ -4,8 +4,9 @@ namespace App\Filament\Resources\Politicas\Pages;
 
 use App\Filament\Resources\Politicas\PoliticaResource;
 use App\Models\AceptacionPolitica;
-use Filament\Resources\Pages\Page;
+use App\Models\Politica;
 use Filament\Actions\Action;
+use Filament\Resources\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -27,17 +28,41 @@ class ViewNdaFirmantes extends Page implements HasTable
 
     public function mount(int|string $record): void
     {
-        $this->record = \App\Models\Politica::findOrFail($record);
+        $this->record = Politica::findOrFail($record);
     }
 
     public function getTitle(): string
     {
-        return 'Firmantes — ' . $this->record->titulo;
+        return 'Firmantes — '.$this->record->titulo;
     }
 
     public function getBreadcrumb(): string
     {
         return 'Firmantes';
+    }
+
+    protected function getHeaderActions(): array
+    {
+        $hasFirmados = AceptacionPolitica::where('politica_id', $this->record->id)
+            ->whereNotNull('firma_imagen')
+            ->whereHas('user', fn ($q) => $q->firmantes())
+            ->exists();
+
+        return [
+            Action::make('descargar_resumen')
+                ->label('Resumen firmantes (PDF)')
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->url(fn () => route('politicas.resumen-firmantes-pdf', ['politica' => $this->record]))
+                ->openUrlInNewTab(),
+
+            Action::make('descargar_firmados_zip')
+                ->label('Descargar todos los firmados (ZIP)')
+                ->icon('heroicon-o-archive-box-arrow-down')
+                ->color('primary')
+                ->url(fn () => route('politicas.firmados-zip', ['politica' => $this->record]))
+                ->visible(fn () => $hasFirmados),
+        ];
     }
 
     public function table(Table $table): Table

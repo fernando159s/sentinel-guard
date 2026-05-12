@@ -114,11 +114,6 @@
                                     <canvas x-ref="canvas" width="460" height="160" style="width:100%; cursor:crosshair; touch-action:none; display:block;"
                                             @mousedown="start($event)" @mousemove="move($event)" @mouseup="end()" @mouseleave="end()"
                                             @touchstart="start($event)" @touchmove="move($event)" @touchend="end()"></canvas>
-                                    @if (!$firmaDataUrl)
-                                        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none;" class="text-xs text-gray-300 dark:text-gray-600">
-                                            Dibuja aqui tu firma
-                                        </div>
-                                    @endif
                                 </div>
                                 <div style="display:flex; justify-content:flex-end; margin-top:4px;">
                                     <button @click="clear()" type="button" class="text-xs text-danger-600 dark:text-danger-400 hover:underline">Limpiar</button>

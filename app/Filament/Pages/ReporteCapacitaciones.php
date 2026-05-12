@@ -6,12 +6,13 @@ use App\Models\Capacitacion;
 use App\Models\CapacitacionAsistencia;
 use App\Models\User;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Mpdf\Mpdf;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteCapacitaciones extends Page implements HasForms
 {
@@ -26,9 +27,11 @@ class ReporteCapacitaciones extends Page implements HasForms
 
     protected static string|\UnitEnum|null $navigationGroup = 'Reportes';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationLabel = 'Reporte Capacitaciones';
 
-    protected static ?string $title = 'Reporte Mensual de Capacitaciones';
+    protected static ?string $title = 'Reporte de Capacitaciones';
 
     protected string $view = 'filament.pages.reporte-capacitaciones';
 
@@ -36,48 +39,22 @@ class ReporteCapacitaciones extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->form->fill([
-            'mes' => (string) now()->month,
-            'anio' => (string) now()->year,
-        ]);
+        $this->form->fill();
     }
 
-    public function form(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
+    public function form(Schema $form): Schema
     {
-        $months = [];
-        for ($m = 1; $m <= 12; $m++) {
-            $months[(string) $m] = now()->setMonth($m)->translatedFormat('F');
-        }
-
-        $years = [];
-        for ($y = now()->year; $y >= now()->year - 3; $y--) {
-            $years[(string) $y] = (string) $y;
-        }
-
         return $form
-            ->schema([
-                Select::make('mes')
-                    ->label('Mes')
-                    ->options($months)
-                    ->required(),
-                Select::make('anio')
-                    ->label('Año')
-                    ->options($years)
-                    ->required(),
-            ])
+            ->schema([])
             ->statePath('data');
     }
 
-    public function generateReport(): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function generateReport(): StreamedResponse
     {
         $tenant = Filament::getTenant();
-        $month = (int) $this->data['mes'];
-        $year = (int) $this->data['anio'];
 
         $capacitaciones = Capacitacion::withoutGlobalScopes()
             ->where('empresa_id', $tenant->id)
-            ->whereMonth('fecha', $month)
-            ->whereYear('fecha', $year)
             ->with(['asistencias', 'asistencias.user'])
             ->orderBy('fecha')
             ->get();
@@ -87,37 +64,35 @@ class ReporteCapacitaciones extends Page implements HasForms
             ->orderBy('name')
             ->get();
 
-        $monthName = now()->setMonth($month)->translatedFormat('F');
-
         $mpdf = new Mpdf([
             'format' => 'A4',
             'tempDir' => storage_path('app/temp'),
         ]);
 
         if ($tenant->logo_path) {
-            $logoPath = storage_path('app/' . $tenant->logo_path);
+            $logoPath = storage_path('app/'.$tenant->logo_path);
             if (file_exists($logoPath)) {
                 $mpdf->imageVars['logo'] = file_get_contents($logoPath);
             }
         }
 
-        $this->buildReportPages($mpdf, $tenant, $capacitaciones, $users, $monthName, $year);
+        $this->buildReportPages($mpdf, $tenant, $capacitaciones, $users);
 
-        $filename = "reporte_capacitaciones_{$year}_{$month}.pdf";
+        $filename = 'reporte_capacitaciones_'.now()->format('Ymd').'.pdf';
 
         return response()->streamDownload(function () use ($mpdf) {
             echo $mpdf->Output('', 'S');
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReportPages(Mpdf $mpdf, $tenant, $capacitaciones, $users, $monthName, $year): void
+    private function buildReportPages(Mpdf $mpdf, $tenant, $capacitaciones, $users): void
     {
         $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/' . $tenant->logo_path))) {
+        if ($tenant->logo_path && file_exists(storage_path('app/'.$tenant->logo_path))) {
             $logoHtml = '<img src="var:logo" style="height:50px;margin-bottom:8px;" /><br>';
         }
 
-        $style = "
+        $style = '
         <style>
             body { font-family: Arial, sans-serif; font-size: 10px; }
             h1 { color: #4338ca; font-size: 16px; margin-bottom: 2px; }
@@ -129,7 +104,7 @@ class ReporteCapacitaciones extends Page implements HasForms
             .summary { margin-top: 15px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; }
             .cap-header { background: #f0f0ff; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; }
             .footer { margin-top: 30px; font-size: 9px; color: #888; }
-        </style>";
+        </style>';
 
         // ═══ PAGE 1: Resumen general ═══
         $totalCap = $capacitaciones->count();
@@ -145,14 +120,14 @@ class ReporteCapacitaciones extends Page implements HasForms
             $asistieron = $c->asistencias->where('asistio', true)->count();
             $pct = $total > 0 ? round(($asistieron / $total) * 100) : 0;
             $capRows .= '<tr>
-                <td>' . e($c->tema) . '</td>
-                <td>' . $c->fecha->format('d/m/Y') . '</td>
-                <td>' . substr($c->hora_inicio, 0, 5) . '</td>
-                <td>' . $c->duracion_minutos . ' min</td>
-                <td>' . e($c->modalidad->label()) . '</td>
-                <td>' . e($c->expositor) . '</td>
-                <td>' . $asistieron . '/' . $total . '</td>
-                <td>' . $pct . '%</td>
+                <td>'.e($c->tema).'</td>
+                <td>'.$c->fecha->format('d/m/Y').'</td>
+                <td>'.substr($c->hora_inicio, 0, 5).'</td>
+                <td>'.$c->duracion_minutos.' min</td>
+                <td>'.e($c->modalidad->label()).'</td>
+                <td>'.e($c->expositor).'</td>
+                <td>'.$asistieron.'/'.$total.'</td>
+                <td>'.$pct.'%</td>
             </tr>';
         }
 
@@ -164,22 +139,22 @@ class ReporteCapacitaciones extends Page implements HasForms
                 ->count();
             $pctUser = $totalCap > 0 ? round(($asistidas / $totalCap) * 100) : 0;
             $userRows .= '<tr>
-                <td>' . e($u->name) . '</td>
-                <td>' . e($u->puesto ?? '—') . '</td>
-                <td>' . e($u->dni ?? '—') . '</td>
-                <td>' . $asistidas . '/' . $totalCap . '</td>
-                <td>' . $pctUser . '%</td>
+                <td>'.e($u->name).'</td>
+                <td>'.e($u->puesto ?? '—').'</td>
+                <td>'.e($u->dni ?? '—').'</td>
+                <td>'.$asistidas.'/'.$totalCap.'</td>
+                <td>'.$pctUser.'%</td>
             </tr>';
         }
 
-        $mpdf->WriteHTML($style . "
+        $mpdf->WriteHTML($style."
             {$logoHtml}
-            <h1>" . e($tenant->razon_social) . "</h1>
-            <p style='color:#666;'>RUC: " . e($tenant->ruc) . "</p>
-            <p><strong>Reporte de Capacitaciones de Ciberseguridad — {$monthName} {$year}</strong></p>
+            <h1>".e($tenant->razon_social)."</h1>
+            <p style='color:#666;'>RUC: ".e($tenant->ruc)."</p>
+            <p><strong>Reporte completo de Capacitaciones de Ciberseguridad</strong></p>
 
             <div class='summary'>
-                <strong>Resumen del periodo:</strong>
+                <strong>Resumen general:</strong>
                 Total capacitaciones: {$totalCap} |
                 Presenciales: {$presenciales} |
                 Virtuales: {$virtuales} |
@@ -199,7 +174,7 @@ class ReporteCapacitaciones extends Page implements HasForms
             </table>
 
             <p class='footer'>
-                Generado: " . now()->format('d/m/Y H:i') . ' | Admin: ' . e(auth()->user()->name) . ' | SecuriForm
+                Generado: ".now()->format('d/m/Y H:i').' | Admin: '.e(auth()->user()->name).' | SecuriForm
             </p>');
 
         // ═══ PAGES 2+: Una hoja por capacitación con sus asistentes ═══
@@ -218,30 +193,30 @@ class ReporteCapacitaciones extends Page implements HasForms
                 $fechaConf = $a->fecha_confirmacion?->format('d/m/Y H:i') ?? '—';
 
                 $asistenciaRows .= '<tr>
-                    <td>' . e($a->user?->name ?? '—') . '</td>
-                    <td>' . e($a->user?->dni ?? '—') . '</td>
-                    <td>' . e($a->user?->puesto ?? '—') . '</td>
-                    <td style="color:' . $estadoColor . '; font-weight:bold;">' . $estado . '</td>
-                    <td>' . e($confirmador) . '</td>
-                    <td>' . $fechaConf . '</td>
+                    <td>'.e($a->user?->name ?? '—').'</td>
+                    <td>'.e($a->user?->dni ?? '—').'</td>
+                    <td>'.e($a->user?->puesto ?? '—').'</td>
+                    <td style="color:'.$estadoColor.'; font-weight:bold;">'.$estado.'</td>
+                    <td>'.e($confirmador).'</td>
+                    <td>'.$fechaConf.'</td>
                 </tr>';
             }
 
-            $mpdf->WriteHTML($style . "
+            $mpdf->WriteHTML($style."
                 {$logoHtml}
-                <h1>" . e($tenant->razon_social) . "</h1>
-                <p style='color:#666;'>RUC: " . e($tenant->ruc) . "</p>
+                <h1>".e($tenant->razon_social)."</h1>
+                <p style='color:#666;'>RUC: ".e($tenant->ruc)."</p>
 
                 <div class='cap-header'>
-                    <h2 style='margin:0 0 6px;'>" . e($c->tema) . "</h2>
+                    <h2 style='margin:0 0 6px;'>".e($c->tema)."</h2>
                     <table style='border:none; margin:0;'>
                         <tr style='border:none;'>
-                            <td style='border:none; padding:2px 20px 2px 0;'><strong>Fecha:</strong> " . $c->fecha->format('d/m/Y') . "</td>
-                            <td style='border:none; padding:2px 20px 2px 0;'><strong>Hora:</strong> " . substr($c->hora_inicio, 0, 5) . " (" . $c->duracion_minutos . " min)</td>
-                            <td style='border:none; padding:2px 20px 2px 0;'><strong>Modalidad:</strong> " . e($c->modalidad->label()) . "</td>
+                            <td style='border:none; padding:2px 20px 2px 0;'><strong>Fecha:</strong> ".$c->fecha->format('d/m/Y')."</td>
+                            <td style='border:none; padding:2px 20px 2px 0;'><strong>Hora:</strong> ".substr($c->hora_inicio, 0, 5).' ('.$c->duracion_minutos." min)</td>
+                            <td style='border:none; padding:2px 20px 2px 0;'><strong>Modalidad:</strong> ".e($c->modalidad->label())."</td>
                         </tr>
                         <tr style='border:none;'>
-                            <td style='border:none; padding:2px 20px 2px 0;'><strong>Expositor:</strong> " . e($c->expositor) . "</td>
+                            <td style='border:none; padding:2px 20px 2px 0;'><strong>Expositor:</strong> ".e($c->expositor)."</td>
                             <td style='border:none; padding:2px 20px 2px 0;'><strong>Asistencia:</strong> {$asistieron}/{$total} ({$pct}%)</td>
                             <td style='border:none;'></td>
                         </tr>
@@ -255,7 +230,7 @@ class ReporteCapacitaciones extends Page implements HasForms
                 </table>
 
                 <p class='footer'>
-                    Generado: " . now()->format('d/m/Y H:i') . ' | Admin: ' . e(auth()->user()->name) . ' | SecuriForm
+                    Generado: ".now()->format('d/m/Y H:i').' | Admin: '.e(auth()->user()->name).' | SecuriForm
                 </p>');
         }
     }

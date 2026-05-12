@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Mpdf\Mpdf;
+use Mpdf\Output\Destination;
 
 class PoliticaPdfController extends Controller
 {
@@ -28,30 +29,30 @@ class PoliticaPdfController extends Controller
 
         $html .= '
         <div class="header">
-            <h1>' . e($empresa?->razon_social ?? 'SecuriForm') . '</h1>
+            <h1>'.e($empresa?->razon_social ?? 'SecuriForm').'</h1>
             <p>Documento de politica de seguridad de la informacion</p>
         </div>
 
         <div class="meta">
             <table>
-                <tr><td class="label">Titulo:</td><td class="value">' . e($politica->titulo) . '</td></tr>
-                <tr><td class="label">Version:</td><td class="value">' . e($politica->version) . '</td></tr>
-                <tr><td class="label">Estado:</td><td class="value">' . ($politica->activa ? 'Activa' : 'Inactiva') . '</td></tr>
-                <tr><td class="label">Obligatoria:</td><td class="value">' . ($politica->obligatoria ? 'Si' : 'No') . '</td></tr>
-                <tr><td class="label">Fecha:</td><td class="value">' . $politica->created_at->format('d/m/Y') . '</td></tr>'
-                . ($politica->es_nda ? '<tr><td class="label">Tipo:</td><td class="value">Acuerdo de Confidencialidad (NDA)</td></tr>' : '')
-                . ($politica->es_nda && $politica->vigencia_meses ? '<tr><td class="label">Vigencia:</td><td class="value">' . $politica->vigencia_meses . ' meses</td></tr>' : '')
-                . ($aceptacion?->fecha_expiracion ? '<tr><td class="label">Expira:</td><td class="value">' . $aceptacion->fecha_expiracion->format('d/m/Y') . '</td></tr>' : '') . '
+                <tr><td class="label">Titulo:</td><td class="value">'.e($politica->titulo).'</td></tr>
+                <tr><td class="label">Version:</td><td class="value">'.e($politica->version).'</td></tr>
+                <tr><td class="label">Estado:</td><td class="value">'.($politica->activa ? 'Activa' : 'Inactiva').'</td></tr>
+                <tr><td class="label">Obligatoria:</td><td class="value">'.($politica->obligatoria ? 'Si' : 'No').'</td></tr>
+                <tr><td class="label">Fecha:</td><td class="value">'.$politica->created_at->format('d/m/Y').'</td></tr>'
+                .($politica->es_nda ? '<tr><td class="label">Tipo:</td><td class="value">Acuerdo de Confidencialidad (NDA)</td></tr>' : '')
+                .($politica->es_nda && $politica->vigencia_meses ? '<tr><td class="label">Vigencia:</td><td class="value">'.$politica->vigencia_meses.' meses</td></tr>' : '')
+                .($aceptacion?->fecha_expiracion ? '<tr><td class="label">Expira:</td><td class="value">'.$aceptacion->fecha_expiracion->format('d/m/Y').'</td></tr>' : '').'
             </table>
         </div>
 
-        <div class="content">' . $this->renderContenido($politica, $user) . '</div>';
+        <div class="content">'.$this->renderContenido($politica, $user).'</div>';
 
         $html .= $this->buildSignatureBlock($admin, $aceptacion, $empresa);
 
         $html .= '
         <div class="footer">
-            ' . e($empresa?->razon_social ?? '') . ' &mdash; Generado el ' . now()->format('d/m/Y H:i') . '
+            '.e($empresa?->razon_social ?? '').' &mdash; Generado el '.now()->format('d/m/Y H:i').'
             <br>Este documento es confidencial y de uso interno.
         </div>';
 
@@ -63,22 +64,95 @@ class PoliticaPdfController extends Controller
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        $mpdf->SetTitle($politica->titulo . ' v' . $politica->version);
+        $mpdf->SetTitle($politica->titulo.' v'.$politica->version);
         $mpdf->WriteHTML($html);
 
-        $filename = 'politica_' . $politica->slug . '_v' . $politica->version . '.pdf';
-        $path = storage_path('app/temp/' . $filename);
+        $filename = 'politica_'.$politica->slug.'_v'.$politica->version.'.pdf';
+        $path = storage_path('app/temp/'.$filename);
 
         if (! is_dir(storage_path('app/temp'))) {
             mkdir(storage_path('app/temp'), 0755, true);
         }
 
-        $mpdf->Output($path, \Mpdf\Output\Destination::FILE);
+        $mpdf->Output($path, Destination::FILE);
 
         return response()->download($path, $filename)->deleteFileAfterSend();
     }
 
     public function downloadNdaFirmante(Request $request, Politica $politica, AceptacionPolitica $aceptacion)
+    {
+        $firmante = $aceptacion->user;
+        $bytes = $this->buildFirmantePdfBytes($politica, $aceptacion);
+
+        $filename = 'nda_'.Str::slug($firmante->name).'_v'.$aceptacion->version_aceptada.'.pdf';
+
+        if (! is_dir(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+
+        $path = storage_path('app/temp/'.$filename);
+        file_put_contents($path, $bytes);
+
+        return response()->download($path, $filename)->deleteFileAfterSend();
+    }
+
+    public function downloadAllFirmadosZip(Request $request, Politica $politica)
+    {
+        if (! auth()->user()?->hasRole(['super_admin', 'admin_empresa', 'agente_helpdesk'])) {
+            abort(403);
+        }
+
+        $aceptaciones = AceptacionPolitica::where('politica_id', $politica->id)
+            ->whereNotNull('firma_imagen')
+            ->whereHas('user', fn ($q) => $q->firmantes())
+            ->with('user')
+            ->orderBy('fecha_aceptacion', 'desc')
+            ->get();
+
+        if ($aceptaciones->isEmpty()) {
+            abort(404, 'No hay firmantes para esta politica.');
+        }
+
+        if (! is_dir(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+
+        $zipFilename = 'firmados_'.$politica->slug.'_v'.$politica->version.'_'.now()->format('Ymd_His').'.zip';
+        $zipPath = storage_path('app/temp/'.$zipFilename);
+
+        $zip = new \ZipArchive;
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            abort(500, 'No se pudo crear el archivo ZIP.');
+        }
+
+        $usedNames = [];
+        foreach ($aceptaciones as $aceptacion) {
+            $firmante = $aceptacion->user;
+            if (! $firmante) {
+                continue;
+            }
+
+            $bytes = $this->buildFirmantePdfBytes($politica, $aceptacion);
+
+            $base = 'nda_'.Str::slug($firmante->name).'_v'.$aceptacion->version_aceptada;
+            $entryName = $base.'.pdf';
+            $i = 1;
+            while (isset($usedNames[$entryName])) {
+                $entryName = $base.'_'.(++$i).'.pdf';
+            }
+            $usedNames[$entryName] = true;
+
+            $zip->addFromString($entryName, $bytes);
+        }
+
+        $zip->close();
+
+        return response()->download($zipPath, $zipFilename, [
+            'Content-Type' => 'application/zip',
+        ])->deleteFileAfterSend();
+    }
+
+    private function buildFirmantePdfBytes(Politica $politica, AceptacionPolitica $aceptacion): string
     {
         $empresa = $politica->empresa;
         $firmante = $aceptacion->user;
@@ -88,30 +162,30 @@ class PoliticaPdfController extends Controller
 
         $html .= '
         <div class="header">
-            <h1>' . e($empresa?->razon_social ?? 'SecuriForm') . '</h1>
+            <h1>'.e($empresa?->razon_social ?? 'SecuriForm').'</h1>
             <p>Acuerdo de Confidencialidad (NDA)</p>
         </div>
 
         <div class="meta">
             <table>
-                <tr><td class="label">Documento:</td><td class="value">' . e($politica->titulo) . '</td></tr>
-                <tr><td class="label">Version:</td><td class="value">' . e($aceptacion->version_aceptada) . '</td></tr>
-                <tr><td class="label">Firmante:</td><td class="value">' . e($firmante->name) . '</td></tr>
-                <tr><td class="label">DNI:</td><td class="value">' . e($firmante->dni ?? 'N/A') . '</td></tr>
-                <tr><td class="label">Puesto:</td><td class="value">' . e($firmante->puesto ?? 'N/A') . '</td></tr>
-                <tr><td class="label">Fecha firma:</td><td class="value">' . $aceptacion->fecha_aceptacion->format('d/m/Y H:i') . '</td></tr>'
-                . ($aceptacion->fecha_expiracion ? '<tr><td class="label">Expira:</td><td class="value">' . $aceptacion->fecha_expiracion->format('d/m/Y') . '</td></tr>' : '')
-                . '<tr><td class="label">Estado:</td><td class="value">' . ($aceptacion->estaVigente() ? 'Vigente' : 'Expirado') . '</td></tr>
+                <tr><td class="label">Documento:</td><td class="value">'.e($politica->titulo).'</td></tr>
+                <tr><td class="label">Version:</td><td class="value">'.e($aceptacion->version_aceptada).'</td></tr>
+                <tr><td class="label">Firmante:</td><td class="value">'.e($firmante?->name ?? '-').'</td></tr>
+                <tr><td class="label">DNI:</td><td class="value">'.e($firmante?->dni ?? 'N/A').'</td></tr>
+                <tr><td class="label">Puesto:</td><td class="value">'.e($firmante?->puesto ?? 'N/A').'</td></tr>
+                <tr><td class="label">Fecha firma:</td><td class="value">'.$aceptacion->fecha_aceptacion->format('d/m/Y H:i').'</td></tr>'
+                .($aceptacion->fecha_expiracion ? '<tr><td class="label">Expira:</td><td class="value">'.$aceptacion->fecha_expiracion->format('d/m/Y').'</td></tr>' : '')
+                .'<tr><td class="label">Estado:</td><td class="value">'.($aceptacion->estaVigente() ? 'Vigente' : 'Expirado').'</td></tr>
             </table>
         </div>
 
-        <div class="content">' . $this->renderContenido($politica, $firmante) . '</div>';
+        <div class="content">'.$this->renderContenido($politica, $firmante).'</div>';
 
         $html .= $this->buildSignatureBlock($admin, $aceptacion, $empresa);
 
         $html .= '
         <div class="footer">
-            ' . e($empresa?->razon_social ?? '') . ' &mdash; Generado el ' . now()->format('d/m/Y H:i') . '
+            '.e($empresa?->razon_social ?? '').' &mdash; Generado el '.now()->format('d/m/Y H:i').'
             <br>Este documento es confidencial y de uso interno.
         </div>';
 
@@ -123,19 +197,10 @@ class PoliticaPdfController extends Controller
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        $mpdf->SetTitle('NDA - ' . $firmante->name . ' - ' . $politica->titulo);
+        $mpdf->SetTitle('NDA - '.($firmante?->name ?? '-').' - '.$politica->titulo);
         $mpdf->WriteHTML($html);
 
-        $filename = 'nda_' . Str::slug($firmante->name) . '_v' . $aceptacion->version_aceptada . '.pdf';
-        $path = storage_path('app/temp/' . $filename);
-
-        if (! is_dir(storage_path('app/temp'))) {
-            mkdir(storage_path('app/temp'), 0755, true);
-        }
-
-        $mpdf->Output($path, \Mpdf\Output\Destination::FILE);
-
-        return response()->download($path, $filename)->deleteFileAfterSend();
+        return $mpdf->Output('', Destination::STRING_RETURN);
     }
 
     public function downloadResumenFirmantes(Request $request, Politica $politica)
@@ -189,17 +254,17 @@ class PoliticaPdfController extends Controller
 
         $html .= '
         <div class="header">
-            <h1>' . e($empresa?->razon_social ?? 'SecuriForm') . '</h1>
-            <p>Resumen de firmantes — ' . e($politica->titulo) . '</p>
+            <h1>'.e($empresa?->razon_social ?? 'SecuriForm').'</h1>
+            <p>Resumen de firmantes — '.e($politica->titulo).'</p>
         </div>
 
         <div class="meta">
             <table>
-                <tr><td class="label">Politica:</td><td class="value">' . e($politica->titulo) . '</td></tr>
-                <tr><td class="label">Version actual:</td><td class="value">' . e($politica->version) . '</td></tr>
-                <tr><td class="label">Tipo:</td><td class="value">' . ($politica->es_nda ? 'Acuerdo de Confidencialidad (NDA)' : 'Politica de seguridad') . '</td></tr>
-                <tr><td class="label">Total firmantes:</td><td class="value">' . $aceptaciones->count() . '</td></tr>
-                <tr><td class="label">Generado:</td><td class="value">' . now()->format('d/m/Y H:i') . '</td></tr>
+                <tr><td class="label">Politica:</td><td class="value">'.e($politica->titulo).'</td></tr>
+                <tr><td class="label">Version actual:</td><td class="value">'.e($politica->version).'</td></tr>
+                <tr><td class="label">Tipo:</td><td class="value">'.($politica->es_nda ? 'Acuerdo de Confidencialidad (NDA)' : 'Politica de seguridad').'</td></tr>
+                <tr><td class="label">Total firmantes:</td><td class="value">'.$aceptaciones->count().'</td></tr>
+                <tr><td class="label">Generado:</td><td class="value">'.now()->format('d/m/Y H:i').'</td></tr>
             </table>
         </div>';
 
@@ -207,9 +272,9 @@ class PoliticaPdfController extends Controller
         $html .= '<div class="admin-box">';
         if ($admin?->firma_guardada && str_starts_with($admin->firma_guardada, 'data:image')) {
             $html .= '<h4>Firma del Gerente General</h4>
-                <img src="' . $admin->firma_guardada . '" class="admin-img"><br>
-                <div class="admin-name">' . e($admin->name) . '</div>
-                <div class="admin-detail">Gerente General — ' . e($empresa?->razon_social ?? '') . '</div>';
+                <img src="'.$admin->firma_guardada.'" class="admin-img"><br>
+                <div class="admin-name">'.e($admin->name).'</div>
+                <div class="admin-detail">Gerente General — '.e($empresa?->razon_social ?? '').'</div>';
         } else {
             $html .= '<h4>Firma del Gerente General</h4>
                 <div style="height:40px;"></div>
@@ -220,7 +285,7 @@ class PoliticaPdfController extends Controller
 
         // Firmantes by version
         foreach ($porVersion as $version => $firmas) {
-            $html .= '<div class="version-title">Version ' . e($version) . ' — ' . $firmas->count() . ' firmante(s)</div>';
+            $html .= '<div class="version-title">Version '.e($version).' — '.$firmas->count().' firmante(s)</div>';
 
             foreach ($firmas as $a) {
                 $user = $a->user;
@@ -228,14 +293,14 @@ class PoliticaPdfController extends Controller
 
                 // Left: user info
                 $html .= '<td width="55%" valign="middle">
-                    <div class="firma-name">' . e($user?->name ?? '-') . '</div>
-                    <div class="firma-detail">' . e($user?->puesto ?? '-') . ' · DNI: ' . e($user?->dni ?? '-') . '</div>
-                    <div class="firma-detail">Firmado: ' . $a->fecha_aceptacion->format('d/m/Y H:i');
+                    <div class="firma-name">'.e($user?->name ?? '-').'</div>
+                    <div class="firma-detail">'.e($user?->puesto ?? '-').' · DNI: '.e($user?->dni ?? '-').'</div>
+                    <div class="firma-detail">Firmado: '.$a->fecha_aceptacion->format('d/m/Y H:i');
 
                 if ($politica->es_nda && $a->fecha_expiracion) {
                     $vigente = $a->estaVigente();
-                    $html .= ' · Expira: ' . $a->fecha_expiracion->format('d/m/Y')
-                        . ' <span style="color:' . ($vigente ? '#059669' : '#dc2626') . ';font-weight:bold;">(' . ($vigente ? 'Vigente' : 'Expirado') . ')</span>';
+                    $html .= ' · Expira: '.$a->fecha_expiracion->format('d/m/Y')
+                        .' <span style="color:'.($vigente ? '#059669' : '#dc2626').';font-weight:bold;">('.($vigente ? 'Vigente' : 'Expirado').')</span>';
                 }
 
                 $html .= '</div></td>';
@@ -243,9 +308,9 @@ class PoliticaPdfController extends Controller
                 // Right: signature
                 $html .= '<td width="45%" valign="middle" style="text-align:right;">';
                 if ($a->firma_imagen && str_starts_with($a->firma_imagen, 'data:image')) {
-                    $html .= '<img src="' . $a->firma_imagen . '" class="firma-img">';
+                    $html .= '<img src="'.$a->firma_imagen.'" class="firma-img">';
                     if ($a->firma_nombre) {
-                        $html .= '<div class="firma-detail">' . e($a->firma_nombre) . '</div>';
+                        $html .= '<div class="firma-detail">'.e($a->firma_nombre).'</div>';
                     }
                 } else {
                     $html .= '<span class="firma-detail" style="color:#dc2626;">Sin firma digital</span>';
@@ -255,21 +320,21 @@ class PoliticaPdfController extends Controller
         }
 
         $html .= '<div class="footer">'
-            . e($empresa?->razon_social ?? '') . ' — Resumen generado el ' . now()->format('d/m/Y H:i')
-            . ' por ' . e(auth()->user()->name)
-            . '<br>Este documento es confidencial y de uso interno.</div>';
+            .e($empresa?->razon_social ?? '').' — Resumen generado el '.now()->format('d/m/Y H:i')
+            .' por '.e(auth()->user()->name)
+            .'<br>Este documento es confidencial y de uso interno.</div>';
 
-        $mpdf->SetTitle('Firmantes - ' . $politica->titulo);
+        $mpdf->SetTitle('Firmantes - '.$politica->titulo);
         $mpdf->WriteHTML($html);
 
-        $filename = 'firmantes_' . $politica->slug . '_v' . $politica->version . '.pdf';
-        $path = storage_path('app/temp/' . $filename);
+        $filename = 'firmantes_'.$politica->slug.'_v'.$politica->version.'.pdf';
+        $path = storage_path('app/temp/'.$filename);
 
         if (! is_dir(storage_path('app/temp'))) {
             mkdir(storage_path('app/temp'), 0755, true);
         }
 
-        $mpdf->Output($path, \Mpdf\Output\Destination::FILE);
+        $mpdf->Output($path, Destination::FILE);
 
         return response()->download($path, $filename)->deleteFileAfterSend();
     }
@@ -320,10 +385,10 @@ class PoliticaPdfController extends Controller
         if ($admin?->firma_guardada && str_starts_with($admin->firma_guardada, 'data:image')) {
             $html .= '<div class="sig-box">
                 <h4>Firma del Gerente General</h4>
-                <img src="' . $admin->firma_guardada . '" class="sig-img">
-                <div class="sig-name">' . e($admin->name) . '</div>
+                <img src="'.$admin->firma_guardada.'" class="sig-img">
+                <div class="sig-name">'.e($admin->name).'</div>
                 <div class="sig-detail">Gerente General</div>
-                <div class="sig-detail">' . e($empresa?->razon_social ?? '') . '</div>
+                <div class="sig-detail">'.e($empresa?->razon_social ?? '').'</div>
             </div>';
         } else {
             $html .= '<div class="sig-missing">
@@ -338,11 +403,11 @@ class PoliticaPdfController extends Controller
         if ($aceptacion?->firma_imagen && str_starts_with($aceptacion->firma_imagen, 'data:image')) {
             $html .= '<div class="sig-box">
                 <h4>Firma del trabajador</h4>
-                <img src="' . $aceptacion->firma_imagen . '" class="sig-img">
-                <div class="sig-name">' . e($aceptacion->firma_nombre) . '</div>'
-                . ($aceptacion->firma_cargo ? '<div class="sig-detail">' . e($aceptacion->firma_cargo) . '</div>' : '') . '
-                <div class="sig-detail">Firmado: ' . $aceptacion->fecha_aceptacion->format('d/m/Y H:i') . '</div>
-                <div class="sig-detail">IP: ' . e($aceptacion->ip_address) . '</div>
+                <img src="'.$aceptacion->firma_imagen.'" class="sig-img">
+                <div class="sig-name">'.e($aceptacion->firma_nombre).'</div>'
+                .($aceptacion->firma_cargo ? '<div class="sig-detail">'.e($aceptacion->firma_cargo).'</div>' : '').'
+                <div class="sig-detail">Firmado: '.$aceptacion->fecha_aceptacion->format('d/m/Y H:i').'</div>
+                <div class="sig-detail">IP: '.e($aceptacion->ip_address).'</div>
             </div>';
         } else {
             $html .= '<div class="sig-box">
