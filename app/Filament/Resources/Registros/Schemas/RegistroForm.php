@@ -42,6 +42,7 @@ class RegistroForm
                     ->live()
                     ->searchable()
                     ->disabled(fn (string $operation): bool => $operation === 'edit')
+                    ->dehydrated()
                     ->hidden(fn (string $operation): bool => $operation === 'create')
                     ->columnSpanFull(),
 
