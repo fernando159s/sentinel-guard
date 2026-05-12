@@ -13,15 +13,33 @@ class Empresa extends Model implements HasName, HasAvatar
         'ruc',
         'razon_social',
         'logo_path',
+        'logo_documentos_path',
         'color_primario',
         'color_secundario',
         'color_sidebar',
+        'pdf_color_primario',
+        'pdf_color_secundario',
         'nombre_portal',
         'direccion',
         'email',
         'telefono',
         'estado',
     ];
+
+    public function getPdfColorPrimario(): string
+    {
+        return $this->pdf_color_primario ?: '#4f46e5';
+    }
+
+    public function getPdfColorSecundario(): string
+    {
+        return $this->pdf_color_secundario ?: '#1e1b4b';
+    }
+
+    public function getPdfLogoPath(): ?string
+    {
+        return $this->logo_documentos_path ?: $this->logo_path;
+    }
 
     public function users(): HasMany
     {

@@ -81,10 +81,15 @@ class ViewEmpresa extends ViewRecord
                     ->columnSpanFull()
                     ->schema([
                         ImageEntry::make('logo_path')
-                            ->label('Logo')
+                            ->label('Logo sistema')
                             ->disk('logos')
                             ->height(60)
                             ->defaultImageUrl(url('/images/placeholder.png')),
+                        ImageEntry::make('logo_documentos_path')
+                            ->label('Logo documentos')
+                            ->disk('logos')
+                            ->height(60)
+                            ->placeholder('—'),
                         TextEntry::make('ruc')
                             ->label('RUC'),
                         TextEntry::make('razon_social')
