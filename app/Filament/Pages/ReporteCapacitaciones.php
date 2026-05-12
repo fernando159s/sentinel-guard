@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Capacitacion;
 use App\Models\CapacitacionAsistencia;
 use App\Models\User;
+use App\Support\PdfBranding;
 use Filament\Facades\Filament;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -66,17 +67,16 @@ class ReporteCapacitaciones extends Page implements HasForms
 
         $mpdf = new Mpdf([
             'format' => 'A4',
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 14,
+            'margin_right' => 14,
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        if ($tenant->logo_path) {
-            $logoPath = storage_path('app/'.$tenant->logo_path);
-            if (file_exists($logoPath)) {
-                $mpdf->imageVars['logo'] = file_get_contents($logoPath);
-            }
-        }
+        $hasLogo = PdfBranding::attachLogo($mpdf, $tenant);
 
-        $this->buildReportPages($mpdf, $tenant, $capacitaciones, $users);
+        $this->buildReportPages($mpdf, $tenant, $capacitaciones, $users, $hasLogo);
 
         $filename = 'reporte_capacitaciones_'.now()->format('Ymd').'.pdf';
 
@@ -85,25 +85,12 @@ class ReporteCapacitaciones extends Page implements HasForms
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReportPages(Mpdf $mpdf, $tenant, $capacitaciones, $users): void
+    private function buildReportPages(Mpdf $mpdf, $tenant, $capacitaciones, $users, bool $hasLogo = false): void
     {
-        $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/'.$tenant->logo_path))) {
-            $logoHtml = '<img src="var:logo" style="height:50px;margin-bottom:8px;" /><br>';
-        }
-
-        $style = '
+        $logoHtml = PdfBranding::logoHtml($hasLogo);
+        $style = PdfBranding::reportStyle($tenant).'
         <style>
-            body { font-family: Arial, sans-serif; font-size: 10px; }
-            h1 { color: #4338ca; font-size: 16px; margin-bottom: 2px; }
-            h2 { font-size: 13px; margin-top: 20px; color: #333; }
-            h3 { font-size: 12px; margin-top: 10px; color: #555; }
-            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-            th, td { border: 1px solid #ddd; padding: 5px; text-align: left; }
-            th { background: #f3f4f6; font-weight: bold; }
-            .summary { margin-top: 15px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; }
-            .cap-header { background: #f0f0ff; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; }
-            .footer { margin-top: 30px; font-size: 9px; color: #888; }
+            .cap-header { background: #f0f0ff; padding: 6px 8px; border: 1px solid #e5e7eb; margin-bottom: 6px; border-radius: 3px; }
         </style>';
 
         // ═══ PAGE 1: Resumen general ═══

@@ -11,6 +11,7 @@ use App\Models\Equipo;
 use App\Models\EquipoAsignacion;
 use App\Models\Politica;
 use App\Models\Registro;
+use App\Support\PdfBranding;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
@@ -220,18 +221,14 @@ class CentroReportes extends Page
 
         $mpdf = new Mpdf([
             'format' => 'A4',
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 14,
+            'margin_right' => 14,
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        $logoPath = $tenant->getPdfLogoPath();
-        $hasLogo = false;
-        if ($logoPath) {
-            $disk = \Illuminate\Support\Facades\Storage::disk('logos');
-            if ($disk->exists($logoPath)) {
-                $mpdf->imageVars['logo'] = $disk->get($logoPath);
-                $hasLogo = true;
-            }
-        }
+        $hasLogo = PdfBranding::attachLogo($mpdf, $tenant);
 
         $this->buildCompleto($mpdf, $tenant, $hasLogo);
 
@@ -244,30 +241,19 @@ class CentroReportes extends Page
 
     private function buildCompleto(Mpdf $mpdf, $tenant, bool $hasLogo = false): void
     {
-        $logoHtml = $hasLogo ? '<img src="var:logo" style="height:60px;margin-bottom:8px;" /><br>' : '';
+        $logoHtml = PdfBranding::logoHtml($hasLogo, 50);
+        $colors = PdfBranding::colors($tenant);
 
-        $primario = $tenant->getPdfColorPrimario();
-        $secundario = $tenant->getPdfColorSecundario();
-
-        $style = '
+        $style = PdfBranding::reportStyle($tenant).'
         <style>
-            body { font-family: Arial, sans-serif; font-size: 10px; color: #333; }
-            h1 { color: '.$primario.'; font-size: 18px; margin-bottom: 2px; }
-            h2 { font-size: 14px; margin-top: 18px; color: '.$secundario.'; border-bottom: 2px solid '.$primario.'; padding-bottom: 4px; }
-            h3 { font-size: 12px; margin-top: 12px; color: #555; }
-            table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-            th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
-            th { background: #f3f4f6; font-weight: bold; font-size: 9px; }
-            .cover { text-align: center; padding: 80px 20px 20px; }
-            .cover h1 { font-size: 26px; }
-            .cover .subtitle { font-size: 14px; color: #6b7280; margin-top: 16px; }
-            .cover .meta { margin-top: 60px; font-size: 11px; color: #4b5563; }
-            .stat-grid table { margin-top: 8px; }
-            .stat-grid td { text-align: center; padding: 8px 6px; background: #f9fafb; border: 1px solid #e5e7eb; }
-            .stat-number { font-size: 20px; font-weight: bold; color: '.$primario.'; }
-            .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-            .section { margin-top: 20px; }
-            .footer { margin-top: 30px; font-size: 9px; color: #888; }
+            .cover { text-align: center; padding: 60px 16px 16px; }
+            .cover h1 { font-size: 22px; }
+            .cover .subtitle { font-size: 12px; color: #6b7280; margin-top: 10px; }
+            .cover .meta { margin-top: 40px; font-size: 10px; color: #4b5563; }
+            .stat-grid table { margin-top: 4px; }
+            .stat-grid td { text-align: center; padding: 6px; background: #f9fafb; border: 1px solid #e5e7eb; }
+            .stat-number { font-size: 16px; font-weight: bold; color: '.$colors['primario'].'; }
+            .stat-label { font-size: 7.5px; color: #666; text-transform: uppercase; letter-spacing: 0.4px; }
         </style>';
 
         // ═══ COVER PAGE ═══

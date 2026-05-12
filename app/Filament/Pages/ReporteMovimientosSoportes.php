@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\EquipoAsignacion;
+use App\Support\PdfBranding;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -91,17 +92,16 @@ class ReporteMovimientosSoportes extends Page implements HasForms
 
         $mpdf = new Mpdf([
             'format' => 'A4-L',
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_left' => 10,
+            'margin_right' => 10,
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        if ($tenant->logo_path) {
-            $logoPath = storage_path('app/'.$tenant->logo_path);
-            if (file_exists($logoPath)) {
-                $mpdf->imageVars['logo'] = file_get_contents($logoPath);
-            }
-        }
+        $hasLogo = PdfBranding::attachLogo($mpdf, $tenant);
 
-        $this->buildReport($mpdf, $tenant, $movimientos);
+        $this->buildReport($mpdf, $tenant, $movimientos, $hasLogo);
 
         $filename = 'movimientos_soportes_F08_'.now()->format('Ymd').'.pdf';
 
@@ -110,24 +110,10 @@ class ReporteMovimientosSoportes extends Page implements HasForms
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReport(Mpdf $mpdf, $tenant, $movimientos): void
+    private function buildReport(Mpdf $mpdf, $tenant, $movimientos, bool $hasLogo = false): void
     {
-        $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/'.$tenant->logo_path))) {
-            $logoHtml = '<img src="var:logo" style="height:50px;margin-bottom:8px;" /><br>';
-        }
-
-        $style = '
-        <style>
-            body { font-family: Arial, sans-serif; font-size: 9px; color: #333; }
-            h1 { color: #4338ca; font-size: 16px; margin-bottom: 2px; }
-            h2 { font-size: 13px; margin-top: 15px; color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-            th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
-            th { background: #f3f4f6; font-weight: bold; font-size: 8px; }
-            .summary { margin-top: 12px; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e7eb; font-size: 10px; }
-            .footer { margin-top: 20px; font-size: 8px; color: #888; }
-        </style>';
+        $logoHtml = PdfBranding::logoHtml($hasLogo, 36);
+        $style = PdfBranding::reportStyle($tenant);
 
         $tipoCount = $movimientos->groupBy('tipo')->map->count();
 
