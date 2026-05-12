@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Registros\Schemas;
 
 use App\Enums\TipoFormato;
 use App\Services\FormatoFieldsService;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -34,16 +35,20 @@ class RegistroForm
                     ->visible(fn (Get $get, string $operation): bool => $operation === 'create' && ! filled($get('tipo_formato')))
                     ->columnSpanFull(),
 
-                // Hidden select to hold the value
+                // Hidden field holds the value in form state during create
+                // (wire:click in catalog/preview sets it). On edit it is shown read-only.
+                Hidden::make('tipo_formato')
+                    ->live()
+                    ->dehydrated()
+                    ->visible(fn (string $operation): bool => $operation === 'create'),
+
                 Select::make('tipo_formato')
                     ->label('Formato')
                     ->options(TipoFormato::options())
                     ->required()
-                    ->live()
-                    ->searchable()
-                    ->disabled(fn (string $operation): bool => $operation === 'edit')
+                    ->disabled()
                     ->dehydrated()
-                    ->hidden(fn (string $operation): bool => $operation === 'create')
+                    ->visible(fn (string $operation): bool => $operation === 'edit')
                     ->columnSpanFull(),
 
                 // 2-column layout when format IS selected
