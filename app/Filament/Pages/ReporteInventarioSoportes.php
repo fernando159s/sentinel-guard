@@ -114,36 +114,43 @@ class ReporteInventarioSoportes extends Page implements HasForms
     public function generateReport(): \Symfony\Component\HttpFoundation\StreamedResponse|null
     {
         $tenant = Filament::getTenant();
+        $bytes = $this->pdfBytes($tenant);
 
-        $query = Equipo::withoutGlobalScopes()
-            ->where('empresa_id', $tenant->id)
-            ->with(['asignacionVigente.user']);
-
-        if (! empty($this->data['categoria'])) {
-            $query->where('categoria', $this->data['categoria']);
-        }
-        if (! empty($this->data['clasificacion_soporte'])) {
-            $query->where('clasificacion_soporte', $this->data['clasificacion_soporte']);
-        }
-        if (! empty($this->data['estado'])) {
-            $query->where('estado', $this->data['estado']);
-        }
-        if (! empty($this->data['nivel_sensibilidad'])) {
-            $query->where('nivel_sensibilidad', $this->data['nivel_sensibilidad']);
-        }
-        if (! empty($this->data['tipo'])) {
-            $query->where('tipo', $this->data['tipo']);
-        }
-
-        $equipos = $query->orderBy('codigo_interno')->get();
-
-        if ($equipos->isEmpty()) {
+        if ($bytes === null) {
             Notification::make()
                 ->title('Sin resultados')
                 ->body('No se encontraron activos con los filtros seleccionados.')
                 ->warning()
                 ->send();
 
+            return null;
+        }
+
+        return response()->streamDownload(function () use ($bytes) {
+            echo $bytes;
+        }, 'inventario_soportes_F07_' . now()->format('Ymd') . '.pdf', ['Content-Type' => 'application/pdf']);
+    }
+
+    public function pdfBytes($tenant, array $filtros = []): ?string
+    {
+        $query = Equipo::withoutGlobalScopes()
+            ->where('empresa_id', $tenant->id)
+            ->with(['asignacionVigente.user']);
+
+        $f = function (string $key) use ($filtros) {
+            return $filtros[$key] ?? ($this->data[$key] ?? null);
+        };
+
+        foreach (['categoria', 'clasificacion_soporte', 'estado', 'nivel_sensibilidad', 'tipo'] as $key) {
+            $val = $f($key);
+            if (! empty($val)) {
+                $query->where($key, $val);
+            }
+        }
+
+        $equipos = $query->orderBy('codigo_interno')->get();
+
+        if ($equipos->isEmpty()) {
             return null;
         }
 
@@ -160,9 +167,7 @@ class ReporteInventarioSoportes extends Page implements HasForms
 
         $this->buildReport($mpdf, $tenant, $equipos, $hasLogo);
 
-        return response()->streamDownload(function () use ($mpdf) {
-            echo $mpdf->Output('', 'S');
-        }, 'inventario_soportes_F07_' . now()->format('Ymd') . '.pdf', ['Content-Type' => 'application/pdf']);
+        return $mpdf->Output('', 'S');
     }
 
     private function buildReport(Mpdf $mpdf, $tenant, $equipos, bool $hasLogo = false): void

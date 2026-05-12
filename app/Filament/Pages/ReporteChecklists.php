@@ -54,7 +54,27 @@ class ReporteChecklists extends Page implements HasForms
     public function generateReport(): ?StreamedResponse
     {
         $tenant = Filament::getTenant();
+        $bytes = $this->pdfBytes($tenant);
 
+        if ($bytes === null) {
+            Notification::make()
+                ->title('Sin resultados')
+                ->body('No hay checklists ni ejecuciones registradas para esta empresa.')
+                ->warning()
+                ->send();
+
+            return null;
+        }
+
+        $filename = 'reporte_checklists_'.now()->format('Ymd').'.pdf';
+
+        return response()->streamDownload(function () use ($bytes) {
+            echo $bytes;
+        }, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function pdfBytes($tenant): ?string
+    {
         $plantillas = ChecklistPlantilla::withoutGlobalScopes()
             ->where('empresa_id', $tenant->id)
             ->orderBy('nombre')
@@ -71,12 +91,6 @@ class ReporteChecklists extends Page implements HasForms
             ->get();
 
         if ($ejecuciones->isEmpty() && $plantillas->isEmpty()) {
-            Notification::make()
-                ->title('Sin resultados')
-                ->body('No hay checklists ni ejecuciones registradas para esta empresa.')
-                ->warning()
-                ->send();
-
             return null;
         }
 
@@ -93,11 +107,7 @@ class ReporteChecklists extends Page implements HasForms
 
         $this->buildReport($mpdf, $tenant, $plantillas, $ejecuciones, $hasLogo);
 
-        $filename = 'reporte_checklists_'.now()->format('Ymd').'.pdf';
-
-        return response()->streamDownload(function () use ($mpdf) {
-            echo $mpdf->Output('', 'S');
-        }, $filename, ['Content-Type' => 'application/pdf']);
+        return $mpdf->Output('', 'S');
     }
 
     private function buildReport(Mpdf $mpdf, $tenant, $plantillas, $ejecuciones, bool $hasLogo = false): void

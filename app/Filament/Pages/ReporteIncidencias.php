@@ -51,7 +51,16 @@ class ReporteIncidencias extends Page implements HasForms
     public function generateReport(): StreamedResponse
     {
         $tenant = Filament::getTenant();
+        $bytes = $this->pdfBytes($tenant);
+        $filename = 'reporte_incidencias_'.now()->format('Ymd').'.pdf';
 
+        return response()->streamDownload(function () use ($bytes) {
+            echo $bytes;
+        }, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function pdfBytes($tenant): string
+    {
         $incidencias = Registro::withoutGlobalScopes()
             ->where('empresa_id', $tenant->id)
             ->where('tipo_formato', 'F09')
@@ -79,11 +88,7 @@ class ReporteIncidencias extends Page implements HasForms
 
         $this->buildReportPages($mpdf, $tenant, $incidencias, $resoluciones, $hasLogo);
 
-        $filename = 'reporte_incidencias_'.now()->format('Ymd').'.pdf';
-
-        return response()->streamDownload(function () use ($mpdf) {
-            echo $mpdf->Output('', 'S');
-        }, $filename, ['Content-Type' => 'application/pdf']);
+        return $mpdf->Output('', 'S');
     }
 
     private function buildReportPages(Mpdf $mpdf, $tenant, $incidencias, $resoluciones, bool $hasLogo = false): void

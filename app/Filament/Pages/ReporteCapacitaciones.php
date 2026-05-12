@@ -53,7 +53,16 @@ class ReporteCapacitaciones extends Page implements HasForms
     public function generateReport(): StreamedResponse
     {
         $tenant = Filament::getTenant();
+        $bytes = $this->pdfBytes($tenant);
+        $filename = 'reporte_capacitaciones_'.now()->format('Ymd').'.pdf';
 
+        return response()->streamDownload(function () use ($bytes) {
+            echo $bytes;
+        }, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function pdfBytes($tenant): string
+    {
         $capacitaciones = Capacitacion::withoutGlobalScopes()
             ->where('empresa_id', $tenant->id)
             ->with(['asistencias', 'asistencias.user'])
@@ -78,11 +87,7 @@ class ReporteCapacitaciones extends Page implements HasForms
 
         $this->buildReportPages($mpdf, $tenant, $capacitaciones, $users, $hasLogo);
 
-        $filename = 'reporte_capacitaciones_'.now()->format('Ymd').'.pdf';
-
-        return response()->streamDownload(function () use ($mpdf) {
-            echo $mpdf->Output('', 'S');
-        }, $filename, ['Content-Type' => 'application/pdf']);
+        return $mpdf->Output('', 'S');
     }
 
     private function buildReportPages(Mpdf $mpdf, $tenant, $capacitaciones, $users, bool $hasLogo = false): void
@@ -223,7 +228,7 @@ class ReporteCapacitaciones extends Page implements HasForms
 
                 <h3>Lista de asistencia</h3>
                 <table>
-                    <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Asistio</th><th>Confirmado por</th><th>Fecha confirmacion</th><th style="width:130px;">Firma</th></tr>
+                    <tr><th>Nombre</th><th>DNI</th><th>Puesto</th><th>Asistio</th><th>Confirmado por</th><th>Fecha confirmacion</th><th style='width:130px;'>Firma</th></tr>
                     {$asistenciaRows}
                 </table>
 
