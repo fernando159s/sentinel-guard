@@ -51,7 +51,8 @@ class EmpresaForm
                     ->collapsible()
                     ->schema([
                         FileUpload::make('logo_path')
-                            ->label('Logo de la empresa')
+                            ->label('Logo del sistema')
+                            ->helperText('Se muestra en el sidebar, login y selector de empresa.')
                             ->image()
                             ->disk('logos')
                             ->directory('/')
@@ -67,6 +68,29 @@ class EmpresaForm
                             ->label('Color secundario (acentos)'),
                         ColorPicker::make('color_sidebar')
                             ->label('Color del sidebar'),
+                    ]),
+                Section::make('Personalización de documentos PDF')
+                    ->description('Logo y colores aplicados a los reportes y politicas/NDA en PDF.')
+                    ->columns(2)
+                    ->collapsible()
+                    ->schema([
+                        FileUpload::make('logo_documentos_path')
+                            ->label('Logo para documentos')
+                            ->helperText('Aparece en la cabecera de PDFs (politicas, NDA, reportes). Si no se carga, se usa el logo del sistema.')
+                            ->image()
+                            ->disk('logos')
+                            ->directory('/')
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/svg+xml'])
+                            ->columnSpanFull(),
+                        ColorPicker::make('pdf_color_primario')
+                            ->label('Color primario PDF')
+                            ->helperText('Bordes de cabecera y titulos principales (h1).')
+                            ->placeholder('#4f46e5'),
+                        ColorPicker::make('pdf_color_secundario')
+                            ->label('Color secundario PDF')
+                            ->helperText('Subtitulos (h2) y acentos.')
+                            ->placeholder('#1e1b4b'),
                     ]),
                 Section::make('Configuración')
                     ->schema([

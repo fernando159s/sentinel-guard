@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AceptacionPolitica;
+use App\Models\Empresa;
 use App\Models\Politica;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -25,10 +26,21 @@ class PoliticaPdfController extends Controller
 
         $admin = $this->getAdminConFirma($politica->empresa_id);
 
-        $html = $this->buildStyle();
+        $mpdf = new Mpdf([
+            'margin_top' => 20,
+            'margin_bottom' => 20,
+            'margin_left' => 20,
+            'margin_right' => 20,
+            'tempDir' => storage_path('app/temp'),
+        ]);
+
+        $hasLogo = $this->attachLogoToMpdf($mpdf, $empresa);
+
+        $html = $this->buildStyle($empresa);
 
         $html .= '
         <div class="header">
+            '.$this->buildLogoHtml($hasLogo).'
             <h1>'.e($empresa?->razon_social ?? 'SecuriForm').'</h1>
             <p>Documento de politica de seguridad de la informacion</p>
         </div>
@@ -56,14 +68,6 @@ class PoliticaPdfController extends Controller
             <br>Este documento es confidencial y de uso interno.
         </div>';
 
-        $mpdf = new Mpdf([
-            'margin_top' => 20,
-            'margin_bottom' => 20,
-            'margin_left' => 20,
-            'margin_right' => 20,
-            'tempDir' => storage_path('app/temp'),
-        ]);
-
         $mpdf->SetTitle($politica->titulo.' v'.$politica->version);
         $mpdf->WriteHTML($html);
 
@@ -81,10 +85,8 @@ class PoliticaPdfController extends Controller
 
     public function downloadNdaFirmante(Request $request, Politica $politica, AceptacionPolitica $aceptacion)
     {
-        $firmante = $aceptacion->user;
         $bytes = $this->buildFirmantePdfBytes($politica, $aceptacion);
-
-        $filename = 'nda_'.Str::slug($firmante->name).'_v'.$aceptacion->version_aceptada.'.pdf';
+        $filename = $this->aceptacionFilename($politica, $aceptacion);
 
         if (! is_dir(storage_path('app/temp'))) {
             mkdir(storage_path('app/temp'), 0755, true);
@@ -127,18 +129,16 @@ class PoliticaPdfController extends Controller
 
         $usedNames = [];
         foreach ($aceptaciones as $aceptacion) {
-            $firmante = $aceptacion->user;
-            if (! $firmante) {
+            if (! $aceptacion->user) {
                 continue;
             }
 
             $bytes = $this->buildFirmantePdfBytes($politica, $aceptacion);
 
-            $base = 'nda_'.Str::slug($firmante->name).'_v'.$aceptacion->version_aceptada;
-            $entryName = $base.'.pdf';
+            $entryName = $this->aceptacionFilename($politica, $aceptacion);
             $i = 1;
             while (isset($usedNames[$entryName])) {
-                $entryName = $base.'_'.(++$i).'.pdf';
+                $entryName = preg_replace('/\.pdf$/', '_'.(++$i).'.pdf', $this->aceptacionFilename($politica, $aceptacion));
             }
             $usedNames[$entryName] = true;
 
@@ -152,18 +152,38 @@ class PoliticaPdfController extends Controller
         ])->deleteFileAfterSend();
     }
 
-    private function buildFirmantePdfBytes(Politica $politica, AceptacionPolitica $aceptacion): string
+    /**
+     * Build PDF bytes for a signed acceptance (política o NDA).
+     * Used by single-download, per-política ZIP, and centro de reportes.
+     */
+    public function buildFirmantePdfBytes(Politica $politica, AceptacionPolitica $aceptacion): string
     {
         $empresa = $politica->empresa;
         $firmante = $aceptacion->user;
         $admin = $this->getAdminConFirma($politica->empresa_id);
+        $tipoLabel = $politica->es_nda ? 'Acuerdo de Confidencialidad (NDA)' : 'Politica de seguridad de la informacion';
 
-        $html = $this->buildStyle();
+        if (! is_dir(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+
+        $mpdf = new Mpdf([
+            'margin_top' => 20,
+            'margin_bottom' => 20,
+            'margin_left' => 20,
+            'margin_right' => 20,
+            'tempDir' => storage_path('app/temp'),
+        ]);
+
+        $hasLogo = $this->attachLogoToMpdf($mpdf, $empresa);
+
+        $html = $this->buildStyle($empresa);
 
         $html .= '
         <div class="header">
+            '.$this->buildLogoHtml($hasLogo).'
             <h1>'.e($empresa?->razon_social ?? 'SecuriForm').'</h1>
-            <p>Acuerdo de Confidencialidad (NDA)</p>
+            <p>'.$tipoLabel.'</p>
         </div>
 
         <div class="meta">
@@ -189,6 +209,41 @@ class PoliticaPdfController extends Controller
             <br>Este documento es confidencial y de uso interno.
         </div>';
 
+        $titlePrefix = $politica->es_nda ? 'NDA' : 'Politica';
+        $mpdf->SetTitle($titlePrefix.' - '.($firmante?->name ?? '-').' - '.$politica->titulo);
+        $mpdf->WriteHTML($html);
+
+        return $mpdf->Output('', Destination::STRING_RETURN);
+    }
+
+    /**
+     * Build one consolidated PDF for a policy: one section per firmante,
+     * using only the most recent acceptance per user with a signature.
+     */
+    public function buildConsolidatedFirmadosPdfBytes(Politica $politica): ?string
+    {
+        $aceptaciones = AceptacionPolitica::where('politica_id', $politica->id)
+            ->whereNotNull('firma_imagen')
+            ->whereHas('user', fn ($q) => $q->firmantes())
+            ->with('user')
+            ->orderBy('fecha_aceptacion', 'desc')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn ($group) => $group->first())
+            ->values();
+
+        if ($aceptaciones->isEmpty()) {
+            return null;
+        }
+
+        $empresa = $politica->empresa;
+        $admin = $this->getAdminConFirma($politica->empresa_id);
+        $tipoLabel = $politica->es_nda ? 'Acuerdo de Confidencialidad (NDA)' : 'Politica de seguridad de la informacion';
+
+        if (! is_dir(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+
         $mpdf = new Mpdf([
             'margin_top' => 20,
             'margin_bottom' => 20,
@@ -197,10 +252,63 @@ class PoliticaPdfController extends Controller
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        $mpdf->SetTitle('NDA - '.($firmante?->name ?? '-').' - '.$politica->titulo);
-        $mpdf->WriteHTML($html);
+        $mpdf->SetTitle(($politica->es_nda ? 'NDA' : 'Politica').' - '.$politica->titulo.' - Firmantes');
+
+        $hasLogo = $this->attachLogoToMpdf($mpdf, $empresa);
+        $logoHtml = $this->buildLogoHtml($hasLogo);
+        $style = $this->buildStyle($empresa);
+        $first = true;
+
+        foreach ($aceptaciones as $aceptacion) {
+            $firmante = $aceptacion->user;
+
+            if (! $first) {
+                $mpdf->AddPage();
+            }
+            $first = false;
+
+            $html = $style.'
+            <div class="header">
+                '.$logoHtml.'
+                <h1>'.e($empresa?->razon_social ?? 'SecuriForm').'</h1>
+                <p>'.$tipoLabel.'</p>
+            </div>
+
+            <div class="meta">
+                <table>
+                    <tr><td class="label">Documento:</td><td class="value">'.e($politica->titulo).'</td></tr>
+                    <tr><td class="label">Version:</td><td class="value">'.e($aceptacion->version_aceptada).'</td></tr>
+                    <tr><td class="label">Firmante:</td><td class="value">'.e($firmante?->name ?? '-').'</td></tr>
+                    <tr><td class="label">DNI:</td><td class="value">'.e($firmante?->dni ?? 'N/A').'</td></tr>
+                    <tr><td class="label">Puesto:</td><td class="value">'.e($firmante?->puesto ?? 'N/A').'</td></tr>
+                    <tr><td class="label">Fecha firma:</td><td class="value">'.$aceptacion->fecha_aceptacion->format('d/m/Y H:i').'</td></tr>'
+                    .($aceptacion->fecha_expiracion ? '<tr><td class="label">Expira:</td><td class="value">'.$aceptacion->fecha_expiracion->format('d/m/Y').'</td></tr>' : '')
+                    .'<tr><td class="label">Estado:</td><td class="value">'.($aceptacion->estaVigente() ? 'Vigente' : 'Expirado').'</td></tr>
+                </table>
+            </div>
+
+            <div class="content">'.$this->renderContenido($politica, $firmante).'</div>';
+
+            $html .= $this->buildSignatureBlock($admin, $aceptacion, $empresa);
+
+            $html .= '
+            <div class="footer">
+                '.e($empresa?->razon_social ?? '').' &mdash; Generado el '.now()->format('d/m/Y H:i').'
+                <br>Este documento es confidencial y de uso interno.
+            </div>';
+
+            $mpdf->WriteHTML($html);
+        }
 
         return $mpdf->Output('', Destination::STRING_RETURN);
+    }
+
+    public function aceptacionFilename(Politica $politica, AceptacionPolitica $aceptacion): string
+    {
+        $prefix = $politica->es_nda ? 'nda' : 'politica';
+        $nombre = $aceptacion->user?->name ?? 'sin-usuario';
+
+        return $prefix.'_'.Str::slug($nombre).'_'.$politica->slug.'_v'.$aceptacion->version_aceptada.'.pdf';
     }
 
     public function downloadResumenFirmantes(Request $request, Politica $politica)
@@ -224,17 +332,22 @@ class PoliticaPdfController extends Controller
             'tempDir' => storage_path('app/temp'),
         ]);
 
+        $hasLogo = $this->attachLogoToMpdf($mpdf, $empresa);
+        $primario = $empresa?->getPdfColorPrimario() ?? '#4f46e5';
+        $secundario = $empresa?->getPdfColorSecundario() ?? '#1e1b4b';
+
         $style = '
         <style>
             body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; line-height: 1.5; }
-            .header { text-align: center; border-bottom: 2px solid #4f46e5; padding-bottom: 12px; margin-bottom: 18px; }
-            .header h1 { font-size: 18px; margin: 0; color: #1e1b4b; }
+            .header { text-align: center; border-bottom: 2px solid '.$primario.'; padding-bottom: 12px; margin-bottom: 18px; }
+            .header img.brand-logo { max-height: 50px; max-width: 180px; margin-bottom: 6px; }
+            .header h1 { font-size: 18px; margin: 0; color: '.$secundario.'; }
             .header p { font-size: 11px; color: #6b7280; margin: 4px 0 0; }
             .meta { background: #f3f4f6; padding: 10px 15px; border-radius: 6px; margin-bottom: 18px; font-size: 10px; }
             .meta td { padding: 2px 0; }
             .meta .label { color: #6b7280; width: 130px; }
             .meta .value { font-weight: bold; }
-            .version-title { font-size: 13px; font-weight: bold; color: #1e1b4b; margin: 18px 0 8px; padding: 6px 10px; background: #eef2ff; border-radius: 4px; }
+            .version-title { font-size: 13px; font-weight: bold; color: '.$secundario.'; margin: 18px 0 8px; padding: 6px 10px; background: #eef2ff; border-radius: 4px; }
             .firma-row { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; }
             .firma-row table { width: 100%; }
             .firma-img { max-height: 45px; max-width: 150px; }
@@ -254,6 +367,7 @@ class PoliticaPdfController extends Controller
 
         $html .= '
         <div class="header">
+            '.$this->buildLogoHtml($hasLogo).'
             <h1>'.e($empresa?->razon_social ?? 'SecuriForm').'</h1>
             <p>Resumen de firmantes — '.e($politica->titulo).'</p>
         </div>
@@ -347,13 +461,17 @@ class PoliticaPdfController extends Controller
             ->first();
     }
 
-    private function buildStyle(): string
+    private function buildStyle(?Empresa $empresa = null): string
     {
+        $primario = $empresa?->getPdfColorPrimario() ?? '#4f46e5';
+        $secundario = $empresa?->getPdfColorSecundario() ?? '#1e1b4b';
+
         return '
         <style>
             body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a1a; line-height: 1.6; }
-            .header { text-align: center; border-bottom: 2px solid #4f46e5; padding-bottom: 15px; margin-bottom: 20px; }
-            .header h1 { font-size: 18px; margin: 0; color: #1e1b4b; }
+            .header { text-align: center; border-bottom: 2px solid '.$primario.'; padding-bottom: 15px; margin-bottom: 20px; }
+            .header img.brand-logo { max-height: 60px; max-width: 200px; margin-bottom: 8px; }
+            .header h1 { font-size: 18px; margin: 0; color: '.$secundario.'; }
             .header p { font-size: 11px; color: #6b7280; margin: 4px 0 0; }
             .meta { background: #f3f4f6; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; font-size: 11px; }
             .meta table { width: 100%; }
@@ -361,7 +479,7 @@ class PoliticaPdfController extends Controller
             .meta .label { color: #6b7280; width: 140px; }
             .meta .value { font-weight: bold; }
             .content { margin-top: 20px; }
-            .content h2 { font-size: 16px; color: #1e1b4b; }
+            .content h2 { font-size: 16px; color: '.$secundario.'; }
             .content h3 { font-size: 14px; color: #374151; }
             .content ul { padding-left: 20px; }
             .content li { margin-bottom: 4px; }
@@ -374,6 +492,28 @@ class PoliticaPdfController extends Controller
             .sig-missing { background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 8px; padding: 20px; text-align: center; color: #dc2626; font-size: 11px; }
             .footer { margin-top: 30px; border-top: 1px solid #d1d5db; padding-top: 10px; font-size: 9px; color: #9ca3af; text-align: center; }
         </style>';
+    }
+
+    private function attachLogoToMpdf(Mpdf $mpdf, ?Empresa $empresa): bool
+    {
+        $logoPath = $empresa?->getPdfLogoPath();
+        if (! $logoPath) {
+            return false;
+        }
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('logos');
+        if (! $disk->exists($logoPath)) {
+            return false;
+        }
+
+        $mpdf->imageVars['logo'] = $disk->get($logoPath);
+
+        return true;
+    }
+
+    private function buildLogoHtml(bool $hasLogo): string
+    {
+        return $hasLogo ? '<img src="var:logo" class="brand-logo"><br>' : '';
     }
 
     private function buildSignatureBlock(?User $admin, ?AceptacionPolitica $aceptacion, $empresa): string
@@ -426,7 +566,7 @@ class PoliticaPdfController extends Controller
     {
         $contenido = $politica->contenido;
 
-        if ($politica->es_nda) {
+        if ($politica->es_nda && $user) {
             $contenido = str_replace(
                 ['{nombre_completo}', '{dni}', '{direccion}', '{telefono}', '{puesto}'],
                 [
@@ -440,6 +580,22 @@ class PoliticaPdfController extends Controller
             );
         }
 
-        return $contenido;
+        return $this->markdownToHtml($contenido);
+    }
+
+    private function markdownToHtml(?string $contenido): string
+    {
+        if (blank($contenido)) {
+            return '';
+        }
+
+        if (preg_match('/<\s*(p|div|h[1-6]|ul|ol|table|section|article|br)\b/i', $contenido)) {
+            return $contenido;
+        }
+
+        return Str::markdown($contenido, [
+            'html_input' => 'allow',
+            'allow_unsafe_links' => false,
+        ]);
     }
 }

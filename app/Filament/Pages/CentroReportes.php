@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Http\Controllers\PoliticaPdfController;
 use App\Models\AceptacionPolitica;
 use App\Models\Capacitacion;
 use App\Models\ChecklistEjecucion;
@@ -12,10 +13,13 @@ use App\Models\Politica;
 use App\Models\Registro;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Str;
 use Mpdf\Mpdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class CentroReportes extends Page
 {
@@ -87,6 +91,14 @@ class CentroReportes extends Page
                 'url' => ReporteChecklists::getUrl(),
                 'roles' => ['super_admin', 'admin_empresa'],
             ],
+            [
+                'title' => 'Documentos Firmados',
+                'desc' => 'Un PDF por documento (NDA o politica) con la firma mas reciente de cada colaborador.',
+                'icon' => 'heroicon-o-document-duplicate',
+                'color' => '#9333ea',
+                'action' => 'descargarDocumentosFirmados',
+                'roles' => ['super_admin', 'admin_empresa'],
+            ],
         ];
     }
 
@@ -109,6 +121,99 @@ class CentroReportes extends Page
         ];
     }
 
+    public function descargarDocumentosFirmados()
+    {
+        $tenant = Filament::getTenant();
+
+        $politicas = Politica::withoutGlobalScopes()
+            ->where('empresa_id', $tenant->id)
+            ->whereHas('aceptaciones', fn ($q) => $q->whereNotNull('firma_imagen')
+                ->whereHas('user', fn ($u) => $u->firmantes()))
+            ->orderBy('es_nda', 'desc')
+            ->orderBy('titulo')
+            ->get();
+
+        if ($politicas->isEmpty()) {
+            Notification::make()
+                ->title('Sin firmantes')
+                ->body('No hay documentos firmados por colaboradores en esta empresa.')
+                ->warning()
+                ->send();
+
+            return null;
+        }
+
+        $pdfController = app(PoliticaPdfController::class);
+
+        if ($politicas->count() === 1) {
+            $politica = $politicas->first();
+            $bytes = $pdfController->buildConsolidatedFirmadosPdfBytes($politica);
+
+            if ($bytes === null) {
+                Notification::make()
+                    ->title('Sin firmantes')
+                    ->body('No hay firmantes para este documento.')
+                    ->warning()
+                    ->send();
+
+                return null;
+            }
+
+            $prefix = $politica->es_nda ? 'nda' : 'politica';
+            $filename = $prefix.'_firmantes_'.$politica->slug.'_v'.$politica->version.'_'.now()->format('Ymd_His').'.pdf';
+
+            return response()->streamDownload(function () use ($bytes) {
+                echo $bytes;
+            }, $filename, ['Content-Type' => 'application/pdf']);
+        }
+
+        $tempDir = storage_path('app/temp');
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $zipName = 'documentos_firmados_'.Str::slug($tenant->razon_social ?? 'empresa').'_'.now()->format('Ymd_His').'.zip';
+        $zipPath = $tempDir.'/'.$zipName;
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            Notification::make()
+                ->title('Error')
+                ->body('No se pudo crear el archivo ZIP.')
+                ->danger()
+                ->send();
+
+            return null;
+        }
+
+        $usados = [];
+
+        foreach ($politicas as $politica) {
+            $bytes = $pdfController->buildConsolidatedFirmadosPdfBytes($politica);
+            if ($bytes === null) {
+                continue;
+            }
+
+            $prefix = $politica->es_nda ? 'nda' : 'politica';
+            $folder = $politica->es_nda ? 'NDA' : 'Politicas';
+            $base = $prefix.'_firmantes_'.$politica->slug.'_v'.$politica->version.'.pdf';
+
+            $finalName = $base;
+            $i = 1;
+            while (isset($usados[$folder.'/'.$finalName])) {
+                $finalName = preg_replace('/\.pdf$/', '_'.$i.'.pdf', $base);
+                $i++;
+            }
+            $usados[$folder.'/'.$finalName] = true;
+
+            $zip->addFromString($folder.'/'.$finalName, $bytes);
+        }
+
+        $zip->close();
+
+        return response()->download($zipPath, $zipName)->deleteFileAfterSend();
+    }
+
     public function generateReporteCompleto(): StreamedResponse
     {
         $tenant = Filament::getTenant();
@@ -118,14 +223,17 @@ class CentroReportes extends Page
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        if ($tenant->logo_path) {
-            $logoPath = storage_path('app/'.$tenant->logo_path);
-            if (file_exists($logoPath)) {
-                $mpdf->imageVars['logo'] = file_get_contents($logoPath);
+        $logoPath = $tenant->getPdfLogoPath();
+        $hasLogo = false;
+        if ($logoPath) {
+            $disk = \Illuminate\Support\Facades\Storage::disk('logos');
+            if ($disk->exists($logoPath)) {
+                $mpdf->imageVars['logo'] = $disk->get($logoPath);
+                $hasLogo = true;
             }
         }
 
-        $this->buildCompleto($mpdf, $tenant);
+        $this->buildCompleto($mpdf, $tenant, $hasLogo);
 
         $filename = 'reporte_completo_'.now()->format('Ymd_His').'.pdf';
 
@@ -134,18 +242,18 @@ class CentroReportes extends Page
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildCompleto(Mpdf $mpdf, $tenant): void
+    private function buildCompleto(Mpdf $mpdf, $tenant, bool $hasLogo = false): void
     {
-        $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/'.$tenant->logo_path))) {
-            $logoHtml = '<img src="var:logo" style="height:60px;margin-bottom:8px;" /><br>';
-        }
+        $logoHtml = $hasLogo ? '<img src="var:logo" style="height:60px;margin-bottom:8px;" /><br>' : '';
+
+        $primario = $tenant->getPdfColorPrimario();
+        $secundario = $tenant->getPdfColorSecundario();
 
         $style = '
         <style>
             body { font-family: Arial, sans-serif; font-size: 10px; color: #333; }
-            h1 { color: #4338ca; font-size: 18px; margin-bottom: 2px; }
-            h2 { font-size: 14px; margin-top: 18px; color: #1e1b4b; border-bottom: 2px solid #4338ca; padding-bottom: 4px; }
+            h1 { color: '.$primario.'; font-size: 18px; margin-bottom: 2px; }
+            h2 { font-size: 14px; margin-top: 18px; color: '.$secundario.'; border-bottom: 2px solid '.$primario.'; padding-bottom: 4px; }
             h3 { font-size: 12px; margin-top: 12px; color: #555; }
             table { width: 100%; border-collapse: collapse; margin-top: 6px; }
             th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
@@ -156,7 +264,7 @@ class CentroReportes extends Page
             .cover .meta { margin-top: 60px; font-size: 11px; color: #4b5563; }
             .stat-grid table { margin-top: 8px; }
             .stat-grid td { text-align: center; padding: 8px 6px; background: #f9fafb; border: 1px solid #e5e7eb; }
-            .stat-number { font-size: 20px; font-weight: bold; color: #4338ca; }
+            .stat-number { font-size: 20px; font-weight: bold; color: '.$primario.'; }
             .stat-label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
             .section { margin-top: 20px; }
             .footer { margin-top: 30px; font-size: 9px; color: #888; }
