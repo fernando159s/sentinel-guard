@@ -29,7 +29,16 @@ class CreateRegistro extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $tipo = TipoFormato::from($data['tipo_formato']);
+        if (empty($data['tipo_formato']) || ! ($tipo = TipoFormato::tryFrom($data['tipo_formato']))) {
+            \Filament\Notifications\Notification::make()
+                ->title('Selecciona un formato')
+                ->body('Debes elegir un tipo de formato antes de guardar el registro.')
+                ->warning()
+                ->send();
+
+            $this->halt();
+        }
+
         $tenant = Filament::getTenant();
 
         $data['empresa_id'] = $tenant->id;
