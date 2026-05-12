@@ -69,24 +69,40 @@ class ReporteMovimientosSoportes extends Page implements HasForms
     public function generateReport(): ?StreamedResponse
     {
         $tenant = Filament::getTenant();
+        $bytes = $this->pdfBytes($tenant);
 
-        $query = EquipoAsignacion::query()
-            ->whereHas('equipo', fn ($q) => $q->withoutGlobalScopes()->where('empresa_id', $tenant->id))
-            ->with(['equipo', 'user', 'asignador']);
-
-        if (! empty($this->data['tipo_movimiento'])) {
-            $query->where('tipo', $this->data['tipo_movimiento']);
-        }
-
-        $movimientos = $query->orderBy('fecha_inicio')->get();
-
-        if ($movimientos->isEmpty()) {
+        if ($bytes === null) {
             Notification::make()
                 ->title('Sin resultados')
                 ->body('No se encontraron movimientos.')
                 ->warning()
                 ->send();
 
+            return null;
+        }
+
+        $filename = 'movimientos_soportes_F08_'.now()->format('Ymd').'.pdf';
+
+        return response()->streamDownload(function () use ($bytes) {
+            echo $bytes;
+        }, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function pdfBytes($tenant, array $filtros = []): ?string
+    {
+        $tipoMov = $filtros['tipo_movimiento'] ?? ($this->data['tipo_movimiento'] ?? null);
+
+        $query = EquipoAsignacion::query()
+            ->whereHas('equipo', fn ($q) => $q->withoutGlobalScopes()->where('empresa_id', $tenant->id))
+            ->with(['equipo', 'user', 'asignador']);
+
+        if (! empty($tipoMov)) {
+            $query->where('tipo', $tipoMov);
+        }
+
+        $movimientos = $query->orderBy('fecha_inicio')->get();
+
+        if ($movimientos->isEmpty()) {
             return null;
         }
 
@@ -103,11 +119,7 @@ class ReporteMovimientosSoportes extends Page implements HasForms
 
         $this->buildReport($mpdf, $tenant, $movimientos, $hasLogo);
 
-        $filename = 'movimientos_soportes_F08_'.now()->format('Ymd').'.pdf';
-
-        return response()->streamDownload(function () use ($mpdf) {
-            echo $mpdf->Output('', 'S');
-        }, $filename, ['Content-Type' => 'application/pdf']);
+        return $mpdf->Output('', 'S');
     }
 
     private function buildReport(Mpdf $mpdf, $tenant, $movimientos, bool $hasLogo = false): void

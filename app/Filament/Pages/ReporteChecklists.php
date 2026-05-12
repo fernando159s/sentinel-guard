@@ -54,7 +54,27 @@ class ReporteChecklists extends Page implements HasForms
     public function generateReport(): ?StreamedResponse
     {
         $tenant = Filament::getTenant();
+        $bytes = $this->pdfBytes($tenant);
 
+        if ($bytes === null) {
+            Notification::make()
+                ->title('Sin resultados')
+                ->body('No hay checklists ni ejecuciones registradas para esta empresa.')
+                ->warning()
+                ->send();
+
+            return null;
+        }
+
+        $filename = 'reporte_checklists_'.now()->format('Ymd').'.pdf';
+
+        return response()->streamDownload(function () use ($bytes) {
+            echo $bytes;
+        }, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function pdfBytes($tenant): ?string
+    {
         $plantillas = ChecklistPlantilla::withoutGlobalScopes()
             ->where('empresa_id', $tenant->id)
             ->orderBy('nombre')
@@ -71,12 +91,6 @@ class ReporteChecklists extends Page implements HasForms
             ->get();
 
         if ($ejecuciones->isEmpty() && $plantillas->isEmpty()) {
-            Notification::make()
-                ->title('Sin resultados')
-                ->body('No hay checklists ni ejecuciones registradas para esta empresa.')
-                ->warning()
-                ->send();
-
             return null;
         }
 
@@ -93,11 +107,7 @@ class ReporteChecklists extends Page implements HasForms
 
         $this->buildReport($mpdf, $tenant, $plantillas, $ejecuciones, $hasLogo);
 
-        $filename = 'reporte_checklists_'.now()->format('Ymd').'.pdf';
-
-        return response()->streamDownload(function () use ($mpdf) {
-            echo $mpdf->Output('', 'S');
-        }, $filename, ['Content-Type' => 'application/pdf']);
+        return $mpdf->Output('', 'S');
     }
 
     private function buildReport(Mpdf $mpdf, $tenant, $plantillas, $ejecuciones, bool $hasLogo = false): void
@@ -143,6 +153,57 @@ class ReporteChecklists extends Page implements HasForms
             </tr>';
         }
 
+        // Detalle por ejecucion — flujo continuo, sin AddPage
+        $detalleHtml = '';
+        if ($ejecuciones->isNotEmpty()) {
+            $detalleHtml .= '<h2 style="margin-top:24px;">Detalle de ejecuciones</h2>';
+        }
+        foreach ($ejecuciones as $e) {
+            $cumple = $e->itemsCumplen();
+            $total = $e->totalItems();
+            $pct = $total > 0 ? round($cumple / $total * 100) : 0;
+            $estClass = $pct >= 80 ? 'badge-ok' : ($pct >= 50 ? 'badge-warn' : 'badge-bad');
+
+            $itemsRows = '';
+            foreach (($e->resultados ?? []) as $idx => $r) {
+                $cumpleVal = ! empty($r['cumple']);
+                $itemsRows .= '<tr>
+                    <td style="text-align:center;width:30px;">'.($idx + 1).'</td>
+                    <td>'.e($r['item'] ?? $r['nombre'] ?? '-').'</td>
+                    <td style="text-align:center;width:60px;">'.($cumpleVal ? '<span class="badge badge-ok">Si</span>' : '<span class="badge badge-bad">No</span>').'</td>
+                    <td>'.e($r['observacion'] ?? $r['observaciones'] ?? '').'</td>
+                </tr>';
+            }
+
+            $detalleHtml .= '
+                <div class="ficha" style="margin-top:14px;page-break-inside:avoid;">
+                    <div class="ficha-header">
+                        <h3 style="margin:0;">'.e($e->plantilla?->nombre ?? '-').' — '.$e->fecha_ejecucion->format('d/m/Y H:i').'</h3>
+                    </div>
+                    <div class="ficha-body">
+                        <table style="border:none;">
+                            <tr style="border:none;">
+                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Equipo:</strong> '.e($e->equipo?->codigo_interno ?? '-').'</td>
+                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Marca/Modelo:</strong> '.e(trim(($e->equipo?->marca ?? '').' '.($e->equipo?->modelo ?? '')) ?: '-').'</td>
+                                <td style="border:none;padding:2px 16px 2px 0;"><strong>S/N:</strong> '.e($e->equipo?->numero_serie ?? '-').'</td>
+                            </tr>
+                            <tr style="border:none;">
+                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Ejecutor:</strong> '.e($e->ejecutor?->name ?? '-').'</td>
+                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Estado:</strong> '.e($e->estado ?? '-').'</td>
+                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Score:</strong> <span class="badge '.$estClass.'">'.$cumple.'/'.$total.' ('.$pct.'%)</span></td>
+                            </tr>
+                        </table>
+
+                        <table style="margin-top:8px;">
+                            <tr><th style="width:30px;">#</th><th>Item</th><th style="width:60px;">Cumple</th><th>Observaciones</th></tr>
+                            '.($itemsRows ?: '<tr><td colspan="4" style="text-align:center;color:#999;">Sin items</td></tr>').'
+                        </table>
+                        '.(! empty($e->observaciones_generales) ? '
+                        <p style="margin-top:8px;padding:6px 8px;background:#fafafa;border:1px solid #eee;"><strong>Observaciones:</strong> '.nl2br(e($e->observaciones_generales)).'</p>' : '').'
+                    </div>
+                </div>';
+        }
+
         $mpdf->WriteHTML($style.'
             '.$logoHtml.'
             <h1>'.e($tenant->razon_social).'</h1>
@@ -176,68 +237,10 @@ class ReporteChecklists extends Page implements HasForms
                 '.($ejecRows ?: '<tr><td colspan="7" style="text-align:center;color:#999;">Sin ejecuciones</td></tr>').'
             </table>
 
+            '.$detalleHtml.'
+
             <p class="footer">
                 Generado: '.now()->format('d/m/Y H:i').' | '.e(auth()->user()->name).' | SecuriForm
             </p>');
-
-        // Detalle por ejecucion
-        foreach ($ejecuciones as $e) {
-            $mpdf->AddPage();
-
-            $cumple = $e->itemsCumplen();
-            $total = $e->totalItems();
-            $pct = $total > 0 ? round($cumple / $total * 100) : 0;
-            $estClass = $pct >= 80 ? 'badge-ok' : ($pct >= 50 ? 'badge-warn' : 'badge-bad');
-
-            $itemsRows = '';
-            foreach (($e->resultados ?? []) as $idx => $r) {
-                $cumpleVal = ! empty($r['cumple']);
-                $itemsRows .= '<tr>
-                    <td style="text-align:center;width:30px;">'.($idx + 1).'</td>
-                    <td>'.e($r['item'] ?? $r['nombre'] ?? '-').'</td>
-                    <td style="text-align:center;width:60px;">'.($cumpleVal ? '<span class="badge badge-ok">Si</span>' : '<span class="badge badge-bad">No</span>').'</td>
-                    <td>'.e($r['observacion'] ?? $r['observaciones'] ?? '').'</td>
-                </tr>';
-            }
-
-            $mpdf->WriteHTML($style.'
-                '.$logoHtml.'
-                <h1>'.e($tenant->razon_social).'</h1>
-                <p style="color:#666;">RUC: '.e($tenant->ruc).'</p>
-
-                <div class="ficha">
-                    <div class="ficha-header">
-                        <h2 style="margin:0;">Ejecucion de Checklist</h2>
-                        <p style="margin:4px 0 0; color:#666;">'.e($e->plantilla?->nombre ?? '-').' — '.$e->fecha_ejecucion->format('d/m/Y H:i').'</p>
-                    </div>
-                    <div class="ficha-body">
-                        <table style="border:none;">
-                            <tr style="border:none;">
-                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Equipo:</strong> '.e($e->equipo?->codigo_interno ?? '-').'</td>
-                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Marca/Modelo:</strong> '.e(trim(($e->equipo?->marca ?? '').' '.($e->equipo?->modelo ?? '')) ?: '-').'</td>
-                                <td style="border:none;padding:2px 16px 2px 0;"><strong>S/N:</strong> '.e($e->equipo?->numero_serie ?? '-').'</td>
-                            </tr>
-                            <tr style="border:none;">
-                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Ejecutor:</strong> '.e($e->ejecutor?->name ?? '-').'</td>
-                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Estado:</strong> '.e($e->estado ?? '-').'</td>
-                                <td style="border:none;padding:2px 16px 2px 0;"><strong>Score:</strong> <span class="badge '.$estClass.'">'.$cumple.'/'.$total.' ('.$pct.'%)</span></td>
-                            </tr>
-                        </table>
-
-                        <h3>Items verificados</h3>
-                        <table>
-                            <tr><th style="width:30px;">#</th><th>Item</th><th style="width:60px;">Cumple</th><th>Observaciones</th></tr>
-                            '.($itemsRows ?: '<tr><td colspan="4" style="text-align:center;color:#999;">Sin items</td></tr>').'
-                        </table>
-                        '.(! empty($e->observaciones_generales) ? '
-                        <h3>Observaciones generales</h3>
-                        <p style="padding:6px 8px;background:#fafafa;border:1px solid #eee;">'.nl2br(e($e->observaciones_generales)).'</p>' : '').'
-                    </div>
-                </div>
-
-                <p class="footer">
-                    Generado: '.now()->format('d/m/Y H:i').' | SecuriForm
-                </p>');
-        }
     }
 }

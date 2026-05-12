@@ -81,29 +81,9 @@ class ReporteDestruccionActivos extends Page implements HasForms
     public function generateReport(): ?StreamedResponse
     {
         $tenant = Filament::getTenant();
+        $bytes = $this->pdfBytes($tenant);
 
-        $query = Registro::withoutGlobalScopes()
-            ->where('empresa_id', $tenant->id)
-            ->where('tipo_formato', 'F13')
-            ->with(['creador', 'equipo']);
-
-        if (! empty($this->data['metodo'])) {
-            $query->where('datos->metodo', $this->data['metodo']);
-        }
-
-        $registros = $query->orderBy('created_at', 'desc')->get();
-
-        // Filter by motivo if selected (stored in observaciones text)
-        if (! empty($this->data['motivo'])) {
-            $motivo = $this->data['motivo'];
-            $registros = $registros->filter(function ($r) use ($motivo) {
-                $obs = $r->datos['observaciones'] ?? '';
-
-                return str_contains(mb_strtolower($obs), mb_strtolower($motivo));
-            })->values();
-        }
-
-        if ($registros->isEmpty()) {
+        if ($bytes === null) {
             Notification::make()
                 ->title('Sin resultados')
                 ->body('No se encontraron registros F13 con los filtros seleccionados.')
@@ -113,7 +93,41 @@ class ReporteDestruccionActivos extends Page implements HasForms
             return null;
         }
 
-        // Collect associated equipos for decommissioned assets section
+        $filename = 'destruccion_activos_F13_'.now()->format('Ymd').'.pdf';
+
+        return response()->streamDownload(function () use ($bytes) {
+            echo $bytes;
+        }, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function pdfBytes($tenant, array $filtros = []): ?string
+    {
+        $query = Registro::withoutGlobalScopes()
+            ->where('empresa_id', $tenant->id)
+            ->where('tipo_formato', 'F13')
+            ->with(['creador', 'equipo']);
+
+        $metodo = $filtros['metodo'] ?? ($this->data['metodo'] ?? null);
+        $motivo = $filtros['motivo'] ?? ($this->data['motivo'] ?? null);
+
+        if (! empty($metodo)) {
+            $query->where('datos->metodo', $metodo);
+        }
+
+        $registros = $query->orderBy('created_at', 'desc')->get();
+
+        if (! empty($motivo)) {
+            $registros = $registros->filter(function ($r) use ($motivo) {
+                $obs = $r->datos['observaciones'] ?? '';
+
+                return str_contains(mb_strtolower($obs), mb_strtolower($motivo));
+            })->values();
+        }
+
+        if ($registros->isEmpty()) {
+            return null;
+        }
+
         $equipoIds = $registros->pluck('equipo_id')->filter()->unique()->toArray();
         $equipos = Equipo::withoutGlobalScopes()
             ->withTrashed()
@@ -134,11 +148,7 @@ class ReporteDestruccionActivos extends Page implements HasForms
 
         $this->buildReport($mpdf, $tenant, $registros, $equipos, $hasLogo);
 
-        $filename = 'destruccion_activos_F13_'.now()->format('Ymd').'.pdf';
-
-        return response()->streamDownload(function () use ($mpdf) {
-            echo $mpdf->Output('', 'S');
-        }, $filename, ['Content-Type' => 'application/pdf']);
+        return $mpdf->Output('', 'S');
     }
 
     private function buildReport(Mpdf $mpdf, $tenant, $registros, $equipos, bool $hasLogo = false): void

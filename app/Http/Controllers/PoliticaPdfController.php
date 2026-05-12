@@ -61,16 +61,9 @@ class PoliticaPdfController extends Controller
 
         <div class="content">'.$this->renderContenido($politica, $user).'</div>';
 
-        $html .= $this->buildSignatureBlock($admin, $aceptacion, $empresa);
-
-        $html .= '
-        <div class="footer">
-            '.e($empresa?->razon_social ?? '').' &mdash; Generado el '.now()->format('d/m/Y H:i').'
-            <br>Este documento es confidencial y de uso interno.
-        </div>';
-
         $mpdf->SetTitle($politica->titulo.' v'.$politica->version);
         $mpdf->WriteHTML($html);
+        $this->writeSignaturesAndFooter($mpdf, $admin, $aceptacion, $empresa, $politica);
 
         $filename = 'politica_'.$politica->slug.'_v'.$politica->version.'.pdf';
         $path = storage_path('app/temp/'.$filename);
@@ -202,17 +195,10 @@ class PoliticaPdfController extends Controller
 
         <div class="content">'.$this->renderContenido($politica, $firmante).'</div>';
 
-        $html .= $this->buildSignatureBlock($admin, $aceptacion, $empresa);
-
-        $html .= '
-        <div class="footer">
-            '.e($empresa?->razon_social ?? '').' &mdash; Generado el '.now()->format('d/m/Y H:i').'
-            <br>Este documento es confidencial y de uso interno.
-        </div>';
-
         $titlePrefix = $politica->es_nda ? 'NDA' : 'Politica';
         $mpdf->SetTitle($titlePrefix.' - '.($firmante?->name ?? '-').' - '.$politica->titulo);
         $mpdf->WriteHTML($html);
+        $this->writeSignaturesAndFooter($mpdf, $admin, $aceptacion, $empresa, $politica);
 
         return $mpdf->Output('', Destination::STRING_RETURN);
     }
@@ -290,15 +276,8 @@ class PoliticaPdfController extends Controller
 
             <div class="content">'.$this->renderContenido($politica, $firmante).'</div>';
 
-            $html .= $this->buildSignatureBlock($admin, $aceptacion, $empresa);
-
-            $html .= '
-            <div class="footer">
-                '.e($empresa?->razon_social ?? '').' &mdash; Generado el '.now()->format('d/m/Y H:i').'
-                <br>Este documento es confidencial y de uso interno.
-            </div>';
-
             $mpdf->WriteHTML($html);
+            $this->writeSignaturesAndFooter($mpdf, $admin, $aceptacion, $empresa, $politica);
         }
 
         return $mpdf->Output('', Destination::STRING_RETURN);
@@ -503,9 +482,46 @@ class PoliticaPdfController extends Controller
         return $hasLogo ? '<img src="var:logo" class="brand-logo"><br>' : '';
     }
 
-    private function buildSignatureBlock(?User $admin, ?AceptacionPolitica $aceptacion, $empresa): string
+    /**
+     * Write signature block + footer ensuring signatures never appear alone
+     * on a page. Forces AddPage if remaining vertical space is insufficient.
+     */
+    private function writeSignaturesAndFooter(Mpdf $mpdf, ?User $admin, ?AceptacionPolitica $aceptacion, $empresa, ?Politica $politica): void
     {
-        $html = '<div class="signatures"><table width="100%" cellpadding="0" cellspacing="0"><tr>';
+        $signaturesHtml = $this->buildSignatureBlock($admin, $aceptacion, $empresa, $politica);
+
+        $footerHtml = '
+        <div class="footer">
+            '.e($empresa?->razon_social ?? '').' &mdash; Generado el '.now()->format('d/m/Y H:i').'
+            <br>Este documento es confidencial y de uso interno.
+        </div>';
+
+        // Reserve ~130mm: anchor (~14) + signatures box (~95) + footer (~12) + margin (~9)
+        $minSpaceMm = 130;
+        $pageHeight = $mpdf->h ?? 297;
+        $bottomMargin = $mpdf->bMargin ?? 14;
+        $usableBottom = $pageHeight - $bottomMargin;
+        $remaining = $usableBottom - $mpdf->y;
+
+        if ($remaining < $minSpaceMm) {
+            $mpdf->AddPage();
+        }
+
+        $mpdf->WriteHTML($signaturesHtml.$footerHtml);
+    }
+
+    private function buildSignatureBlock(?User $admin, ?AceptacionPolitica $aceptacion, $empresa, ?Politica $politica = null): string
+    {
+        $anchor = '';
+        if ($politica) {
+            $tipo = $politica->es_nda ? 'NDA' : 'Politica';
+            $firmanteNombre = $aceptacion?->user?->name ?? ($aceptacion?->firma_nombre ?? '-');
+            $anchor = '<div style="margin-top:18px;padding:6px 10px;background:#f3f4f6;border-left:3px solid #6b7280;font-size:9px;color:#374151;">
+                <strong>Firmas del documento:</strong> '.$tipo.' &laquo; '.e($politica->titulo).' &raquo; v'.e($politica->version).' &mdash; Firmante: '.e($firmanteNombre).'
+            </div>';
+        }
+
+        $html = $anchor.'<div class="signatures" style="page-break-inside:avoid;"><table width="100%" cellpadding="0" cellspacing="0"><tr>';
 
         // Admin / Gerente General — left 50%
         $html .= '<td width="48%" valign="top">';

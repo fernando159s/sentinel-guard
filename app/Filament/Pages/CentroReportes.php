@@ -113,6 +113,16 @@ class CentroReportes extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('descargar_todos')
+                ->label('Descargar TODOS los reportes (ZIP)')
+                ->icon('heroicon-o-archive-box-arrow-down')
+                ->color('success')
+                ->size('lg')
+                ->requiresConfirmation()
+                ->modalHeading('Descargar todos los reportes')
+                ->modalDescription('Genera un ZIP con el reporte completo, los 6 reportes individuales y los documentos firmados de la empresa. Puede tardar varios segundos.')
+                ->modalSubmitActionLabel('Generar ZIP')
+                ->action(fn () => $this->descargarTodos()),
             Action::make('reporte_completo')
                 ->label('Reporte completo (PDF)')
                 ->icon('heroicon-o-document-arrow-down')
@@ -218,7 +228,16 @@ class CentroReportes extends Page
     public function generateReporteCompleto(): StreamedResponse
     {
         $tenant = Filament::getTenant();
+        $bytes = $this->reporteCompletoBytes($tenant);
+        $filename = 'reporte_completo_'.now()->format('Ymd_His').'.pdf';
 
+        return response()->streamDownload(function () use ($bytes) {
+            echo $bytes;
+        }, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function reporteCompletoBytes($tenant): string
+    {
         $mpdf = new Mpdf([
             'format' => 'A4',
             'margin_top' => 14,
@@ -232,11 +251,116 @@ class CentroReportes extends Page
 
         $this->buildCompleto($mpdf, $tenant, $hasLogo);
 
-        $filename = 'reporte_completo_'.now()->format('Ymd_His').'.pdf';
+        return $mpdf->Output('', 'S');
+    }
 
-        return response()->streamDownload(function () use ($mpdf) {
-            echo $mpdf->Output('', 'S');
-        }, $filename, ['Content-Type' => 'application/pdf']);
+    public function descargarTodos()
+    {
+        $tenant = Filament::getTenant();
+        $stamp = now()->format('Ymd_His');
+
+        $tempDir = storage_path('app/temp');
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $zipName = 'todos_los_reportes_'.Str::slug($tenant->razon_social ?? 'empresa').'_'.$stamp.'.zip';
+        $zipPath = $tempDir.'/'.$zipName;
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            Notification::make()->title('Error')->body('No se pudo crear el ZIP.')->danger()->send();
+
+            return null;
+        }
+
+        $generadores = [
+            'reporte_completo.pdf' => fn () => $this->reporteCompletoBytes($tenant),
+            'reporte_incidencias.pdf' => fn () => app(ReporteIncidencias::class)->pdfBytes($tenant),
+            'reporte_capacitaciones.pdf' => fn () => app(ReporteCapacitaciones::class)->pdfBytes($tenant),
+            'reporte_checklists.pdf' => fn () => app(ReporteChecklists::class)->pdfBytes($tenant),
+            'reporte_destruccion_activos.pdf' => fn () => app(ReporteDestruccionActivos::class)->pdfBytes($tenant),
+            'reporte_inventario_soportes.pdf' => fn () => app(ReporteInventarioSoportes::class)->pdfBytes($tenant),
+            'reporte_movimientos_soportes.pdf' => fn () => app(ReporteMovimientosSoportes::class)->pdfBytes($tenant),
+        ];
+
+        $incluidos = 0;
+        foreach ($generadores as $nombre => $gen) {
+            try {
+                $bytes = $gen();
+            } catch (\Throwable $e) {
+                $bytes = null;
+            }
+
+            if (! empty($bytes)) {
+                $zip->addFromString($nombre, $bytes);
+                $incluidos++;
+            }
+        }
+
+        $documentosFirmados = $this->buildDocumentosFirmadosForBundle($tenant);
+        foreach ($documentosFirmados as $rutaInterna => $bytesDoc) {
+            $zip->addFromString($rutaInterna, $bytesDoc);
+            $incluidos++;
+        }
+
+        $zip->close();
+
+        if ($incluidos === 0) {
+            @unlink($zipPath);
+
+            Notification::make()
+                ->title('Sin datos')
+                ->body('No hay informacion para generar reportes en esta empresa.')
+                ->warning()
+                ->send();
+
+            return null;
+        }
+
+        return response()->download($zipPath, $zipName)->deleteFileAfterSend();
+    }
+
+    private function buildDocumentosFirmadosForBundle($tenant): array
+    {
+        $politicas = Politica::withoutGlobalScopes()
+            ->where('empresa_id', $tenant->id)
+            ->whereHas('aceptaciones', fn ($q) => $q->whereNotNull('firma_imagen')
+                ->whereHas('user', fn ($u) => $u->firmantes()))
+            ->orderBy('es_nda', 'desc')
+            ->orderBy('titulo')
+            ->get();
+
+        if ($politicas->isEmpty()) {
+            return [];
+        }
+
+        $pdfController = app(PoliticaPdfController::class);
+        $out = [];
+        $usados = [];
+
+        foreach ($politicas as $politica) {
+            $bytes = $pdfController->buildConsolidatedFirmadosPdfBytes($politica);
+            if ($bytes === null) {
+                continue;
+            }
+
+            $prefix = $politica->es_nda ? 'nda' : 'politica';
+            $folder = $politica->es_nda ? 'documentos_firmados/NDA' : 'documentos_firmados/Politicas';
+            $base = $prefix.'_firmantes_'.$politica->slug.'_v'.$politica->version.'.pdf';
+
+            $finalName = $base;
+            $i = 1;
+            while (isset($usados[$folder.'/'.$finalName])) {
+                $finalName = preg_replace('/\.pdf$/', '_'.$i.'.pdf', $base);
+                $i++;
+            }
+            $usados[$folder.'/'.$finalName] = true;
+
+            $out[$folder.'/'.$finalName] = $bytes;
+        }
+
+        return $out;
     }
 
     private function buildCompleto(Mpdf $mpdf, $tenant, bool $hasLogo = false): void
