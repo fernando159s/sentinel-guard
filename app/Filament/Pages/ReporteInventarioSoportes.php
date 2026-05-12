@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Equipo;
+use App\Support\PdfBranding;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -148,74 +149,55 @@ class ReporteInventarioSoportes extends Page implements HasForms
 
         $mpdf = new Mpdf([
             'format' => 'A4-L',
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_left' => 10,
+            'margin_right' => 10,
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        if ($tenant->logo_path) {
-            $logoPath = storage_path('app/' . $tenant->logo_path);
-            if (file_exists($logoPath)) {
-                $mpdf->imageVars['logo'] = file_get_contents($logoPath);
-            }
-        }
+        $hasLogo = PdfBranding::attachLogo($mpdf, $tenant);
 
-        $this->buildReport($mpdf, $tenant, $equipos);
+        $this->buildReport($mpdf, $tenant, $equipos, $hasLogo);
 
         return response()->streamDownload(function () use ($mpdf) {
             echo $mpdf->Output('', 'S');
         }, 'inventario_soportes_F07_' . now()->format('Ymd') . '.pdf', ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReport(Mpdf $mpdf, $tenant, $equipos): void
+    private function buildReport(Mpdf $mpdf, $tenant, $equipos, bool $hasLogo = false): void
     {
-        $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/' . $tenant->logo_path))) {
-            $logoHtml = '<img src="var:logo" style="height:36px;margin-bottom:4px;" /><br>';
-        }
-
-        $style = '
+        $logoHtml = PdfBranding::logoHtml($hasLogo, 32);
+        $colors = PdfBranding::colors($tenant);
+        $style = PdfBranding::reportStyle($tenant).'
         <style>
-            body { font-family: Arial, sans-serif; font-size: 8px; color: #333; }
-            h1 { color: #4338ca; font-size: 14px; margin-bottom: 0; }
-            h2 { font-size: 11px; margin-top: 8px; margin-bottom: 2px; color: #333; }
-            h3 { font-size: 9px; margin-top: 6px; margin-bottom: 2px; color: #555; }
-            table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-            th, td { border: 1px solid #ddd; padding: 2px 4px; text-align: left; }
-            th { background: #f3f4f6; font-weight: bold; font-size: 7px; }
-            .stat-grid { margin-top: 6px; }
+            body { font-size: 8px; }
+            h1 { font-size: 12px; }
+            h2 { font-size: 10px; margin-top: 7px; }
+            h3 { font-size: 9px; margin-top: 5px; }
+            th, td { padding: 2px 4px; }
+            th { font-size: 7.5px; }
+            .stat-grid { margin-top: 5px; }
             .stat-grid table { margin-top: 2px; }
             .stat-grid td { text-align: center; padding: 4px 6px; }
-            .stat-number { font-size: 16px; font-weight: bold; color: #4338ca; }
+            .stat-number { font-size: 14px; font-weight: bold; color: '.$colors['primario'].'; }
             .stat-label { font-size: 7px; color: #666; text-transform: uppercase; letter-spacing: 0.3px; }
-            .summary { margin-top: 6px; padding: 4px 8px; background: #f9fafb; border: 1px solid #e5e7eb; font-size: 8px; }
-            .badge { display: inline-block; padding: 1px 4px; border-radius: 6px; font-size: 7px; font-weight: bold; }
             .badge-tec { background: #dbeafe; color: #1d4ed8; }
-            .badge-notec { background: #fef3c7; color: #d97706; }
-            .badge-activo { background: #d1fae5; color: #059669; }
-            .badge-mant { background: #fef3c7; color: #d97706; }
+            .badge-notec { background: #fef3c7; color: #b45309; }
+            .badge-activo { background: #d1fae5; color: #047857; }
+            .badge-mant { background: #fef3c7; color: #b45309; }
             .badge-obs { background: #fed7aa; color: #c2410c; }
-            .badge-baja { background: #fee2e2; color: #dc2626; }
-            .badge-publico { background: #e0e7ff; color: #4338ca; }
+            .badge-baja { background: #fee2e2; color: #b91c1c; }
+            .badge-publico { background: '.$colors['primario'].'22; color: '.$colors['primario'].'; }
             .badge-interno { background: #dbeafe; color: #1d4ed8; }
-            .badge-confidencial { background: #fef3c7; color: #d97706; }
-            .badge-sensible { background: #fee2e2; color: #dc2626; }
-            .ficha { border: 1px solid #ddd; border-radius: 4px; margin-top: 8px; }
-            .ficha-header { background: #eef2ff; padding: 6px 10px; border-bottom: 1px solid #ddd; }
-            .ficha-body { padding: 8px 10px; }
-            .field { margin-bottom: 6px; }
-            .field-label { font-size: 7px; font-weight: bold; color: #666; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1px; }
-            .field-value { font-size: 9px; color: #222; }
-            .field-value-long { font-size: 9px; color: #222; padding: 4px 6px; background: #fafafa; border: 1px solid #eee; border-radius: 3px; }
-            .grid-2 { display: flex; gap: 0; }
-            .grid-2 > div { width: 50%; }
-            .grid-3 { display: flex; gap: 0; }
-            .grid-3 > div { width: 33.33%; }
+            .badge-confidencial { background: #fef3c7; color: #b45309; }
+            .badge-sensible { background: #fee2e2; color: #b91c1c; }
             .grid-4 { display: flex; gap: 0; }
             .grid-4 > div { width: 25%; }
-            .spec-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; padding: 6px 8px; margin-top: 6px; font-size: 8px; }
+            .spec-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 3px; padding: 5px 7px; margin-top: 5px; font-size: 7.5px; }
             .spec-box strong { color: #0369a1; }
-            .asign-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 6px 8px; margin-top: 6px; font-size: 8px; }
+            .asign-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 3px; padding: 5px 7px; margin-top: 5px; font-size: 7.5px; }
             .asign-box strong { color: #15803d; }
-            .footer { margin-top: 10px; font-size: 7px; color: #888; }
         </style>';
 
         $total = $equipos->count();

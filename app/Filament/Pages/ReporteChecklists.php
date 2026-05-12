@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\ChecklistEjecucion;
 use App\Models\ChecklistPlantilla;
 use App\Models\Equipo;
+use App\Support\PdfBranding;
 use Filament\Facades\Filament;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -81,17 +82,16 @@ class ReporteChecklists extends Page implements HasForms
 
         $mpdf = new Mpdf([
             'format' => 'A4',
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 14,
+            'margin_right' => 14,
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        if ($tenant->logo_path) {
-            $logoPath = storage_path('app/'.$tenant->logo_path);
-            if (file_exists($logoPath)) {
-                $mpdf->imageVars['logo'] = file_get_contents($logoPath);
-            }
-        }
+        $hasLogo = PdfBranding::attachLogo($mpdf, $tenant);
 
-        $this->buildReport($mpdf, $tenant, $plantillas, $ejecuciones);
+        $this->buildReport($mpdf, $tenant, $plantillas, $ejecuciones, $hasLogo);
 
         $filename = 'reporte_checklists_'.now()->format('Ymd').'.pdf';
 
@@ -100,31 +100,14 @@ class ReporteChecklists extends Page implements HasForms
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReport(Mpdf $mpdf, $tenant, $plantillas, $ejecuciones): void
+    private function buildReport(Mpdf $mpdf, $tenant, $plantillas, $ejecuciones, bool $hasLogo = false): void
     {
-        $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/'.$tenant->logo_path))) {
-            $logoHtml = '<img src="var:logo" style="height:50px;margin-bottom:8px;" /><br>';
-        }
-
-        $style = '
+        $logoHtml = PdfBranding::logoHtml($hasLogo);
+        $style = PdfBranding::reportStyle($tenant).'
         <style>
-            body { font-family: Arial, sans-serif; font-size: 10px; color: #333; }
-            h1 { color: #4338ca; font-size: 16px; margin-bottom: 2px; }
-            h2 { font-size: 13px; margin-top: 20px; color: #333; }
-            h3 { font-size: 11px; margin-top: 12px; color: #555; }
-            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-            th, td { border: 1px solid #ddd; padding: 5px; text-align: left; }
-            th { background: #f3f4f6; font-weight: bold; }
-            .summary { margin-top: 12px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; }
-            .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: bold; }
-            .badge-ok { background: #d1fae5; color: #059669; }
-            .badge-warn { background: #fef3c7; color: #d97706; }
-            .badge-bad { background: #fee2e2; color: #dc2626; }
-            .ficha { border: 1px solid #ddd; border-radius: 4px; margin-top: 12px; }
-            .ficha-header { background: #f0f0ff; padding: 8px 10px; border-bottom: 1px solid #ddd; }
-            .ficha-body { padding: 10px; }
-            .footer { margin-top: 30px; font-size: 9px; color: #888; }
+            .badge-ok { background: #d1fae5; color: #047857; }
+            .badge-warn { background: #fef3c7; color: #b45309; }
+            .badge-bad { background: #fee2e2; color: #b91c1c; }
         </style>';
 
         $totalEjec = $ejecuciones->count();

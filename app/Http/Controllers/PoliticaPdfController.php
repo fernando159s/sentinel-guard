@@ -6,6 +6,7 @@ use App\Models\AceptacionPolitica;
 use App\Models\Empresa;
 use App\Models\Politica;
 use App\Models\User;
+use App\Support\PdfBranding;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Mpdf\Mpdf;
@@ -27,10 +28,10 @@ class PoliticaPdfController extends Controller
         $admin = $this->getAdminConFirma($politica->empresa_id);
 
         $mpdf = new Mpdf([
-            'margin_top' => 20,
-            'margin_bottom' => 20,
-            'margin_left' => 20,
-            'margin_right' => 20,
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 16,
+            'margin_right' => 16,
             'tempDir' => storage_path('app/temp'),
         ]);
 
@@ -168,10 +169,10 @@ class PoliticaPdfController extends Controller
         }
 
         $mpdf = new Mpdf([
-            'margin_top' => 20,
-            'margin_bottom' => 20,
-            'margin_left' => 20,
-            'margin_right' => 20,
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 16,
+            'margin_right' => 16,
             'tempDir' => storage_path('app/temp'),
         ]);
 
@@ -245,10 +246,10 @@ class PoliticaPdfController extends Controller
         }
 
         $mpdf = new Mpdf([
-            'margin_top' => 20,
-            'margin_bottom' => 20,
-            'margin_left' => 20,
-            'margin_right' => 20,
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 16,
+            'margin_right' => 16,
             'tempDir' => storage_path('app/temp'),
         ]);
 
@@ -325,41 +326,40 @@ class PoliticaPdfController extends Controller
         $porVersion = $aceptaciones->groupBy('version_aceptada');
 
         $mpdf = new Mpdf([
-            'margin_top' => 20,
-            'margin_bottom' => 20,
-            'margin_left' => 20,
-            'margin_right' => 20,
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 16,
+            'margin_right' => 16,
             'tempDir' => storage_path('app/temp'),
         ]);
 
         $hasLogo = $this->attachLogoToMpdf($mpdf, $empresa);
-        $primario = $empresa?->getPdfColorPrimario() ?? '#4f46e5';
-        $secundario = $empresa?->getPdfColorSecundario() ?? '#1e1b4b';
+        $c = PdfBranding::colors($empresa);
 
         $style = '
         <style>
-            body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; line-height: 1.5; }
-            .header { text-align: center; border-bottom: 2px solid '.$primario.'; padding-bottom: 12px; margin-bottom: 18px; }
-            .header img.brand-logo { max-height: 50px; max-width: 180px; margin-bottom: 6px; }
-            .header h1 { font-size: 18px; margin: 0; color: '.$secundario.'; }
-            .header p { font-size: 11px; color: #6b7280; margin: 4px 0 0; }
-            .meta { background: #f3f4f6; padding: 10px 15px; border-radius: 6px; margin-bottom: 18px; font-size: 10px; }
-            .meta td { padding: 2px 0; }
-            .meta .label { color: #6b7280; width: 130px; }
+            body { font-family: Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.35; }
+            .header { text-align: center; border-bottom: 1.5px solid '.$c['primario'].'; padding-bottom: 8px; margin-bottom: 12px; }
+            .header img.brand-logo { max-height: 40px; max-width: 160px; margin-bottom: 4px; }
+            .header h1 { font-size: 14px; margin: 0; color: '.$c['secundario'].'; }
+            .header p { font-size: 9.5px; color: #6b7280; margin: 2px 0 0; }
+            .meta { background: #f3f4f6; padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; font-size: 9px; }
+            .meta td { padding: 1px 0; }
+            .meta .label { color: #6b7280; width: 120px; }
             .meta .value { font-weight: bold; }
-            .version-title { font-size: 13px; font-weight: bold; color: '.$secundario.'; margin: 18px 0 8px; padding: 6px 10px; background: #eef2ff; border-radius: 4px; }
-            .firma-row { border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; }
+            .version-title { font-size: 11px; font-weight: bold; color: '.$c['secundario'].'; margin: 10px 0 4px; padding: 4px 8px; background: '.$c['primario'].'14; border-radius: 3px; }
+            .firma-row { border: 1px solid #e5e7eb; border-radius: 4px; padding: 6px 10px; margin-bottom: 5px; }
             .firma-row table { width: 100%; }
-            .firma-img { max-height: 45px; max-width: 150px; }
-            .firma-name { font-weight: bold; font-size: 11px; }
-            .firma-detail { font-size: 9px; color: #6b7280; }
-            .summary { font-size: 10px; color: #6b7280; margin-bottom: 12px; }
-            .admin-box { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-bottom: 18px; text-align: center; }
-            .admin-box h4 { font-size: 10px; color: #6b7280; text-transform: uppercase; margin: 0 0 8px; }
-            .admin-img { max-height: 60px; max-width: 200px; margin-bottom: 6px; }
-            .admin-name { font-weight: bold; font-size: 12px; border-top: 1px solid #1a1a1a; padding-top: 5px; margin-top: 5px; display: inline-block; min-width: 160px; }
-            .admin-detail { font-size: 9px; color: #6b7280; }
-            .footer { margin-top: 20px; border-top: 1px solid #d1d5db; padding-top: 8px; font-size: 8px; color: #9ca3af; text-align: center; }
+            .firma-img { max-height: 38px; max-width: 130px; }
+            .firma-name { font-weight: bold; font-size: 10px; }
+            .firma-detail { font-size: 8px; color: #6b7280; }
+            .summary { font-size: 9px; color: #6b7280; margin-bottom: 8px; }
+            .admin-box { border: 1px solid #d1d5db; border-radius: 5px; padding: 8px; margin-bottom: 12px; text-align: center; }
+            .admin-box h4 { font-size: 8.5px; color: #6b7280; text-transform: uppercase; margin: 0 0 5px; letter-spacing: 0.3px; }
+            .admin-img { max-height: 50px; max-width: 170px; margin-bottom: 4px; }
+            .admin-name { font-weight: bold; font-size: 10.5px; border-top: 1px solid #1f2937; padding-top: 3px; margin-top: 3px; display: inline-block; min-width: 140px; }
+            .admin-detail { font-size: 8px; color: #6b7280; }
+            .footer { margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 4px; font-size: 7px; color: #9ca3af; text-align: center; }
         </style>';
 
         // ═══ PAGE 1: Header + Admin signature + Summary table ═══
@@ -463,52 +463,39 @@ class PoliticaPdfController extends Controller
 
     private function buildStyle(?Empresa $empresa = null): string
     {
-        $primario = $empresa?->getPdfColorPrimario() ?? '#4f46e5';
-        $secundario = $empresa?->getPdfColorSecundario() ?? '#1e1b4b';
+        $c = PdfBranding::colors($empresa);
 
         return '
         <style>
-            body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a1a; line-height: 1.6; }
-            .header { text-align: center; border-bottom: 2px solid '.$primario.'; padding-bottom: 15px; margin-bottom: 20px; }
-            .header img.brand-logo { max-height: 60px; max-width: 200px; margin-bottom: 8px; }
-            .header h1 { font-size: 18px; margin: 0; color: '.$secundario.'; }
-            .header p { font-size: 11px; color: #6b7280; margin: 4px 0 0; }
-            .meta { background: #f3f4f6; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; font-size: 11px; }
+            body { font-family: Arial, sans-serif; font-size: 10.5px; color: #1f2937; line-height: 1.4; }
+            .header { text-align: center; border-bottom: 1.5px solid '.$c['primario'].'; padding-bottom: 8px; margin-bottom: 12px; }
+            .header img.brand-logo { max-height: 45px; max-width: 160px; margin-bottom: 4px; }
+            .header h1 { font-size: 15px; margin: 0; color: '.$c['secundario'].'; }
+            .header p { font-size: 9.5px; color: #6b7280; margin: 2px 0 0; }
+            .meta { background: #f3f4f6; padding: 6px 10px; border-radius: 4px; margin-bottom: 12px; font-size: 9.5px; }
             .meta table { width: 100%; }
-            .meta td { padding: 3px 0; }
-            .meta .label { color: #6b7280; width: 140px; }
+            .meta td { padding: 1px 0; }
+            .meta .label { color: #6b7280; width: 130px; }
             .meta .value { font-weight: bold; }
-            .content { margin-top: 20px; }
-            .content h2 { font-size: 16px; color: '.$secundario.'; }
-            .content h3 { font-size: 14px; color: #374151; }
-            .content ul { padding-left: 20px; }
-            .content li { margin-bottom: 4px; }
-            .signatures { margin-top: 40px; }
-            .sig-box { border: 1px solid #d1d5db; border-radius: 8px; padding: 20px; margin-bottom: 15px; text-align: center; }
-            .sig-box h4 { font-size: 12px; color: #6b7280; text-transform: uppercase; margin: 0 0 15px; }
-            .sig-img { max-width: 280px; max-height: 120px; margin: 0 auto 10px; display: block; }
-            .sig-name { font-weight: bold; font-size: 13px; border-top: 1px solid #1a1a1a; padding-top: 8px; margin-top: 8px; display: inline-block; min-width: 200px; }
-            .sig-detail { font-size: 10px; color: #6b7280; }
-            .sig-missing { background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 8px; padding: 20px; text-align: center; color: #dc2626; font-size: 11px; }
-            .footer { margin-top: 30px; border-top: 1px solid #d1d5db; padding-top: 10px; font-size: 9px; color: #9ca3af; text-align: center; }
+            .content { margin-top: 12px; }
+            .content h2 { font-size: 13px; color: '.$c['secundario'].'; margin: 10px 0 4px; }
+            .content h3 { font-size: 11.5px; color: #374151; margin: 8px 0 3px; }
+            .content ul { padding-left: 16px; }
+            .content li { margin-bottom: 2px; }
+            .signatures { margin-top: 20px; }
+            .sig-box { border: 1px solid #d1d5db; border-radius: 5px; padding: 10px; margin-bottom: 8px; text-align: center; }
+            .sig-box h4 { font-size: 9.5px; color: #6b7280; text-transform: uppercase; margin: 0 0 8px; letter-spacing: 0.3px; }
+            .sig-img { max-width: 200px; max-height: 80px; margin: 0 auto 4px; display: block; }
+            .sig-name { font-weight: bold; font-size: 10.5px; border-top: 1px solid #1f2937; padding-top: 4px; margin-top: 4px; display: inline-block; min-width: 160px; }
+            .sig-detail { font-size: 8.5px; color: #6b7280; }
+            .sig-missing { background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 5px; padding: 10px; text-align: center; color: #b91c1c; font-size: 9.5px; }
+            .footer { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 5px; font-size: 7.5px; color: #9ca3af; text-align: center; }
         </style>';
     }
 
     private function attachLogoToMpdf(Mpdf $mpdf, ?Empresa $empresa): bool
     {
-        $logoPath = $empresa?->getPdfLogoPath();
-        if (! $logoPath) {
-            return false;
-        }
-
-        $disk = \Illuminate\Support\Facades\Storage::disk('logos');
-        if (! $disk->exists($logoPath)) {
-            return false;
-        }
-
-        $mpdf->imageVars['logo'] = $disk->get($logoPath);
-
-        return true;
+        return PdfBranding::attachLogo($mpdf, $empresa);
     }
 
     private function buildLogoHtml(bool $hasLogo): string

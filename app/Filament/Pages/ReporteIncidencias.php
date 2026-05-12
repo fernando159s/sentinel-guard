@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Registro;
+use App\Support\PdfBranding;
 use Filament\Facades\Filament;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -67,17 +68,16 @@ class ReporteIncidencias extends Page implements HasForms
 
         $mpdf = new Mpdf([
             'format' => 'A4',
+            'margin_top' => 14,
+            'margin_bottom' => 14,
+            'margin_left' => 14,
+            'margin_right' => 14,
             'tempDir' => storage_path('app/temp'),
         ]);
 
-        if ($tenant->logo_path) {
-            $logoPath = storage_path('app/'.$tenant->logo_path);
-            if (file_exists($logoPath)) {
-                $mpdf->imageVars['logo'] = file_get_contents($logoPath);
-            }
-        }
+        $hasLogo = PdfBranding::attachLogo($mpdf, $tenant);
 
-        $this->buildReportPages($mpdf, $tenant, $incidencias, $resoluciones);
+        $this->buildReportPages($mpdf, $tenant, $incidencias, $resoluciones, $hasLogo);
 
         $filename = 'reporte_incidencias_'.now()->format('Ymd').'.pdf';
 
@@ -86,40 +86,10 @@ class ReporteIncidencias extends Page implements HasForms
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
-    private function buildReportPages(Mpdf $mpdf, $tenant, $incidencias, $resoluciones): void
+    private function buildReportPages(Mpdf $mpdf, $tenant, $incidencias, $resoluciones, bool $hasLogo = false): void
     {
-        $logoHtml = '';
-        if ($tenant->logo_path && file_exists(storage_path('app/'.$tenant->logo_path))) {
-            $logoHtml = '<img src="var:logo" style="height:50px;margin-bottom:8px;" /><br>';
-        }
-
-        $style = '
-        <style>
-            body { font-family: Arial, sans-serif; font-size: 10px; color: #333; }
-            h1 { color: #4338ca; font-size: 16px; margin-bottom: 2px; }
-            h2 { font-size: 13px; margin-top: 20px; color: #333; }
-            h3 { font-size: 12px; margin-top: 10px; color: #555; }
-            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-            th, td { border: 1px solid #ddd; padding: 5px; text-align: left; }
-            th { background: #f3f4f6; font-weight: bold; }
-            .summary { margin-top: 15px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; }
-            .ficha { border: 1px solid #ddd; border-radius: 4px; margin-top: 12px; }
-            .ficha-header { background: #f0f0ff; padding: 10px 12px; border-bottom: 1px solid #ddd; }
-            .ficha-body { padding: 12px; }
-            .field { margin-bottom: 10px; }
-            .field-label { font-size: 9px; font-weight: bold; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-            .field-value { font-size: 11px; color: #222; }
-            .field-value-long { font-size: 10px; color: #222; padding: 6px 8px; background: #fafafa; border: 1px solid #eee; border-radius: 3px; }
-            .grid-2 { display: flex; gap: 0; }
-            .grid-2 > div { width: 50%; }
-            .grid-3 { display: flex; gap: 0; }
-            .grid-3 > div { width: 33.33%; }
-            .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: bold; }
-            .badge-alta { background: #fee2e2; color: #dc2626; }
-            .badge-media { background: #fef3c7; color: #d97706; }
-            .badge-baja { background: #d1fae5; color: #059669; }
-            .footer { margin-top: 30px; font-size: 9px; color: #888; }
-        </style>';
+        $logoHtml = PdfBranding::logoHtml($hasLogo);
+        $style = PdfBranding::reportStyle($tenant);
 
         // ═══ PAGE 1: Resumen general ═══
         $incTable = '';
