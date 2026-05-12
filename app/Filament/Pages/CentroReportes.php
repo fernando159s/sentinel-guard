@@ -356,7 +356,6 @@ class CentroReportes extends Page
             </table>');
 
         // ═══ CAPACITACIONES ═══
-        $mpdf->AddPage();
         $capacitaciones = Capacitacion::withoutGlobalScopes()->where('empresa_id', $tenant->id)->with('asistencias')->orderBy('fecha', 'desc')->get();
         $capRows = '';
         foreach ($capacitaciones as $c) {
@@ -380,7 +379,6 @@ class CentroReportes extends Page
             </table>');
 
         // ═══ INVENTARIO ═══
-        $mpdf->AddPage();
         $equipos = Equipo::withoutGlobalScopes()->where('empresa_id', $tenant->id)->orderBy('codigo_interno')->get();
         $eqRows = '';
         foreach ($equipos as $eq) {
@@ -403,7 +401,6 @@ class CentroReportes extends Page
             </table>');
 
         // ═══ MOVIMIENTOS ═══
-        $mpdf->AddPage();
         $movimientos = EquipoAsignacion::whereIn('equipo_id', $equipoIds)->with(['equipo', 'user'])->orderBy('fecha_inicio', 'desc')->get();
         $movRows = '';
         foreach ($movimientos as $m) {
@@ -445,7 +442,6 @@ class CentroReportes extends Page
             </table>');
 
         // ═══ CHECKLISTS ═══
-        $mpdf->AddPage();
         $ejecuciones = ChecklistEjecucion::whereIn('equipo_id', $equipoIds)->with(['plantilla', 'equipo', 'ejecutor'])->orderBy('fecha_ejecucion', 'desc')->get();
         $ejecRows = '';
         foreach ($ejecuciones as $e) {
@@ -469,7 +465,6 @@ class CentroReportes extends Page
             </table>');
 
         // ═══ POLITICAS / NDAs ═══
-        $mpdf->AddPage();
         $politicas = Politica::withoutGlobalScopes()->where('empresa_id', $tenant->id)->withCount(['aceptaciones'])->get();
         $polRows = '';
         foreach ($politicas as $p) {
