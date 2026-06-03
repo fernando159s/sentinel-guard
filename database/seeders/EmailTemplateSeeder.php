@@ -149,6 +149,34 @@ HTML,
 <p><a href="{{enlace_plataforma}}">Ir a aceptar</a></p>
 HTML,
             ],
+            [
+                'slug' => 'activo-por-vencer',
+                'nombre' => 'Activo digital por vencer',
+                'asunto' => 'Activo digital por vencer en {{dias}} dias: {{nombre_activo}}',
+                'variables_disponibles' => ['nombre', 'nombre_activo', 'codigo', 'proveedor', 'fecha_vencimiento', 'dias', 'empresa'],
+                'contenido' => <<<'HTML'
+<p>Hola <strong>{{nombre}}</strong>,</p>
+<p>El siguiente activo digital esta por vencer y requiere renovacion:</p>
+<p><strong>{{nombre_activo}}</strong> ({{codigo}})<br>
+<strong>Proveedor:</strong> {{proveedor}}<br>
+<strong>Vence:</strong> {{fecha_vencimiento}} (en {{dias}} dias)</p>
+<p>Por favor coordina la renovacion o el pago para evitar la suspension del servicio.</p>
+HTML,
+            ],
+            [
+                'slug' => 'activo-vencido',
+                'nombre' => 'Activo digital vencido',
+                'asunto' => 'Activo digital VENCIDO: {{nombre_activo}}',
+                'variables_disponibles' => ['nombre', 'nombre_activo', 'codigo', 'proveedor', 'fecha_vencimiento', 'empresa'],
+                'contenido' => <<<'HTML'
+<p>Hola <strong>{{nombre}}</strong>,</p>
+<p>El siguiente activo digital ha <strong>vencido</strong>:</p>
+<p><strong>{{nombre_activo}}</strong> ({{codigo}})<br>
+<strong>Proveedor:</strong> {{proveedor}}<br>
+<strong>Vencio el:</strong> {{fecha_vencimiento}}</p>
+<p>El estado de la cuenta se marco como <strong>Vencido</strong>. Regulariza el pago a la brevedad.</p>
+HTML,
+            ],
         ];
     }
 }
