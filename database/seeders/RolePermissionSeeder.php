@@ -35,6 +35,8 @@ class RolePermissionSeeder extends Seeder
         Permission::firstOrCreate(['name' => 'gestionar_empresa_propia']);
         Permission::firstOrCreate(['name' => 'ver_notas_internas']);
         Permission::firstOrCreate(['name' => 'asignar_tickets']);
+        // Activos digitales (EP-19): acceso a credenciales sensibles
+        Permission::firstOrCreate(['name' => 'ver_credenciales']);
 
         // Roles
         $superAdmin = Role::firstOrCreate(['name' => 'super_admin']);
@@ -47,6 +49,7 @@ class RolePermissionSeeder extends Seeder
             'ver_tickets', 'crear_tickets',
             'ver_exportar', 'crear_exportar',
             'gestionar_empresa_propia',
+            'ver_credenciales',
         ]);
 
         $usuario = Role::firstOrCreate(['name' => 'usuario']);

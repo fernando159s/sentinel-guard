@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ActivosDigitales;
 use App\Filament\Resources\ActivosDigitales\Pages\CreateActivoDigital;
 use App\Filament\Resources\ActivosDigitales\Pages\EditActivoDigital;
 use App\Filament\Resources\ActivosDigitales\Pages\ListActivosDigitales;
+use App\Filament\Resources\ActivosDigitales\RelationManagers;
 use App\Filament\Resources\ActivosDigitales\Schemas\ActivoDigitalForm;
 use App\Filament\Resources\ActivosDigitales\Tables\ActivosDigitalesTable;
 use App\Models\ActivoDigital;
@@ -49,7 +50,9 @@ class ActivoDigitalResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            RelationManagers\CredencialesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
