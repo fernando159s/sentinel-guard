@@ -77,6 +77,7 @@ class ActivoDigitalResource extends Resource
     {
         return [
             RelationManagers\CredencialesRelationManager::class,
+            RelationManagers\PagosRelationManager::class,
         ];
     }
 
