@@ -56,9 +56,13 @@ class ActivosDigitalesTable
                     ->sortable()
                     ->badge()
                     ->color(fn ($record): string => $record->estaVencido() ? 'danger' : ($record->porVencer(30) ? 'warning' : 'gray')),
-                TextColumn::make('responsable.name')
-                    ->label('Responsable')
+                TextColumn::make('responsables.name')
+                    ->label('Responsables')
+                    ->badge()
+                    ->separator(',')
                     ->placeholder('Sin asignar')
+                    ->limitList(2)
+                    ->expandableLimitedList()
                     ->toggleable(),
                 TextColumn::make('estado')
                     ->label('Estado')

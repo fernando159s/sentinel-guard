@@ -35,7 +35,32 @@ class ActivoDigitalResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false;
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        // Admins gestionan el modulo; un usuario no-admin entra si es
+        // responsable de al menos una cuenta (vera solo las suyas).
+        if ($user->hasRole(['super_admin', 'admin_empresa'])) {
+            return true;
+        }
+
+        return ActivoDigital::whereHas('responsables', fn (Builder $q) => $q->whereKey($user->id))->exists();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        // Los responsables no-admin solo ven las cuentas a su cargo.
+        if ($user && ! $user->hasRole(['super_admin', 'admin_empresa'])) {
+            $query->whereHas('responsables', fn (Builder $q) => $q->whereKey($user->id));
+        }
+
+        return $query;
     }
 
     public static function form(Schema $schema): Schema

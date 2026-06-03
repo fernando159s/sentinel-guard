@@ -34,7 +34,15 @@ class CredencialesRelationManager extends RelationManager
             return false;
         }
 
-        return $user->can('ver_credenciales') || $ownerRecord->responsable_id === $user->id;
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        if ($user->hasRole('admin_empresa') && $ownerRecord->empresa_id === $user->empresa_id) {
+            return true;
+        }
+
+        return $ownerRecord->esResponsable($user);
     }
 
     public function form(Schema $schema): Schema

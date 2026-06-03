@@ -5,7 +5,6 @@ namespace App\Filament\Resources\ActivosDigitales\Schemas;
 use App\Enums\EstadoActivoDigital;
 use App\Enums\ModalidadPago;
 use App\Enums\TipoActivoDigital;
-use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -117,11 +116,15 @@ class ActivoDigitalForm
                     ->description('Responsable, estado y sensibilidad de la informacion.')
                     ->columns(3)
                     ->schema([
-                        Select::make('responsable_id')
-                            ->label('Responsable')
-                            ->options(fn (): array => User::query()->orderBy('name')->pluck('name', 'id')->all())
+                        Select::make('responsables')
+                            ->label('Responsables')
+                            ->relationship('responsables', 'name')
+                            ->multiple()
+                            ->preload()
                             ->searchable()
-                            ->placeholder('Quien gestiona esta cuenta'),
+                            ->helperText('Las personas que pueden ver las credenciales de esta cuenta')
+                            ->disabled(fn (): bool => ! (auth()->user()?->hasRole(['super_admin', 'admin_empresa']) ?? false))
+                            ->columnSpanFull(),
                         Select::make('estado')
                             ->label('Estado')
                             ->options(EstadoActivoDigital::options())
