@@ -10,6 +10,8 @@ Artisan::command('inspire', function () {
 
 Schedule::command('backups:check-alarms')->dailyAt('08:00');
 
+Schedule::command('activos:check-vencimientos')->dailyAt('08:15');
+
 Schedule::command('queue:work --stop-when-empty --max-time=55')
     ->everyMinute()
     ->withoutOverlapping();
