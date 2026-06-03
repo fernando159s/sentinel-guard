@@ -8,6 +8,7 @@ use App\Enums\TipoActivoDigital;
 use App\Models\Concerns\BelongsToEmpresa;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -85,6 +86,25 @@ class ActivoDigital extends Model
     public function responsable(): BelongsTo
     {
         return $this->belongsTo(User::class, 'responsable_id');
+    }
+
+    /**
+     * Lista de responsables con acceso a las credenciales de esta cuenta.
+     */
+    public function responsables(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'activo_digital_responsables')
+            ->withTimestamps();
+    }
+
+    /** ¿El usuario indicado es responsable de esta cuenta? */
+    public function esResponsable(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $this->responsables()->whereKey($user->id)->exists();
     }
 
     public function equipo(): BelongsTo
