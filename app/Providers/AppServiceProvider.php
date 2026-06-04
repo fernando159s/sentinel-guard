@@ -2,11 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\ActivoDigital;
 use App\Models\Empresa;
+use App\Models\Politica;
 use App\Models\Registro;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Observers\AuditableObserver;
+use App\Observers\PoliticaObserver;
+use App\Observers\RegistroObserver;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,10 +34,11 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Registro::observe(AuditableObserver::class);
-        Registro::observe(\App\Observers\RegistroObserver::class);
+        Registro::observe(RegistroObserver::class);
         Ticket::observe(AuditableObserver::class);
         Empresa::observe(AuditableObserver::class);
         User::observe(AuditableObserver::class);
-        \App\Models\Politica::observe(\App\Observers\PoliticaObserver::class);
+        ActivoDigital::observe(AuditableObserver::class);
+        Politica::observe(PoliticaObserver::class);
     }
 }
