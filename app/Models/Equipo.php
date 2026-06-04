@@ -99,6 +99,11 @@ class Equipo extends Model
         return $this->hasMany(BackupProgramacion::class, 'equipo_id');
     }
 
+    public function activosDigitales(): HasMany
+    {
+        return $this->hasMany(ActivoDigital::class, 'equipo_id');
+    }
+
     public function esTecnologico(): bool
     {
         return $this->categoria === 'tecnologico';

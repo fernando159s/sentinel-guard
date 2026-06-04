@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Equipos;
 use App\Filament\Resources\Equipos\Pages\CreateEquipo;
 use App\Filament\Resources\Equipos\Pages\EditEquipo;
 use App\Filament\Resources\Equipos\Pages\ListEquipos;
+use App\Filament\Resources\Equipos\RelationManagers;
 use App\Filament\Resources\Equipos\Schemas\EquipoForm;
 use App\Filament\Resources\Equipos\Tables\EquiposTable;
 use App\Models\Equipo;
@@ -47,7 +48,9 @@ class EquipoResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            RelationManagers\ActivosDigitalesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

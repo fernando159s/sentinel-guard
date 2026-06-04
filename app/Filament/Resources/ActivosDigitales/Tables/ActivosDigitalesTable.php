@@ -69,6 +69,15 @@ class ActivosDigitalesTable
                     ->badge()
                     ->color(fn (EstadoActivoDigital $state): string => $state->color())
                     ->formatStateUsing(fn (EstadoActivoDigital $state): string => $state->label()),
+                TextColumn::make('vinculo')
+                    ->label('Vinculado a')
+                    ->state(fn ($record): string => collect([
+                        $record->registro?->numero_registro,
+                        $record->equipo?->codigo_interno,
+                    ])->filter()->implode(' · ') ?: '—')
+                    ->badge()
+                    ->color('gray')
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Registrado')
                     ->dateTime('d/m/Y')
@@ -93,6 +102,11 @@ class ActivosDigitalesTable
                         ->whereIn('modalidad_pago', [ModalidadPago::Mensual->value, ModalidadPago::Anual->value])
                         ->whereNotNull('fecha_vencimiento')
                         ->whereDate('fecha_vencimiento', '<=', now()->addDays(30))),
+                Filter::make('vinculados')
+                    ->label('Solo vinculados a PSC/equipo')
+                    ->toggle()
+                    ->query(fn (Builder $query): Builder => $query
+                        ->where(fn (Builder $q) => $q->whereNotNull('registro_id')->orWhereNotNull('equipo_id'))),
                 TrashedFilter::make(),
             ])
             ->recordActions([
