@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\ActivoDigital;
 use App\Models\Empresa;
+use App\Models\Equipo;
 use App\Models\Politica;
 use App\Models\Registro;
 use App\Models\Ticket;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         Empresa::observe(AuditableObserver::class);
         User::observe(AuditableObserver::class);
         ActivoDigital::observe(AuditableObserver::class);
+        Equipo::observe(AuditableObserver::class);
         Politica::observe(PoliticaObserver::class);
     }
 }
