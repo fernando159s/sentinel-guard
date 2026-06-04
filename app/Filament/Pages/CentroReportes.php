@@ -93,6 +93,14 @@ class CentroReportes extends Page
                 'roles' => ['super_admin', 'admin_empresa'],
             ],
             [
+                'title' => 'Activos Digitales',
+                'desc' => 'Inventario de cuentas digitales y reporte de vencimientos (sin credenciales).',
+                'icon' => 'heroicon-o-globe-alt',
+                'color' => '#0d9488',
+                'url' => ReporteActivosDigitales::getUrl(),
+                'roles' => ['super_admin', 'admin_empresa'],
+            ],
+            [
                 'title' => 'Documentos Firmados',
                 'desc' => 'Un PDF por documento (NDA o politica) con la firma mas reciente de cada colaborador.',
                 'icon' => 'heroicon-o-document-duplicate',
