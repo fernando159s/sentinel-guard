@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToEmpresa;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Registro extends Model
@@ -47,5 +48,10 @@ class Registro extends Model
     public function equipo(): BelongsTo
     {
         return $this->belongsTo(Equipo::class, 'equipo_id');
+    }
+
+    public function activosDigitales(): HasMany
+    {
+        return $this->hasMany(ActivoDigital::class, 'registro_id');
     }
 }

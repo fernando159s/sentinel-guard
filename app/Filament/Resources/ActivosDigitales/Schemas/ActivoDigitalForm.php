@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ActivosDigitales\Schemas;
 use App\Enums\EstadoActivoDigital;
 use App\Enums\ModalidadPago;
 use App\Enums\TipoActivoDigital;
+use App\Models\Registro;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 class ActivoDigitalForm
 {
@@ -143,6 +145,34 @@ class ActivoDigitalForm
                             ->required()
                             ->native(false),
                     ]),
+
+                Section::make('Vinculacion (PSC / Equipos)')
+                    ->icon('heroicon-o-link')
+                    ->description('Relaciona opcionalmente esta cuenta con un registro de seguridad o un equipo.')
+                    ->columns(2)
+                    ->schema([
+                        Select::make('registro_id')
+                            ->label('Registro de seguridad')
+                            ->relationship(
+                                'registro',
+                                'numero_registro',
+                                fn (Builder $query) => $query->whereIn('tipo_formato', ['F03', 'F07', 'F13']),
+                            )
+                            ->getOptionLabelFromRecordUsing(fn (Registro $r): string => "{$r->numero_registro} ({$r->tipo_formato})")
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Sin vincular')
+                            ->helperText('F03 prestadores, F07 inventario, F13 destruccion/baja'),
+                        Select::make('equipo_id')
+                            ->label('Equipo')
+                            ->relationship('equipo', 'codigo_interno')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Sin vincular')
+                            ->helperText('Equipo fisico asociado a esta cuenta'),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
 
                 Section::make('Observaciones')
                     ->schema([
