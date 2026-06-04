@@ -32,6 +32,7 @@ class DemoDataSeeder extends Seeder
         $this->seedTickets();
         $this->seedPoliticas();
         $this->seedChecklists();
+        $this->call(ActivoDigitalDemoSeeder::class);
 
         $this->command->info('Demo data seeded successfully!');
     }
