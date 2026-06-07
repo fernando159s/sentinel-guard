@@ -139,7 +139,7 @@ class DemoCorpSeeder extends Seeder
 
     private function seedPoliticas(): void
     {
-        $politicas = (new PoliticaSeeder)->getPoliticas();
+        $politicas = (new PoliticaSeeder)->getPoliticas($this->empresa);
         $firmantes = User::firmantes()->where('empresa_id', $this->empresa->id)->where('estado', 'activo')->get();
 
         $count = 0;

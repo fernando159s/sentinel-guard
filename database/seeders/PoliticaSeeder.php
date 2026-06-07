@@ -18,9 +18,9 @@ class PoliticaSeeder extends Seeder
             return;
         }
 
-        $politicas = $this->getPoliticas();
-
         foreach ($empresas as $empresa) {
+            $politicas = $this->getPoliticas($empresa);
+
             foreach ($politicas as $data) {
                 Politica::firstOrCreate(
                     [
@@ -34,12 +34,12 @@ class PoliticaSeeder extends Seeder
             $this->command->info("  + " . count($politicas) . " politicas creadas para: {$empresa->razon_social}");
         }
 
-        $this->command->info('PoliticaSeeder completado: ' . count($politicas) . ' politicas por empresa.');
+        $this->command->info('PoliticaSeeder completado.');
     }
 
-    public function getPoliticas(): array
+    public function getPoliticas(?Empresa $empresa = null): array
     {
-        return [
+        $politicas = [
             // ──────────────────────────────────────────────────────────
             // 1. POLITICA DE LINEA BASE DE SEGURIDAD (SGSI-PL-0038)
             // ──────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ class PoliticaSeeder extends Seeder
                 'contenido' => '<h2>Politica de Linea Base de Seguridad</h2><p><strong>Codigo:</strong> SGSI-PL-0038 | <strong>Version:</strong> 1 | <strong>Fecha:</strong> 10/01/2026</p>'
                     . '<h3>1. Introduccion</h3>'
                     . '<p>El estudio de abogados gestiona informacion sensible y confidencial que demanda una proteccion solida frente a amenazas ciberneticas. En este contexto, la politica de ciberseguridad constituye un pilar esencial para asegurar que los sistemas, redes, dispositivos y datos del estudio operen bajo estandares elevados de seguridad. El presente documento define medidas tecnicas, procedimientos y buenas practicas que deben adoptarse para reducir el riesgo de accesos no autorizados, perdida de informacion y otras amenazas que puedan afectar la integridad operativa del estudio.</p>'
-                    . '<p>En el Estudio de Abogados Palacios, la gestion documental se soporta en un Servidor Local para edicion y administracion de documentos, por lo que la politica prioriza la seguridad de accesos, permisos, registros de auditoria y continuidad operativa en esta infraestructura.</p>'
+                    . '<p>En {{razon_social}}, la gestion documental se soporta en un Servidor Local para edicion y administracion de documentos, por lo que la politica prioriza la seguridad de accesos, permisos, registros de auditoria y continuidad operativa en esta infraestructura.</p>'
                     . '<h3>2. Objetivo</h3>'
                     . '<p>Proteger los sistemas y datos criticos del estudio mediante la aplicacion de medidas tecnicas y organizativas minimas, tanto a nivel de hardware como de software. Garantizar que los equipos y aplicaciones utilizados se mantengan actualizados y operen con un desempeno adecuado. Promover la vida util del hardware, asegurando que los dispositivos puedan soportar futuras actualizaciones.</p>'
                     . '<h3>3. Alcance</h3>'
@@ -138,7 +138,7 @@ class PoliticaSeeder extends Seeder
                     . '<li>Gestor de correo interno para contacto frecuente entre personal y con personal externo.</li>'
                     . '<li>Canales adicionales: Software interno, Cartas circulares, Reuniones.</li></ul>'
                     . '<h3>5. Comunicacion Externa</h3>'
-                    . '<ul><li>Correo electronico: Cada cliente posee el correo del personal asignado. Existe correo generico (info@estudiopalacios.com.pe).</li></ul>',
+                    . '<ul><li>Correo electronico: Cada cliente posee el correo del personal asignado. Existe correo generico ({{email}}).</li></ul>',
                 'version' => '1.0',
                 'obligatoria' => false,
                 'activa' => true,
@@ -285,7 +285,7 @@ class PoliticaSeeder extends Seeder
                 'titulo' => 'Procedimiento de Gestion de Riesgos y Oportunidades',
                 'contenido' => '<h2>Procedimiento de Gestion de Riesgos y Oportunidades</h2><p><strong>Codigo:</strong> SGSI-PR-04 | <strong>Version:</strong> 02 | <strong>Fecha:</strong> 06.01.2025</p>'
                     . '<h3>1. Objetivo</h3>'
-                    . '<p>Dotar al Estudio Palacios Abogados de una sistematica de gestion de riesgos y oportunidades para asegurar que el SGSI pueda lograr sus resultados previstos, aumentar los efectos deseables, prevenir o reducir efectos indeseados, lograr la mejora continua y evaluar la eficacia de las acciones.</p>'
+                    . '<p>Dotar a {{razon_social}} de una sistematica de gestion de riesgos y oportunidades para asegurar que el SGSI pueda lograr sus resultados previstos, aumentar los efectos deseables, prevenir o reducir efectos indeseados, lograr la mejora continua y evaluar la eficacia de las acciones.</p>'
                     . '<h3>2. Alcance</h3>'
                     . '<p>Toda la organizacion. Determina las cuestiones externas e internas pertinentes para su proposito y direccion estrategica.</p>'
                     . '<h3>3. Proceso</h3>'
@@ -465,13 +465,13 @@ class PoliticaSeeder extends Seeder
             [
                 'titulo' => 'Acuerdo de Confidencialidad (NDA)',
                 'contenido' => "## Acuerdo de Confidencialidad y No Divulgacion\n\n"
-                    . "**ESTUDIO PALACIOS ABOGADOS S.A.C.**\n\n"
+                    . "**{{razon_social_upper}}**\n\n"
                     . "Yo, **{nombre_completo}**, identificado(a) con DNI N° **{dni}**, domiciliado(a) en **{direccion}**, "
-                    . "telefono **{telefono}**, que ocupo el puesto de **{puesto}** en el Estudio Palacios Abogados S.A.C., "
+                    . "telefono **{telefono}**, que ocupo el puesto de **{puesto}** en {{razon_social}}, "
                     . "declaro y me comprometo a lo siguiente:\n\n"
                     . "### 1. Objeto del Acuerdo\n"
                     . "El presente acuerdo tiene por objeto proteger la informacion confidencial a la que tenga acceso "
-                    . "en el ejercicio de mis funciones dentro del Estudio Palacios Abogados S.A.C.\n\n"
+                    . "en el ejercicio de mis funciones dentro de {{razon_social}}\n\n"
                     . "### 2. Definicion de Informacion Confidencial\n"
                     . "Se considera informacion confidencial toda aquella informacion, sea oral, escrita, electronica "
                     . "o en cualquier otro formato, que incluya pero no se limite a:\n"
@@ -571,11 +571,11 @@ class PoliticaSeeder extends Seeder
                 'titulo' => 'Manual del Sistema de Gestion de Seguridad de la Informacion',
                 'contenido' => '<h2>Manual del Sistema de Gestion de Seguridad de la Informacion</h2><p><strong>Codigo:</strong> SGSI-MA-01 | <strong>Version:</strong> 02 | <strong>Fecha:</strong> 06.01.2025</p>'
                     . '<h3>1. Objetivo</h3>'
-                    . '<p>Establecer, implementar, mantener y mejorar continuamente el Sistema de Gestion de Seguridad de la Informacion (SGSI) del Estudio Palacios Abogados S.A.C., asegurando la confidencialidad, integridad y disponibilidad de la informacion.</p>'
+                    . '<p>Establecer, implementar, mantener y mejorar continuamente el Sistema de Gestion de Seguridad de la Informacion (SGSI) de {{razon_social}}, asegurando la confidencialidad, integridad y disponibilidad de la informacion.</p>'
                     . '<h3>2. Alcance</h3>'
-                    . '<p>El SGSI aplica a todos los procesos, areas y personal del Estudio Palacios Abogados S.A.C., incluyendo la informacion en formato fisico y digital, los sistemas de informacion, la infraestructura tecnologica y las comunicaciones.</p>'
+                    . '<p>El SGSI aplica a todos los procesos, areas y personal de {{razon_social}}, incluyendo la informacion en formato fisico y digital, los sistemas de informacion, la infraestructura tecnologica y las comunicaciones.</p>'
                     . '<h3>3. Politica de Seguridad de la Informacion</h3>'
-                    . '<p>El Estudio Palacios Abogados S.A.C. se compromete a proteger el recurso informacion de una amplia gama de amenazas, con el fin de asegurar la continuidad del negocio, minimizar el dano y cumplir su mision y objetivos estrategicos.</p>'
+                    . '<p>{{razon_social}} se compromete a proteger el recurso informacion de una amplia gama de amenazas, con el fin de asegurar la continuidad del negocio, minimizar el dano y cumplir su mision y objetivos estrategicos.</p>'
                     . '<h3>4. Estructura Organizacional del SGSI</h3>'
                     . '<ul><li><strong>Gerente General:</strong> Responsable de la aprobacion y revision del SGSI.</li>'
                     . '<li><strong>Coordinador SGS:</strong> Responsable de la implementacion, mantenimiento y mejora continua del SGSI.</li>'
@@ -713,7 +713,7 @@ class PoliticaSeeder extends Seeder
                 'titulo' => 'Programa Anual de Capacitaciones SGSI',
                 'contenido' => '<h2>Programa Anual de Capacitaciones SGSI</h2><p><strong>Codigo:</strong> SGSI-PGR-001 | <strong>Version:</strong> 1 | <strong>Fecha:</strong> 05.01.2024</p>'
                     . '<h3>Datos del Empleador</h3>'
-                    . '<p>Estudio Palacios Abogados SAC | RUC: 20454292295 | Cal. San Pedro #100E, Arequipa | 6 trabajadores</p>'
+                    . '<p>{{razon_social}} | RUC: {{ruc}} | {{direccion}}</p>'
                     . '<h3>Compromiso de la Politica</h3>'
                     . '<p>Proteger el recurso informacion de una amplia gama de amenazas, con el fin de asegurar la continuidad del negocio, minimizar el dano y cumplir su mision y objetivos estrategicos.</p>'
                     . '<h3>Objetivo General</h3>'
@@ -784,13 +784,47 @@ class PoliticaSeeder extends Seeder
                     . '<tr><td>Comunicaciones con clientes</td><td>Intercepcion o manipulacion</td><td>No uso de canales cifrados</td><td>Alto</td><td>Alto</td><td>Critico</td><td>Cifrado, Seguridad en las comunicaciones</td></tr>'
                     . '</tbody></table>'
                     . '<h3>Responsable</h3>'
-                    . '<p>Elaborado por: JC Aranibar / Coordinador SGS. Aprobado por: M Palacios / Gerente General.</p>',
+                    . '<p>Elaborado por: Coordinador SGS. Aprobado por: Gerente General.</p>',
                 'version' => '1.0',
                 'obligatoria' => false,
                 'activa' => true,
                 'es_nda' => false,
                 'vigencia_meses' => null,
             ],
+        ];
+
+        return $this->personalizar($politicas, $empresa);
+    }
+
+    /**
+     * Sustituye los datos de la empresa en el contenido de cada politica.
+     * Evita que un estudio herede datos identificatorios de otro.
+     */
+    private function personalizar(array $politicas, ?Empresa $empresa): array
+    {
+        $tokens = $this->tokensEmpresa($empresa);
+
+        return array_map(function (array $data) use ($tokens) {
+            $data['contenido'] = strtr($data['contenido'], $tokens);
+
+            return $data;
+        }, $politicas);
+    }
+
+    /**
+     * Tokens {{...}} disponibles en las plantillas de politicas, resueltos
+     * con los datos de la empresa (o un valor neutro si no estan registrados).
+     */
+    private function tokensEmpresa(?Empresa $empresa): array
+    {
+        $razonSocial = $empresa?->razon_social ?: 'el estudio';
+
+        return [
+            '{{razon_social}}' => $razonSocial,
+            '{{razon_social_upper}}' => \Illuminate\Support\Str::upper($razonSocial),
+            '{{ruc}}' => $empresa?->ruc ?: 'RUC no registrado',
+            '{{direccion}}' => $empresa?->direccion ?: 'direccion no registrada',
+            '{{email}}' => $empresa?->email ?: 'correo corporativo no registrado',
         ];
     }
 }

@@ -146,7 +146,7 @@ class RegisterEmpresa extends RegisterTenant
     {
         $seeder = new PoliticaSeeder;
 
-        foreach ($seeder->getPoliticas() as $data) {
+        foreach ($seeder->getPoliticas($empresa) as $data) {
             Politica::firstOrCreate(
                 ['empresa_id' => $empresa->id, 'slug' => Str::slug($data['titulo'])],
                 array_merge($data, ['empresa_id' => $empresa->id])

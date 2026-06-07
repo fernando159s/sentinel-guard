@@ -130,7 +130,7 @@ class EmpresaSetupSeeder extends Seeder
     private function createPoliticas(Empresa $empresa): void
     {
         $politicaSeeder = new PoliticaSeeder;
-        $politicas = $politicaSeeder->getPoliticas();
+        $politicas = $politicaSeeder->getPoliticas($empresa);
 
         $count = 0;
 
