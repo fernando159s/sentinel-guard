@@ -12,8 +12,10 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
+use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 
+#[Name('crear-activo-digital')]
 #[Description(
     'Registra un nuevo activo digital en SecuriForm (cuenta WhatsApp/Meta, suscripción SaaS, '.
     'dominio, licencia, etc.) para la empresa del usuario autenticado. NO maneja credenciales de acceso.'
