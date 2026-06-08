@@ -9,85 +9,71 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Repara las politicas de una empresa que heredaron datos hardcodeados del
- * Estudio Palacios (versiones anteriores del PoliticaSeeder copiaban el texto
- * literal a cada empresa). Reemplaza esos literales por los datos propios de
- * la empresa indicada.
+ * Repara las politicas que heredaron datos hardcodeados del Estudio Palacios
+ * (versiones anteriores del PoliticaSeeder copiaban el texto literal a cada
+ * empresa). Reemplaza esos literales por los datos propios de cada empresa.
  *
  * Es idempotente: tras el primer pase los literales de Palacios ya no existen,
  * por lo que volver a ejecutarlo no cambia nada.
  *
  * Uso:
- *   php artisan politicas:reparar-datos <empresaIdOrRuc> --dry-run   (previsualizar)
- *   php artisan politicas:reparar-datos <empresaIdOrRuc>             (aplicar, pide confirmacion)
- *   php artisan politicas:reparar-datos <empresaIdOrRuc> --force     (aplicar sin preguntar)
+ *   php artisan politicas:reparar-datos <empresaIdOrRuc> --dry-run   (previsualizar una)
+ *   php artisan politicas:reparar-datos <empresaIdOrRuc> --force     (aplicar una sin preguntar)
+ *   php artisan politicas:reparar-datos --all --dry-run             (previsualizar todas)
+ *   php artisan politicas:reparar-datos --all --force              (aplicar a todas sin preguntar)
  */
 class RepararDatosPoliticasEmpresa extends Command
 {
     protected $signature = 'politicas:reparar-datos
-        {empresa : ID o RUC de la empresa cuyas politicas se repararan}
+        {empresa? : ID o RUC de la empresa a reparar (omitir si usas --all)}
+        {--all : Repara TODAS las empresas registradas}
         {--dry-run : Muestra los cambios sin guardarlos}
         {--force : Aplica sin pedir confirmacion}';
 
-    protected $description = 'Reemplaza datos heredados del Estudio Palacios en las politicas de una empresa por los datos propios de esa empresa.';
+    protected $description = 'Reemplaza datos heredados del Estudio Palacios en las politicas por los datos propios de cada empresa (una o --all).';
 
     public function handle(): int
     {
-        $empresa = $this->resolverEmpresa((string) $this->argument('empresa'));
+        $empresas = $this->resolverObjetivo();
 
-        if (! $empresa) {
-            $this->error('No se encontro la empresa indicada (se busca por ID o RUC).');
-
+        if ($empresas === null) {
             return self::FAILURE;
         }
 
-        $this->info("Empresa objetivo: #{$empresa->id} — {$empresa->razon_social} (RUC {$empresa->ruc})");
-
-        foreach (['email' => 'correo', 'direccion' => 'direccion'] as $campo => $etiqueta) {
-            if (blank($empresa->{$campo})) {
-                $this->warn("  ⚠  La empresa no tiene {$etiqueta} registrado; se usara un texto neutro. Considera completar el perfil de la empresa antes de aplicar.");
-            }
-        }
-
-        $reemplazos = $this->mapeoReemplazos($empresa);
-
-        $politicas = Politica::withoutGlobalScopes()
-            ->where('empresa_id', $empresa->id)
-            ->get();
-
-        if ($politicas->isEmpty()) {
-            $this->warn('La empresa no tiene politicas registradas. Nada que hacer.');
-
-            return self::SUCCESS;
-        }
-
-        // Primer pase: calcular cambios sin escribir.
+        // Primer pase: calcular cambios sin escribir, agrupados por empresa.
         $cambios = [];
         $totalReemplazos = 0;
+        $empresasConCambios = 0;
 
-        foreach ($politicas as $politica) {
-            $original = (string) $politica->contenido;
-            $nuevo = strtr($original, $reemplazos);
+        foreach ($empresas as $empresa) {
+            $this->avisarDatosFaltantes($empresa);
 
-            if ($nuevo === $original) {
+            $cambiosEmpresa = $this->calcularCambios($empresa);
+
+            if (empty($cambiosEmpresa)) {
                 continue;
             }
 
-            $n = $this->contarCoincidencias($original, $reemplazos);
-            $totalReemplazos += $n;
-            $cambios[] = ['politica' => $politica, 'nuevo' => $nuevo, 'n' => $n];
+            $empresasConCambios++;
+            $reemplazosEmpresa = array_sum(array_column($cambiosEmpresa, 'n'));
+            $totalReemplazos += $reemplazosEmpresa;
 
-            $this->line("  • [{$politica->slug}] {$politica->titulo} — {$n} reemplazo(s)");
+            $this->line("• #{$empresa->id} {$empresa->razon_social} — " . count($cambiosEmpresa) . " politica(s), {$reemplazosEmpresa} reemplazo(s)");
+            foreach ($cambiosEmpresa as $cambio) {
+                $this->line("    - [{$cambio['politica']->slug}] {$cambio['n']} reemplazo(s)");
+            }
+
+            $cambios = array_merge($cambios, $cambiosEmpresa);
         }
 
         if (empty($cambios)) {
-            $this->info('No se encontraron datos de Palacios en las politicas de esta empresa. Nada que reparar.');
+            $this->info('No se encontraron datos de Palacios en las politicas. Nada que reparar.');
 
             return self::SUCCESS;
         }
 
         $this->newLine();
-        $this->info(count($cambios) . " politica(s) con cambios, {$totalReemplazos} reemplazo(s) en total.");
+        $this->info("{$empresasConCambios} empresa(s), " . count($cambios) . " politica(s) con cambios, {$totalReemplazos} reemplazo(s) en total.");
 
         if ($this->option('dry-run')) {
             $this->comment('DRY-RUN: no se guardo nada.');
@@ -119,10 +105,102 @@ class RepararDatosPoliticasEmpresa extends Command
             return self::FAILURE;
         }
 
-        $this->info('Listo: ' . count($cambios) . ' politica(s) actualizada(s).');
+        $this->info('Listo: ' . count($cambios) . " politica(s) actualizada(s) en {$empresasConCambios} empresa(s).");
         $this->comment('Nota: el contenido se actualizo sin cambiar la "version", por lo que no se notifico a los usuarios ni se creo snapshot de version. Si quieres dejar traza de version, subela manualmente desde el panel.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Resuelve las empresas objetivo segun el argumento/--all. Devuelve null
+     * (e imprime el error) si la invocacion es invalida o no hay empresas.
+     *
+     * @return \Illuminate\Support\Collection<int,Empresa>|null
+     */
+    private function resolverObjetivo(): ?\Illuminate\Support\Collection
+    {
+        $todas = (bool) $this->option('all');
+        $identificador = $this->argument('empresa');
+
+        if ($todas && $identificador !== null) {
+            $this->error('Usa una empresa O --all, no ambos.');
+
+            return null;
+        }
+
+        if (! $todas && $identificador === null) {
+            $this->error('Indica una empresa (ID o RUC) o usa --all para reparar todas.');
+
+            return null;
+        }
+
+        if ($todas) {
+            $empresas = Empresa::withoutGlobalScopes()->orderBy('id')->get();
+
+            if ($empresas->isEmpty()) {
+                $this->warn('No hay empresas registradas. Nada que hacer.');
+
+                return null;
+            }
+
+            $this->info("Objetivo: TODAS las empresas ({$empresas->count()}).");
+
+            return $empresas;
+        }
+
+        $empresa = $this->resolverEmpresa((string) $identificador);
+
+        if (! $empresa) {
+            $this->error('No se encontro la empresa indicada (se busca por ID o RUC).');
+
+            return null;
+        }
+
+        $this->info("Empresa objetivo: #{$empresa->id} — {$empresa->razon_social} (RUC {$empresa->ruc})");
+
+        return collect([$empresa]);
+    }
+
+    /**
+     * Calcula los cambios pendientes de una empresa sin escribir.
+     *
+     * @return array<int,array{politica:Politica,nuevo:string,n:int}>
+     */
+    private function calcularCambios(Empresa $empresa): array
+    {
+        $reemplazos = $this->mapeoReemplazos($empresa);
+
+        $politicas = Politica::withoutGlobalScopes()
+            ->where('empresa_id', $empresa->id)
+            ->get();
+
+        $cambios = [];
+
+        foreach ($politicas as $politica) {
+            $original = (string) $politica->contenido;
+            $nuevo = strtr($original, $reemplazos);
+
+            if ($nuevo === $original) {
+                continue;
+            }
+
+            $cambios[] = [
+                'politica' => $politica,
+                'nuevo' => $nuevo,
+                'n' => $this->contarCoincidencias($original, $reemplazos),
+            ];
+        }
+
+        return $cambios;
+    }
+
+    private function avisarDatosFaltantes(Empresa $empresa): void
+    {
+        foreach (['email' => 'correo', 'direccion' => 'direccion'] as $campo => $etiqueta) {
+            if (blank($empresa->{$campo})) {
+                $this->warn("  ⚠  #{$empresa->id} {$empresa->razon_social}: no tiene {$etiqueta} registrado; se usara un texto neutro.");
+            }
+        }
     }
 
     private function resolverEmpresa(string $identificador): ?Empresa

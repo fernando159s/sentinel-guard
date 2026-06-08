@@ -164,4 +164,60 @@ class PoliticaPersonalizacionTest extends TestCase
 
         $this->assertSame($original, $politica->refresh()->contenido);
     }
+
+    public function test_all_repara_todas_las_empresas(): void
+    {
+        $alfa = $this->empresa();
+        $beta = $this->empresa(['ruc' => '20222222222', 'razon_social' => 'Beta Corp E.I.R.L.', 'email' => 'hola@beta.pe', 'direccion' => 'Jr. Beta 456, Cusco']);
+
+        $polAlfa = $this->crearPolitica($alfa, $this->contenidoHeredadoDePalacios());
+        $polBeta = $this->crearPolitica($beta, $this->contenidoHeredadoDePalacios());
+
+        $this->artisan('politicas:reparar-datos', ['--all' => true, '--force' => true])
+            ->assertSuccessful();
+
+        $contenidoAlfa = $polAlfa->refresh()->contenido;
+        $contenidoBeta = $polBeta->refresh()->contenido;
+
+        $this->assertStringNotContainsString('Palacios', $contenidoAlfa);
+        $this->assertStringNotContainsString('Palacios', $contenidoBeta);
+
+        // Cada empresa recibe SUS datos, no los de la otra.
+        $this->assertStringContainsString('Alfa Legal S.A.C.', $contenidoAlfa);
+        $this->assertStringNotContainsString('Beta Corp', $contenidoAlfa);
+        $this->assertStringContainsString('Beta Corp E.I.R.L.', $contenidoBeta);
+        $this->assertStringNotContainsString('Alfa Legal', $contenidoBeta);
+    }
+
+    public function test_all_y_empresa_son_excluyentes(): void
+    {
+        $empresa = $this->empresa();
+        $politica = $this->crearPolitica($empresa, $this->contenidoHeredadoDePalacios());
+
+        $this->artisan('politicas:reparar-datos', ['empresa' => $empresa->id, '--all' => true, '--force' => true])
+            ->expectsOutputToContain('no ambos')
+            ->assertFailed();
+
+        // No toco nada.
+        $this->assertStringContainsString('Palacios', $politica->refresh()->contenido);
+    }
+
+    public function test_falla_sin_empresa_ni_all(): void
+    {
+        $this->artisan('politicas:reparar-datos')
+            ->expectsOutputToContain('Indica una empresa')
+            ->assertFailed();
+    }
+
+    public function test_all_dry_run_no_persiste(): void
+    {
+        $empresa = $this->empresa();
+        $original = $this->contenidoHeredadoDePalacios();
+        $politica = $this->crearPolitica($empresa, $original);
+
+        $this->artisan('politicas:reparar-datos', ['--all' => true, '--dry-run' => true])
+            ->assertSuccessful();
+
+        $this->assertSame($original, $politica->refresh()->contenido);
+    }
 }
