@@ -69,6 +69,19 @@ class BaulContrasenas extends Page implements HasTable
         return ActivoDigital::whereHas('responsables', fn (Builder $q) => $q->whereKey($user->id))->exists();
     }
 
+    /**
+     * Permite llegar pre-filtrado desde la busqueda global (Ctrl/Cmd+K):
+     * /baul-contrasenas?q=<cuenta> precarga el buscador de la tabla.
+     */
+    public function mount(): void
+    {
+        $q = request()->query('q');
+
+        if (is_string($q) && $q !== '') {
+            $this->tableSearch = $q;
+        }
+    }
+
     public function table(Table $table): Table
     {
         return $table

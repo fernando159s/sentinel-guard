@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\AuditoriaBaul;
 use App\Filament\Pages\BaulContrasenas;
+use App\Filament\Resources\Baul\CredencialBaulResource;
 use App\Models\ActivoDigital;
 use App\Models\ActivoDigitalCredencial;
 use App\Models\Empresa;
@@ -203,5 +204,48 @@ class BaulContrasenasTest extends TestCase
             'accion' => 'prueba_empresa_actor',
             'empresa_id' => $this->empresaA->id,
         ]);
+    }
+
+    public function test_busqueda_global_acceso_igual_que_el_baul(): void
+    {
+        $this->actingAs($this->superAdmin);
+        $this->assertTrue(CredencialBaulResource::canAccess());
+
+        $this->actingAs($this->usuarioResponsable);
+        $this->assertTrue(CredencialBaulResource::canAccess());
+
+        $this->actingAs($this->usuarioSinAcceso);
+        $this->assertFalse(CredencialBaulResource::canAccess());
+    }
+
+    public function test_busqueda_global_respeta_responsables(): void
+    {
+        // El responsable solo encuentra credenciales de las cuentas a su cargo.
+        $this->actingAs($this->usuarioResponsable);
+        $visibles = CredencialBaulResource::getGlobalSearchEloquentQuery()->get();
+        $this->assertCount(1, $visibles);
+        $this->assertSame($this->activoA1->id, $visibles->first()->activo_digital_id);
+
+        // Quien no es responsable de ninguna cuenta no encuentra nada.
+        $this->actingAs($this->usuarioSinAcceso);
+        $this->assertCount(0, CredencialBaulResource::getGlobalSearchEloquentQuery()->get());
+    }
+
+    public function test_busqueda_global_nunca_expone_secretos(): void
+    {
+        // Los campos cifrados no son buscables (no se puede buscar por contraseña/usuario/2FA).
+        $buscables = CredencialBaulResource::getGloballySearchableAttributes();
+        foreach (['password', 'usuario', 'dato_2fa', 'recovery', 'notas'] as $sensible) {
+            $this->assertNotContains($sensible, $buscables);
+            $this->assertNotContains("activoDigital.{$sensible}", $buscables);
+        }
+
+        // Ni el título ni los detalles del resultado contienen el secreto descifrado.
+        $credencial = $this->activoA1->credenciales()->first();
+        $titulo = CredencialBaulResource::getGlobalSearchResultTitle($credencial);
+        $detalles = implode(' ', CredencialBaulResource::getGlobalSearchResultDetails($credencial));
+
+        $this->assertStringNotContainsString('Demo*A1clave', (string) $titulo);
+        $this->assertStringNotContainsString('Demo*A1clave', $detalles);
     }
 }
