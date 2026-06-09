@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -45,5 +46,30 @@ class ActivoDigitalCredencial extends Model
     public function activoDigital(): BelongsTo
     {
         return $this->belongsTo(ActivoDigital::class, 'activo_digital_id');
+    }
+
+    /**
+     * Limita la consulta a las credenciales que un usuario puede ver en el
+     * Baul de Contrasenas. Refleja exactamente ActivoDigitalCredencialPolicy::view():
+     *
+     * - El filtro por empresa (tenant) es explicito y siempre aplica, asi que
+     *   ni siquiera un super_admin cruza datos entre empresas en esta vista.
+     * - Los roles de gestion (super_admin, admin_empresa) ven todas las cuentas
+     *   de la empresa; el resto solo las cuentas de las que son responsables.
+     * - El whereHas sobre activoDigital arrastra los global scopes del activo
+     *   (EmpresaScope + SoftDeletes), por lo que no aparecen credenciales de
+     *   cuentas eliminadas ni de otras empresas.
+     */
+    public function scopeVisiblesPara(Builder $query, User $user, ?int $empresaId): Builder
+    {
+        return $query->whereHas('activoDigital', function (Builder $q) use ($user, $empresaId): void {
+            if ($empresaId !== null) {
+                $q->where('activos_digitales.empresa_id', $empresaId);
+            }
+
+            if (! $user->hasRole(['super_admin', 'admin_empresa'])) {
+                $q->whereHas('responsables', fn (Builder $r) => $r->whereKey($user->id));
+            }
+        });
     }
 }
