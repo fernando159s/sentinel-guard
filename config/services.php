@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // Proveedor LLM del asistente in-app (API compatible con OpenAI).
+    'deepseek' => [
+        'api_key' => env('DEEPSEEK_API_KEY'),
+        'base_url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
+        'model' => env('DEEPSEEK_MODEL', 'deepseek-chat'),
+        'timeout' => (int) env('DEEPSEEK_TIMEOUT', 60),
+    ],
+
 ];

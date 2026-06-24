@@ -8,9 +8,11 @@ use App\Models\Politica;
 use App\Models\Registro;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Mcp\Servers\IngestaServer;
 use App\Observers\AuditableObserver;
 use App\Observers\PoliticaObserver;
 use App\Observers\RegistroObserver;
+use App\Services\Asistente\McpToolBridge;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,7 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // El asistente in-app reusa exactamente el toolset del servidor MCP.
+        $this->app->bind(McpToolBridge::class, fn () => new McpToolBridge(IngestaServer::TOOLS));
     }
 
     /**
