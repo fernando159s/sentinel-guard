@@ -58,8 +58,8 @@ Esta dirección prioriza confianza, profesionalismo de seguridad y alto contrast
 | Código / IDs | **Fira Code** | 400, 500 | Identificadores de registro, código, rutas |
 
 **Configuración Filament:**
-- `->font('DM Sans')` — fuente principal del panel
-- Sora y Fira Code cargadas vía `@import` en `theme.css`
+- `->font('DM Sans')` — fuente principal del panel (Filament inyecta su `<link>` de Google Fonts)
+- Sora y Fira Code cargadas vía `<link>` en el `renderHook('panels::head.end')` del `AdminPanelProvider`
 
 **Escala tipográfica:**
 
@@ -100,8 +100,9 @@ box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.25);
 
 | Archivo | Cambio |
 |---------|--------|
-| `resources/css/filament/admin/theme.css` | Tokens, overrides de gray scale, tipografía |
-| `app/Providers/Filament/AdminPanelProvider.php` | `Color::hex()`, `darkMode(isForced: true)`, `font('DM Sans')` |
+| `resources/css/filament/admin/theme.css` | Tokens, override de gray scale, tipografía, botones accesibles |
+| `app/Providers/Filament/AdminPanelProvider.php` | `Color::hex()`, `darkMode(isForced: true)`, `font('DM Sans')`, fuentes vía `<link>` |
+| `composer.json` / `composer.lock` | Eliminada la dependencia `openplain/filament-shadcn-theme` (ya no se usa) |
 
 ### Modo oscuro
 
@@ -117,24 +118,32 @@ Tailwind gray-700 → #1E3A5F (borders)
 
 ### Carga de fuentes
 
-Importadas desde Google Fonts en `theme.css`:
-```css
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:...'
-    '&family=Sora:...'
-    '&family=Fira+Code:...'
-    '&display=swap');
+- **DM Sans** (UI): la registra `->font('DM Sans')`, que inyecta su propio `<link>` de Google Fonts.
+- **Sora** (display) y **Fira Code** (mono): se cargan con un `<link>` adicional en el `renderHook('panels::head.end')` del `AdminPanelProvider` (no se duplica DM Sans):
+
+```php
+'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap">'
 ```
+
+### Botones accesibles (WCAG AA)
+
+El panel fuerza modo oscuro, donde Filament usaría texto blanco sobre el relleno teal/cyan de los botones `primary`/`info` (~3.4:1, **falla AA**). El tema fija un **fondo brillante (shade 500) + texto navy `#0A1628`** para esos botones, logrando ~7.7:1. Esto reemplaza el fix de texto de botón que antes aportaba el tema shadcn (ya eliminado).
 
 ---
 
 ## 6. Accesibilidad (WCAG AA)
 
-| Par | Ratio | Resultado |
-|-----|-------|-----------|
-| `#E0F0FF` sobre `#0A1628` | 14.8:1 | ✅ AAA |
-| `#00D4AA` sobre `#112240` | 5.2:1 | ✅ AA |
-| `#00B4D8` sobre `#112240` | 4.6:1 | ✅ AA |
-| `#7A8FA6` sobre `#0A1628` | 4.5:1 | ✅ AA (mínimo) |
+> Ratios calculados con el helper `Filament\Support\Colors\Color::calculateContrastRatio()`.
+
+| Par | Uso | Ratio | Resultado |
+|-----|-----|-------|-----------|
+| `#E0F0FF` sobre `#0A1628` | Texto principal sobre fondo | 16.6:1 | ✅ AAA |
+| `#E0F0FF` sobre `#112240` | Texto sobre card | 14.5:1 | ✅ AAA |
+| `#00D4AA` sobre `#112240` | Teal como texto/acento sobre card | 8.9:1 | ✅ AAA |
+| `#00B4D8` sobre `#112240` | Cyan como texto/acento sobre card | 6.9:1 | ✅ AAA |
+| `#7A8FA6` sobre `#0A1628` | Texto muted sobre fondo | 5.9:1 | ✅ AA |
+| `#0A1628` sobre teal-500 | Texto navy en botón `primary` | 7.7:1 | ✅ AAA |
+| `#0A1628` sobre cyan-500 | Texto navy en botón `info` | 7.6:1 | ✅ AAA |
 
 ---
 

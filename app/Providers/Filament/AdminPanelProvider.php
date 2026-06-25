@@ -69,9 +69,12 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook('panels::head.end', function () {
                 $tenant = Filament::getTenant();
 
+                // DM Sans (UI font) is injected by ->font('DM Sans'); here we add
+                // only the display (Sora) and mono (Fira Code) families to avoid
+                // requesting DM Sans twice.
                 $css = '<link rel="preconnect" href="https://fonts.googleapis.com">'
                     . '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-                    . '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Sora:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap">'
+                    . '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap">'
                     . '<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>';
 
                 if ($tenant?->color_sidebar) {

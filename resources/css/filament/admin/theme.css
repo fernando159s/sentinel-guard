@@ -48,10 +48,36 @@
     border-color: var(--st-border) !important;
 }
 
-/* ── Focus ring: teal glow ── */
-.dark *:focus-visible {
+/* ── Focus ring: teal glow (scoped to interactive elements) ── */
+.dark a:focus-visible,
+.dark button:focus-visible,
+.dark [role="button"]:focus-visible,
+.dark input:focus-visible,
+.dark select:focus-visible,
+.dark textarea:focus-visible,
+.dark [tabindex]:focus-visible {
     outline-color: var(--st-teal) !important;
     box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.25) !important;
+}
+
+/* ── Accessible filled buttons on bright brand colors (WCAG AA) ──
+   Teal (#00D4AA) and cyan (#00B4D8) are bright: white text on them is < 4.5:1.
+   In the forced-dark panel, pin a bright background + dark navy text so filled
+   primary/info buttons pass AA (navy on teal-500 = 7.7:1, on teal-600 = 5.7:1).
+   This replaces the dark-mode button-text fix the removed shadcn theme provided. */
+.dark .fi-btn.fi-color-primary {
+    background-color: var(--primary-500) !important;
+    color: var(--st-bg) !important;
+}
+.dark .fi-btn.fi-color-primary:not(:disabled):hover {
+    background-color: var(--primary-600) !important;
+}
+.dark .fi-btn.fi-color-info {
+    background-color: var(--info-500) !important;
+    color: var(--st-bg) !important;
+}
+.dark .fi-btn.fi-color-info:not(:disabled):hover {
+    background-color: var(--info-600) !important;
 }
 
 /* ── Base border-radius token (4px) ── */
