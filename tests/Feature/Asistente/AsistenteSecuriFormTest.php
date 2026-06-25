@@ -59,7 +59,7 @@ class AsistenteSecuriFormTest extends TestCase
                     'id' => 'call_1',
                     'type' => 'function',
                     'function' => [
-                        'name' => 'crear_activo_digital',
+                        'name' => 'crear-activo-digital',
                         'arguments' => json_encode(['nombre' => 'WhatsApp Ventas', 'tipo' => 'whatsapp']),
                     ],
                 ]]))
@@ -72,7 +72,7 @@ class AsistenteSecuriFormTest extends TestCase
         );
 
         $this->assertStringContainsString('WhatsApp Ventas', $resultado['texto']);
-        $this->assertContains('crear_activo_digital', $resultado['herramientas']);
+        $this->assertContains('crear-activo-digital', $resultado['herramientas']);
 
         $this->assertDatabaseHas('activos_digitales', [
             'empresa_id' => $admin->empresa_id,

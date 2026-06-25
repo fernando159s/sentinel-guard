@@ -12,7 +12,7 @@ use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tool;
 
-#[Name('consultar_activos_digitales')]
+#[Name('consultar-activos-digitales')]
 #[Description(
     'Consulta (lista/busca) los activos digitales ya registrados en SecuriForm para la empresa del '.
     'usuario autenticado: cuentas WhatsApp/Meta, suscripciones SaaS, dominios, licencias, etc. '.

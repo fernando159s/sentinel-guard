@@ -42,7 +42,7 @@ class ConsultarActivosDigitalesToolTest extends TestCase
 
     public function test_la_herramienta_tiene_un_nombre_estable_para_el_llm(): void
     {
-        $this->assertSame('consultar_activos_digitales', (new ConsultarActivosDigitalesTool)->name());
+        $this->assertSame('consultar-activos-digitales', (new ConsultarActivosDigitalesTool)->name());
     }
 
     public function test_admin_solo_ve_activos_de_su_empresa(): void

@@ -6,8 +6,8 @@ use App\Enums\EstadoActivoDigital;
 use App\Enums\ModalidadPago;
 use App\Enums\TipoActivoDigital;
 use App\Models\ActivoDigital;
-use App\Models\Empresa;
 use App\Models\User;
+use App\Services\Ingesta\Concerns\ResuelveEmpresa;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -23,6 +23,8 @@ use Illuminate\Validation\ValidationException;
  */
 class ActivoDigitalIngestaService
 {
+    use ResuelveEmpresa;
+
     /** Roles autorizados a gestionar (crear) activos digitales. */
     private const ROLES_GESTION = ['super_admin', 'admin_empresa'];
 
@@ -40,35 +42,12 @@ class ActivoDigitalIngestaService
             );
         }
 
-        $empresaId = $this->resolverEmpresa($payload, $actor);
+        $empresaId = $this->resolverEmpresa($actor, isset($payload['empresa_id']) ? (int) $payload['empresa_id'] : null);
 
         $data = $this->validar($payload);
         $data['empresa_id'] = $empresaId;
 
         return ActivoDigital::create($data);
-    }
-
-    /**
-     * Resuelve la empresa destino. Un admin de empresa solo puede crear en la
-     * suya (nunca en otra); un super admin debe indicar empresa_id explícito.
-     *
-     * @param  array<string,mixed>  $payload
-     */
-    private function resolverEmpresa(array $payload, User $actor): int
-    {
-        if ($actor->empresa_id) {
-            return (int) $actor->empresa_id;
-        }
-
-        $empresaId = $payload['empresa_id'] ?? null;
-
-        if (! $empresaId || ! Empresa::query()->whereKey($empresaId)->exists()) {
-            throw ValidationException::withMessages([
-                'empresa_id' => 'Como super admin debes indicar un empresa_id válido (la empresa destino).',
-            ]);
-        }
-
-        return (int) $empresaId;
     }
 
     /**
