@@ -32,15 +32,53 @@ mkdir -p storage/framework/{sessions,views,cache}
 mkdir -p storage/logs
 mkdir -p bootstrap/cache
 
-# ── .env ─────────────────────────────────────────────────────
+# ── .env upsert desde .env.production ────────────────────────
+# Primera vez: copiar directo. Deploys siguientes: upsert por clave,
+# preservando APP_KEY y cualquier valor no presente en .env.production.
 if [ ! -f .env ]; then
     if [ -f .env.production ]; then
         cp .env.production .env
-        echo "[POST-DEPLOY] .env creado desde .env.production"
+        echo "[POST-DEPLOY] .env creado desde .env.production (primera vez)"
     else
         echo "[POST-DEPLOY] ERROR: No existe .env ni .env.production"
         exit 1
     fi
+elif [ -f .env.production ]; then
+    echo "[POST-DEPLOY] Sincronizando .env desde .env.production (preservando APP_KEY)..."
+    # Upsert via awk: recorre el .env actual línea a línea.
+    # Para cada clave presente en .env.production (excepto APP_KEY), usa el valor nuevo.
+    # Las claves nuevas en .env.production que no están en .env se agregan al final.
+    awk -v prod_file=".env.production" '
+    BEGIN {
+        while ((getline line < prod_file) > 0) {
+            if (line ~ /^[[:space:]]*#/ || line ~ /^[[:space:]]*$/) continue
+            n = index(line, "=")
+            if (n == 0) continue
+            k = substr(line, 1, n - 1)
+            if (k == "APP_KEY") continue
+            prod[k] = line
+        }
+        close(prod_file)
+    }
+    {
+        if (/^[[:space:]]*#/ || /^[[:space:]]*$/) { print; next }
+        n = index($0, "=")
+        if (n == 0) { print; next }
+        k = substr($0, 1, n - 1)
+        if (k in prod) {
+            print prod[k]
+            delete prod[k]
+        } else {
+            print
+        }
+    }
+    END {
+        for (k in prod) {
+            print prod[k]
+        }
+    }
+    ' .env > .env.tmp && mv .env.tmp .env
+    echo "[POST-DEPLOY] .env sincronizado desde .env.production"
 fi
 
 # ── Limpiar TODO el cache ────────────────────────────────────
