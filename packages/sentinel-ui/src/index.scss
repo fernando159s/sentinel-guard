@@ -1,0 +1,21 @@
+// ==========================================================================
+// sentinel-ui — ITCSS-lite entry point
+//
+// Layer order (Inverted Triangle CSS):
+//   1. Settings  — variables & design tokens
+//   2. Tools     — mixins & functions (no output)
+//   3. Generic   — reset & normalize
+//   4. Elements  — bare HTML elements
+//   5. Objects   — layout patterns (OOCSS)
+//   6. Components — UI components (BEM)
+//   7. Utilities — single-purpose overrides (!important)
+// ==========================================================================
+
+@use '1-settings' as settings;  // tokens only — no CSS output
+@use '2-tools' as tools;         // mixins/functions only — no CSS output
+
+@use '3-generic' as *;
+@use '4-elements' as *;
+@use '5-objects' as *;
+@use '6-components' as *;
+@use '7-utilities' as *;

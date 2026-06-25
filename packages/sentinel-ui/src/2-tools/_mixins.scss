@@ -1,0 +1,69 @@
+// ==========================================================================
+// 2-tools/_mixins.scss
+// ==========================================================================
+
+@use 'sass:map';
+@use '../1-settings' as s;
+
+// Responsive breakpoints
+$breakpoints: (
+  'sm':  640px,
+  'md':  768px,
+  'lg':  1024px,
+  'xl':  1280px,
+  '2xl': 1536px,
+) !default;
+
+@mixin respond-to($breakpoint) {
+  $value: map.get($breakpoints, $breakpoint);
+  @if $value != null {
+    @media (min-width: $value) {
+      @content;
+    }
+  } @else {
+    @warn 'Unknown breakpoint: #{$breakpoint}';
+  }
+}
+
+// Flex helpers
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Typography helpers
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// Focus ring (accessible)
+@mixin focus-ring($color: s.$color-primary) {
+  outline: 2px solid $color;
+  outline-offset: 2px;
+}
+
+// Transition preset
+@mixin transition($props: all, $duration: 150ms, $easing: ease-in-out) {
+  transition: $props $duration $easing;
+}

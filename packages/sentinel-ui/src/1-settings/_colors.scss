@@ -1,0 +1,48 @@
+// ==========================================================================
+// 1-settings/_colors.scss
+// Sentinel Teal palette — design tokens
+// ==========================================================================
+
+// Brand primaries
+$color-teal-50:  #e6f7f7 !default;
+$color-teal-100: #b3e8e8 !default;
+$color-teal-200: #80d8d8 !default;
+$color-teal-300: #4dc9c9 !default;
+$color-teal-400: #26bfbf !default;
+$color-teal-500: #00b5b5 !default; // Base sentinel teal
+$color-teal-600: #00a3a3 !default;
+$color-teal-700: #008c8c !default;
+$color-teal-800: #007575 !default;
+$color-teal-900: #005757 !default;
+
+// Semantic aliases
+$color-primary:         $color-teal-600 !default;
+$color-primary-light:   $color-teal-300 !default;
+$color-primary-dark:    $color-teal-800 !default;
+$color-primary-contrast: #ffffff !default;
+
+// Neutrals
+$color-gray-50:  #f9fafb !default;
+$color-gray-100: #f3f4f6 !default;
+$color-gray-200: #e5e7eb !default;
+$color-gray-300: #d1d5db !default;
+$color-gray-400: #9ca3af !default;
+$color-gray-500: #6b7280 !default;
+$color-gray-600: #4b5563 !default;
+$color-gray-700: #374151 !default;
+$color-gray-800: #1f2937 !default;
+$color-gray-900: #111827 !default;
+
+// Feedback colors
+$color-success: #059669 !default;
+$color-warning: #d97706 !default;
+$color-danger:  #dc2626 !default;
+$color-info:    $color-teal-600 !default;
+
+// Surface / background
+$color-bg:        $color-gray-50  !default;
+$color-bg-card:   #ffffff         !default;
+$color-bg-sidebar: $color-gray-900 !default;
+$color-text:      $color-gray-900 !default;
+$color-text-muted: $color-gray-500 !default;
+$color-border:    $color-gray-200 !default;
