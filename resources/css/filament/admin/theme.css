@@ -3,7 +3,101 @@
 @source '../../../../app/Filament/**/*.php';
 @source '../../../../resources/views/filament/**/*.blade.php';
 
-/* Sidebar: invisible scrollbar */
+/* Sora, DM Sans, Fira Code are injected via <link> in AdminPanelProvider */
+
+/* ── Sentinel Teal — design tokens ── */
+:root {
+    --st-bg:      #0A1628;
+    --st-sidebar: #0D1E35;
+    --st-card:    #112240;
+    --st-teal:    #00D4AA;
+    --st-accent:  #00B4D8;
+    --st-text:    #E0F0FF;
+    --st-muted:   #7A8FA6;
+    --st-border:  #1E3A5F;
+    --st-radius:  4px;
+}
+
+/* ── Gray scale override in dark mode → Sentinel Teal palette ── */
+.dark {
+    --color-gray-950: #0A1628;
+    --color-gray-900: #0D1E35;
+    --color-gray-800: #112240;
+    --color-gray-700: #1E3A5F;
+    --color-gray-600: #2A4A70;
+    --color-gray-500: #7A8FA6;
+    --color-gray-400: #A0B4C8;
+    --color-gray-300: #C0D0E0;
+    --color-gray-200: #D0E0F0;
+    --color-gray-100: #E0F0FF;
+    --color-gray-50:  #F0F8FF;
+}
+
+/* ── Sidebar ── */
+.dark .fi-sidebar {
+    background-color: var(--st-sidebar) !important;
+    border-right-color: var(--st-border) !important;
+}
+
+/* ── Cards / panels ── */
+.dark .fi-card,
+.dark .fi-section,
+.dark [class^="fi-wi-"],
+.dark [class*=" fi-wi-"] {
+    background-color: var(--st-card) !important;
+    border-color: var(--st-border) !important;
+}
+
+/* ── Focus ring: teal glow (scoped to interactive elements) ── */
+.dark a:focus-visible,
+.dark button:focus-visible,
+.dark [role="button"]:focus-visible,
+.dark input:focus-visible,
+.dark select:focus-visible,
+.dark textarea:focus-visible,
+.dark [tabindex]:focus-visible {
+    outline-color: var(--st-teal) !important;
+    box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.25) !important;
+}
+
+/* ── Accessible filled buttons on bright brand colors (WCAG AA) ──
+   Teal (#00D4AA) and cyan (#00B4D8) are bright: white text on them is < 4.5:1.
+   In the forced-dark panel, pin a bright background + dark navy text so filled
+   primary/info buttons pass AA (navy on teal-500 = 7.7:1, on teal-600 = 5.7:1).
+   This replaces the dark-mode button-text fix the removed shadcn theme provided. */
+.dark .fi-btn.fi-color-primary {
+    background-color: var(--primary-500) !important;
+    color: var(--st-bg) !important;
+}
+.dark .fi-btn.fi-color-primary:not(:disabled):hover {
+    background-color: var(--primary-600) !important;
+}
+.dark .fi-btn.fi-color-info {
+    background-color: var(--info-500) !important;
+    color: var(--st-bg) !important;
+}
+.dark .fi-btn.fi-color-info:not(:disabled):hover {
+    background-color: var(--info-600) !important;
+}
+
+/* ── Base border-radius token (4px) ── */
+.fi-btn { border-radius: var(--st-radius) !important; }
+.fi-input,
+.fi-select-input,
+.fi-textarea { border-radius: var(--st-radius) !important; }
+.fi-badge { border-radius: var(--st-radius) !important; }
+
+/* ── Sora for display headings ── */
+.fi-header-heading,
+.fi-page-heading,
+h1.fi-heading { font-family: 'Sora', sans-serif !important; }
+
+/* ── Fira Code for IDs and code elements ── */
+.fi-ta-text code,
+.font-mono,
+[class*="fi-"] code { font-family: 'Fira Code', monospace !important; }
+
+/* ── Sidebar: invisible scrollbar ── */
 .fi-sidebar-nav {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -16,14 +110,14 @@
     display: none;
 }
 
-/* Hide tenant selector from sidebar */
+/* ── Hide tenant selector from sidebar ── */
 .fi-sidebar-header-ctn,
 .fi-sidebar .fi-tenant-menu-trigger,
 .fi-sidebar .fi-dropdown:has(.fi-tenant-menu-trigger) {
     display: none !important;
 }
 
-/* Groups */
+/* ── Groups ── */
 .fi-sidebar-group {
     margin-bottom: 0 !important;
 }
@@ -41,7 +135,7 @@
     gap: 0.1rem !important;
 }
 
-/* Items */
+/* ── Items ── */
 .fi-sidebar-item {
     margin: 0 !important;
 }
@@ -58,12 +152,12 @@
     height: 1.1rem !important;
 }
 
-/* Active item */
+/* ── Active item ── */
 .fi-sidebar-item.fi-active a {
     font-weight: 600;
 }
 
-/* Collapse toggle */
+/* ── Collapse toggle ── */
 .fi-sidebar-group-collapse-button {
     padding: 0.15rem !important;
     width: 1.25rem !important;
@@ -74,7 +168,7 @@
     height: 0.75rem !important;
 }
 
-/* Collapsed sidebar: bigger icons */
+/* ── Collapsed sidebar: bigger icons ── */
 .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-icon {
     width: 1.5rem !important;
     height: 1.5rem !important;
@@ -85,7 +179,7 @@
     justify-content: center;
 }
 
-/* Masonry layout for 2-column grids — only when multiple children */
+/* ── Masonry layout for 2-column grids — only when multiple children ── */
 .fi-grid.lg\:fi-grid-cols {
     display: block !important;
     columns: 2;

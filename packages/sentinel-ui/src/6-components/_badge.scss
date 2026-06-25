@@ -1,0 +1,41 @@
+// ==========================================================================
+// 6-components/_badge.scss
+// ==========================================================================
+
+@use '../1-settings' as s;
+
+.c-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: s.$spacing-1;
+  padding: 2px s.$spacing-2;
+  font-size: s.$font-size-xs;
+  font-weight: s.$font-weight-medium;
+  line-height: 1;
+  border-radius: s.$radius-full;
+
+  &--teal {
+    background-color: s.$color-teal-100;
+    color: s.$color-teal-800;
+  }
+
+  &--success {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+
+  &--warning {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+
+  &--danger {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+
+  &--neutral {
+    background-color: s.$color-gray-100;
+    color: s.$color-gray-700;
+  }
+}

@@ -1,0 +1,39 @@
+// ==========================================================================
+// 7-utilities/_display.scss
+// Single-purpose utility classes (high specificity intentional)
+// ==========================================================================
+
+.u-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+.u-hidden        { display: none !important; }
+.u-block         { display: block !important; }
+.u-inline        { display: inline !important; }
+.u-inline-block  { display: inline-block !important; }
+.u-flex          { display: flex !important; }
+.u-inline-flex   { display: inline-flex !important; }
+.u-grid          { display: grid !important; }
+
+.u-text-left    { text-align: left !important; }
+.u-text-center  { text-align: center !important; }
+.u-text-right   { text-align: right !important; }
+
+.u-font-normal    { font-weight: 400 !important; }
+.u-font-medium    { font-weight: 500 !important; }
+.u-font-semibold  { font-weight: 600 !important; }
+.u-font-bold      { font-weight: 700 !important; }
+
+.u-truncate {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}

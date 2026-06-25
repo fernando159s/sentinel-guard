@@ -1,0 +1,40 @@
+{
+  "name": "@sentinel/ui",
+  "version": "0.1.0",
+  "description": "Sentinel Guard – design system: SCSS tokens, utilities y componentes (ITCSS-lite)",
+  "type": "module",
+  "main": "dist/sentinel-ui.css",
+  "style": "dist/sentinel-ui.css",
+  "exports": {
+    ".": "./dist/sentinel-ui.css",
+    "./scss": "./src/index.scss"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "sass src/index.scss dist/sentinel-ui.css --style=compressed --no-source-map",
+    "build:dev": "sass src/index.scss dist/sentinel-ui.css --style=expanded",
+    "watch": "sass --watch src/index.scss:dist/sentinel-ui.css",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "devDependencies": {
+    "sass": "^1.89.1",
+    "@storybook/html": "^8.6.12",
+    "@storybook/html-vite": "^8.6.12",
+    "@storybook/addon-essentials": "^8.6.12",
+    "@storybook/addon-a11y": "^8.6.12",
+    "storybook": "^8.6.12",
+    "vite": "^7.0.7"
+  },
+  "keywords": [
+    "sentinel",
+    "design-system",
+    "scss",
+    "itcss"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}

@@ -15,7 +15,7 @@ use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Openplain\FilamentShadcnTheme\Color as ShadcnColor;
+use Filament\Support\Colors\Color;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -39,13 +39,14 @@ class AdminPanelProvider extends PanelProvider
             ->tenant(Empresa::class, slugAttribute: 'ruc')
             ->tenantRegistration(\App\Filament\Pages\Auth\RegisterEmpresa::class)
             ->colors([
-                'primary' => ShadcnColor::Violet,
-                'danger' => ShadcnColor::Red,
-                'info' => ShadcnColor::Blue,
-                'success' => ShadcnColor::Green,
-                'warning' => ShadcnColor::Orange,
+                'primary' => Color::hex('#00D4AA'),
+                'info'    => Color::hex('#00B4D8'),
+                'danger'  => Color::Red,
+                'success' => Color::Emerald,
+                'warning' => Color::Amber,
             ])
-            ->font('Inter')
+            ->darkMode(isForced: true)
+            ->font('DM Sans')
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('14rem')
             ->collapsedSidebarWidth('4.5rem')
@@ -68,7 +69,13 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook('panels::head.end', function () {
                 $tenant = Filament::getTenant();
 
-                $css = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>';
+                // DM Sans (UI font) is injected by ->font('DM Sans'); here we add
+                // only the display (Sora) and mono (Fira Code) families to avoid
+                // requesting DM Sans twice.
+                $css = '<link rel="preconnect" href="https://fonts.googleapis.com">'
+                    . '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+                    . '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap">'
+                    . '<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>';
 
                 if ($tenant?->color_sidebar) {
                     $sidebarColor = e($tenant->color_sidebar);

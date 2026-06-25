@@ -1,0 +1,45 @@
+// ==========================================================================
+// 5-objects/_container.scss
+// Layout objects — class-agnostic structural patterns
+// ==========================================================================
+
+@use '../1-settings' as s;
+@use '../2-tools' as t;
+
+.o-container {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: s.$spacing-4;
+
+  @include t.respond-to('md') {
+    padding-inline: s.$spacing-6;
+  }
+
+  @include t.respond-to('lg') {
+    padding-inline: s.$spacing-8;
+  }
+}
+
+.o-section {
+  padding-block: s.$spacing-12;
+}
+
+.o-stack {
+  display: flex;
+  flex-direction: column;
+  gap: s.$spacing-4;
+}
+
+.o-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: s.$spacing-3;
+  align-items: center;
+}
+
+.o-grid {
+  display: grid;
+  gap: s.$spacing-4;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}

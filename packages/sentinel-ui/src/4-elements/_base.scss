@@ -1,0 +1,66 @@
+// ==========================================================================
+// 4-elements/_base.scss
+// Base HTML elements styled without class selectors
+// ==========================================================================
+
+@use '../1-settings' as s;
+
+body {
+  font-family: s.$font-family-sans;
+  font-size: s.$font-size-base;
+  font-weight: s.$font-weight-normal;
+  line-height: s.$line-height-normal;
+  color: s.$color-text;
+  background-color: s.$color-bg;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: s.$font-weight-semibold;
+  line-height: s.$line-height-tight;
+  color: s.$color-text;
+}
+
+h1 { font-size: s.$font-size-4xl; }
+h2 { font-size: s.$font-size-3xl; }
+h3 { font-size: s.$font-size-2xl; }
+h4 { font-size: s.$font-size-xl; }
+h5 { font-size: s.$font-size-lg; }
+h6 { font-size: s.$font-size-base; }
+
+p {
+  margin-bottom: s.$spacing-4;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+a {
+  color: s.$color-primary;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: s.$color-primary-dark;
+  }
+
+  &:focus-visible {
+    outline: 2px solid s.$color-primary;
+    outline-offset: 2px;
+    border-radius: s.$radius-sm;
+  }
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: s.$font-family-mono;
+  font-size: s.$font-size-sm;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid s.$color-border;
+  margin: s.$spacing-6 0;
+}
