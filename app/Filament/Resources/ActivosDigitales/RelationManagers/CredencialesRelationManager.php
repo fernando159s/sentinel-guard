@@ -108,15 +108,23 @@ class CredencialesRelationManager extends RelationManager
                     ->modalHeading('Credenciales')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Cerrar')
-                    ->modalContent(function (ActivoDigitalCredencial $record): HtmlString {
-                        // Registrar el acceso a credenciales sensibles en auditoria
+                    // El log se registra al montar la accion (una sola vez por apertura);
+                    // modalContent puede re-renderizarse y duplicaria el registro.
+                    ->mountUsing(function (ActivoDigitalCredencial $record): void {
                         AuditService::log(
                             accion: 'credencial_revelada',
                             entidad: 'ActivoDigitalCredencial',
                             entidadId: $record->id,
-                            datosNuevos: ['etiqueta' => $record->etiqueta, 'activo_digital_id' => $record->activo_digital_id],
+                            datosNuevos: [
+                                'etiqueta' => $record->etiqueta,
+                                'activo' => $record->activoDigital?->nombre,
+                                'activo_digital_id' => $record->activo_digital_id,
+                                'por' => auth()->user()?->name,
+                            ],
+                            empresaId: $record->activoDigital?->empresa_id,
                         );
-
+                    })
+                    ->modalContent(function (ActivoDigitalCredencial $record): HtmlString {
                         $row = fn (string $label, ?string $value): string => '<div class="py-2 border-b border-gray-100 dark:border-gray-800">'
                             . '<p class="text-xs font-medium text-gray-500">' . e($label) . '</p>'
                             . '<p class="text-sm text-gray-900 dark:text-gray-100 font-mono break-all">' . (filled($value) ? e($value) : '—') . '</p></div>';
