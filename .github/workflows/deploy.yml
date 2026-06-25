@@ -82,16 +82,80 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }}" \
             ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/sentinel-guard/
 
-      # ── Write .env.production from variable ──────────────────
-      - name: Write .env.production on server
+      # ── Compose .env.production from Secrets + Variables ────────
+      # Sensitive values are passed via env: so GitHub masks them in logs.
+      # Non-sensitive config uses vars.* (plain text is fine for those).
+      # After confirming the deploy works, delete the old ENV_PRODUCTION variable
+      # from GitHub → Settings → Variables and rotate any previously exposed keys.
+      - name: Compose and upload .env.production
+        env:
+          _APP_KEY:          ${{ secrets.APP_KEY }}
+          _DB_PASSWORD:      ${{ secrets.DB_PASSWORD }}
+          _REDIS_PASSWORD:   ${{ secrets.REDIS_PASSWORD }}
+          _MAIL_PASSWORD:    ${{ secrets.MAIL_PASSWORD }}
+          _DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
-          printf '%s\n' "$ENV_PRODUCTION_CONTENT" > /tmp/.env.production
+          {
+            printf 'APP_NAME="%s"\n'          "${{ vars.APP_NAME }}"
+            printf 'APP_ENV=production\n'
+            printf 'APP_KEY=%s\n'             "$_APP_KEY"
+            printf 'APP_DEBUG=false\n'
+            printf 'APP_URL=%s\n'             "${{ vars.APP_URL }}"
+            printf '\n'
+            printf 'APP_LOCALE=%s\n'          "${{ vars.APP_LOCALE }}"
+            printf 'APP_FALLBACK_LOCALE=%s\n' "${{ vars.APP_FALLBACK_LOCALE }}"
+            printf 'APP_FAKER_LOCALE=%s\n'    "${{ vars.APP_FAKER_LOCALE }}"
+            printf '\n'
+            printf 'APP_MAINTENANCE_DRIVER=file\n'
+            printf 'BCRYPT_ROUNDS=12\n'
+            printf '\n'
+            printf 'LOG_CHANNEL=stack\n'
+            printf 'LOG_STACK=single\n'
+            printf 'LOG_DEPRECATIONS_CHANNEL=null\n'
+            printf 'LOG_LEVEL=error\n'
+            printf '\n'
+            printf 'DB_CONNECTION=mysql\n'
+            printf 'DB_HOST=%s\n'             "${{ vars.DB_HOST }}"
+            printf 'DB_PORT=%s\n'             "${{ vars.DB_PORT }}"
+            printf 'DB_DATABASE=%s\n'         "${{ vars.DB_DATABASE }}"
+            printf 'DB_USERNAME=%s\n'         "${{ vars.DB_USERNAME }}"
+            printf 'DB_PASSWORD=%s\n'         "$_DB_PASSWORD"
+            printf '\n'
+            printf 'SESSION_DRIVER=database\n'
+            printf 'SESSION_LIFETIME=120\n'
+            printf 'SESSION_ENCRYPT=false\n'
+            printf 'SESSION_PATH=/\n'
+            printf 'SESSION_DOMAIN=null\n'
+            printf '\n'
+            printf 'BROADCAST_CONNECTION=log\n'
+            printf 'FILESYSTEM_DISK=local\n'
+            printf 'QUEUE_CONNECTION=redis\n'
+            printf '\n'
+            printf 'CACHE_STORE=database\n'
+            printf '\n'
+            printf 'REDIS_CLIENT=phpredis\n'
+            printf 'REDIS_HOST=%s\n'          "${{ vars.REDIS_HOST }}"
+            printf 'REDIS_PASSWORD=%s\n'      "$_REDIS_PASSWORD"
+            printf 'REDIS_PORT=%s\n'          "${{ vars.REDIS_PORT }}"
+            printf '\n'
+            printf 'MAIL_MAILER=smtp\n'
+            printf 'MAIL_SCHEME=null\n'
+            printf 'MAIL_HOST=%s\n'           "${{ vars.MAIL_HOST }}"
+            printf 'MAIL_PORT=%s\n'           "${{ vars.MAIL_PORT }}"
+            printf 'MAIL_USERNAME=%s\n'       "${{ vars.MAIL_USERNAME }}"
+            printf 'MAIL_PASSWORD=%s\n'       "$_MAIL_PASSWORD"
+            printf 'MAIL_FROM_ADDRESS="%s"\n' "${{ vars.MAIL_FROM_ADDRESS }}"
+            printf 'MAIL_FROM_NAME="%s"\n'    "${{ vars.MAIL_FROM_NAME }}"
+            printf '\n'
+            printf 'DEEPSEEK_API_KEY=%s\n'    "$_DEEPSEEK_API_KEY"
+            printf 'DEEPSEEK_BASE_URL=%s\n'   "${{ vars.DEEPSEEK_BASE_URL }}"
+            printf 'DEEPSEEK_MODEL=%s\n'      "${{ vars.DEEPSEEK_MODEL }}"
+            printf 'DEEPSEEK_TIMEOUT=%s\n'    "${{ vars.DEEPSEEK_TIMEOUT }}"
+          } > /tmp/.env.production
           scp -i ~/.ssh/deploy_key -P ${{ secrets.SSH_PORT }} \
             /tmp/.env.production \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/sentinel-guard/.env.production
           rm -f /tmp/.env.production
-        env:
-          ENV_PRODUCTION_CONTENT: ${{ vars.ENV_PRODUCTION }}
 
       # ── Post-deploy commands ────────────────────────────────
       - name: Run post-deploy on server
